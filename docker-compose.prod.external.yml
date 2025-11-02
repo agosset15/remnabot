@@ -49,9 +49,7 @@ services:
 
   remnashop:
     &remnashop
-    build:
-      context: . #TODO: image
-      dockerfile: Dockerfile
+    image: ghcr.io/snoups/remnashop:latest
     container_name: "remnashop"
     hostname: remnashop
     restart: unless-stopped

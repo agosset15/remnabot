@@ -1,4 +1,4 @@
-name: Remnashop - Dev CI/CD
+name: Remnashop - Dev
 
 on:
   push:
@@ -31,7 +31,6 @@ jobs:
       - name: 🏷️ Define Tags & Outputs
         id: vars
         run: |
-          # More reliable and git-native short commit retrieval
           SHORT_SHA=$(git rev-parse --short HEAD)
           IMAGE_REPO="ghcr.io/${GITHUB_REPOSITORY}"
           IMAGE_TAGS="${IMAGE_REPO}:dev,${IMAGE_REPO}:dev-${SHORT_SHA}"
