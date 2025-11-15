@@ -8,7 +8,7 @@ from redis.asyncio import Redis
 
 from src.core.config import AppConfig
 from src.core.constants import PURCHASE_PREFIX
-from src.core.enums import AccessMode
+from src.core.enums import AccessMode, Locale
 from src.core.storage.keys import AccessWaitListKey
 from src.infrastructure.database.models.dto import UserDto
 from src.infrastructure.redis.repository import RedisRepository
@@ -57,7 +57,7 @@ class AccessService(BaseService):
                 temp_user = UserDto(
                     telegram_id=aiogram_user.id,
                     name=aiogram_user.full_name,
-                    language=aiogram_user.language_code,
+                    language=Locale(aiogram_user.language_code),
                 )
                 await send_access_denied_notification_task.kiq(
                     user=temp_user,
