@@ -29,6 +29,8 @@ services:
       --tasks-pattern src/infrastructure/taskiq/tasks -fsd
     ports:
       - "5786"
+    networks:
+      - remnabot-network
 
 
   remnashop-taskiq-scheduler:
@@ -39,6 +41,8 @@ services:
       --tasks-pattern src/infrastructure/taskiq/tasks -fsd
     ports:
       - "5784"
+    networks:
+      - remnabot-network
 
 
 networks:
