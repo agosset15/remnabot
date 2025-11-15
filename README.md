@@ -256,7 +256,7 @@ A reverse proxy is required to run Remnashop properly.
 It is needed to receive webhooks from Telegram, the Remnawave panel, and payment systems.
 
 **This guide does not cover how to install or configure a reverse proxy.**  
-You can use any proxy solution, similar to how it is done for [**Remnawave**](https://remna.st/docs/install/reverse-proxies/).
+You can use any proxy solution, similar to how it is done for [**Remnawave**](https://docs.rw/docs/install/reverse-proxies/).
 
 > If you are installing the bot on the same server as the panel, you probably already have a proxy configured.  
 > In this case, you only need to add a forwarding rule to route traffic to the bot container.
