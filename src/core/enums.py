@@ -248,7 +248,8 @@ class AccessMode(UpperStrEnum):
 
 class Command(Enum):
     START = BotCommand(command="start", description="cmd-start")
-    # HELP = BotCommand(command="help", description="cmd-help")
+    PAYSUPPORT = BotCommand(command="paysupport", description="cmd-paysupport")
+    HELP = BotCommand(command="help", description="cmd-help")
 
 
 class Locale(StrEnum):

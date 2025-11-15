@@ -16,8 +16,10 @@ unit-unlimited = { $value ->
 
 # Other
 payment-invoice-description = { purchase-type } подписки { $name } на { $duration }
-contact-support = Здравствуйте! Мне нужна помощь.
+contact-support-help = Здравствуйте! Мне нужна помощь.
+contact-support-paysupport = Здравствуйте! Я бы хотел запросить возврат средств.
 cmd-start = Перезапустить бота
+cmd-paysupport = Возврат средств
 cmd-help = Помощь
 
 
@@ -33,7 +35,7 @@ hdr-subscription = { $is_trial ->
 hdr-plan = <b>📦 План:</b>
 hdr-payment = <b>💰 Платеж:</b>
 hdr-error = <b>⚠️ Ошибка:</b>
-hdr-node = <b>🖥 Нода:</b
+hdr-node = <b>🖥 Нода:</b>
 hdr-hwid = <b>📱 Устройство:</b>
 
 # Fragments
@@ -97,7 +99,7 @@ frg-payment-info =
     </blockquote>
 
 frg-payment-amount = { $final_amount }{ $currency } { $discount_percent -> 
-    [0] { empty }
+    [0] { space }
     *[more] { space } <strike>{ $original_amount }{ $currency }</strike> (-{ $discount_percent }%)
     }
 
@@ -295,6 +297,14 @@ purchase-type = { $purchase_type ->
     [CHANGE] Изменение
     *[OTHER] { $purchase_type }
 }
+
+traffic-strategy = { $strategy_type -> 
+    [NO_RESET] При оплате
+    [DAY] Каждый день
+    [WEEK] Каждую неделю
+    [MONTH] Каждый месяц
+    *[OTHER] { $strategy_type }
+    }
 
 language = { $language ->
     [ar] Арабский
