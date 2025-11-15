@@ -13,6 +13,9 @@ services:
     environment:
       RESET_ASSETS: "${RESET_ASSETS:-false}"
 
+    ports:
+      - '127.0.0.1:9493:9493'
+
     volumes:
       - ./src:/opt/remnashop/src
       - ./logs:/opt/remnashop/logs
