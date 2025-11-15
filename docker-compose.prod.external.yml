@@ -14,6 +14,7 @@ services:
       RESET_ASSETS: "${RESET_ASSETS:-false}"
 
     volumes:
+      - ./src:/opt/remnashop/src
       - ./logs:/opt/remnashop/logs
       - ./assets:/opt/remnashop/assets
 
