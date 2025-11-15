@@ -32,6 +32,7 @@ def setup_routers(router: Router) -> None:
         extra.payment.router,
         extra.notification.router,
         extra.test.router,
+        extra.commands.router,
         extra.member.router,
         extra.goto.router,
         #

@@ -225,7 +225,7 @@ async def on_button_select(
     for button in buttons:
         if button.get("selected"):
             if button["id"] == 0:
-                text = i18n.get("contact-support")
+                text = i18n.get("contact-support-help")
                 support_username = config.bot.support_username.get_secret_value()
                 goto_buttons[0].url = format_username_to_url(support_username, text)
 

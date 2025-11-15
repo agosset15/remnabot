@@ -722,7 +722,7 @@ async def on_send(
         return
 
     if is_double_click(dialog_manager, key="message_confirm", cooldown=5):
-        text = i18n.get("contact-support")
+        text = i18n.get("contact-support-help")
         support_username = config.bot.support_username.get_secret_value()
         payload["reply_markup"] = get_contact_support_keyboard(support_username, text)
 

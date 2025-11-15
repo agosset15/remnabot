@@ -31,7 +31,7 @@ async def menu_getter(
     plan = await plan_service.get_trial_plan()
     has_used_trial = await subscription_service.has_used_trial(user)
     support_username = config.bot.support_username.get_secret_value()
-    support_link = format_username_to_url(support_username, i18n.get("contact-support"))
+    support_link = format_username_to_url(support_username, i18n.get("contact-support-help"))
 
     base_data = {
         "user_id": str(user.telegram_id),
