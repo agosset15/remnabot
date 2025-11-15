@@ -34,6 +34,8 @@ class BaseUserDto(TrackableDto):
     created_at: Optional[datetime] = Field(default=None, frozen=True)
     updated_at: Optional[datetime] = Field(default=None, frozen=True)
 
+    referrer_id: Optional[int] = None
+
     @property
     def remna_name(self) -> str:  # NOTE: DONT USE FOR GET!
         return f"{REMNASHOP_PREFIX}{self.telegram_id}"
