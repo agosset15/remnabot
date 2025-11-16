@@ -16,6 +16,8 @@ URL_PATTERN: Pattern[str] = re.compile(
 USERNAME_PATTERN: Pattern[str] = re.compile(r"^@[a-zA-Z0-9_]{5,32}$")
 DATETIME_FORMAT: Final[str] = "%d.%m.%Y %H:%M:%S"
 
+REFERRAL_PAYOUT_PERCENT: Final[float] = 0.1
+
 API_V1: Final[str] = "/webhook/vpn_bot"
 BOT_WEBHOOK_PATH: Final[str] = "/telegram"
 PAYMENTS_WEBHOOK_PATH: Final[str] = "/payments"

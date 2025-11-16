@@ -211,6 +211,19 @@ class UserService(BaseService):
         await self.clear_user_cache(user.telegram_id)
         logger.info(f"Set role='{role.name}' for user '{user.telegram_id}'")
 
+    async def make_referral_payout(self, telegram_id: int, amount: int):
+        user = await self.get(telegram_id)
+        if user is None:
+            logger.warning(f"User '{telegram_id}' not found")
+            return
+
+        user.balance += amount
+        await self.uow.repository.users.update(
+            user.telegram_id,
+            **user.changed_data,
+        )
+        logger.info(f"Made referral payout for user '{user.telegram_id}'")
+
     #
 
     async def add_to_recent_registered(self, telegram_id: int) -> None:

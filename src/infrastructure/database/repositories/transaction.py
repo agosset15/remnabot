@@ -23,6 +23,9 @@ class TransactionRepository(BaseRepository):
     async def get_by_status(self, status: TransactionStatus) -> list[Transaction]:
         return await self._get_many(Transaction, Transaction.status == status)
 
+    async def get_by_user_and_status(self, telegram_id: int, status: TransactionStatus) -> list[Transaction]:
+        return await self._get_many(Transaction, Transaction.user_telegram_id == telegram_id, Transaction.status == status)
+
     async def update(self, payment_id: UUID, **data: Any) -> Optional[Transaction]:
         return await self._update(Transaction, Transaction.payment_id == payment_id, **data)
 

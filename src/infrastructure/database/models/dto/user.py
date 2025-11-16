@@ -66,6 +66,8 @@ class BaseUserDto(TrackableDto):
 
 class UserDto(BaseUserDto):
     current_subscription: Optional["BaseSubscriptionDto"] = None
+    referrals: list[UserDto] = []
+    referrer: Optional[UserDto] = None
 
     @property
     def has_subscription(self) -> bool:

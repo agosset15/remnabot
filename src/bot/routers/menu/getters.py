@@ -12,10 +12,13 @@ from src.core.utils.formatters import (
     i18n_format_expire_time,
     i18n_format_traffic_limit,
 )
+from src.core.enums import TransactionStatus
+from src.core.constants import REFERRAL_PAYOUT_PERCENT
 from src.infrastructure.database.models.dto import UserDto
 from src.services.plan import PlanService
 from src.services.remnawave import RemnawaveService
 from src.services.subscription import SubscriptionService
+from src.services.transaction import TransactionService
 
 
 @inject
@@ -100,4 +103,38 @@ async def devices_getter(
         "max_count": i18n_format_device_limit(user.current_subscription.device_limit),
         "devices": formatted_devices,
         "devices_empty": len(devices) == 0,
+    }
+
+
+@inject
+async def invite_getter(
+    dialog_manager: DialogManager,
+    user: UserDto,
+    transaction_service: FromDishka[TransactionService],
+    **kwargs: Any,
+) -> dict[str, Any]:
+
+    payments, earned = 0, 0
+    for transaction in (await transaction_service.get_by_referrer_and_status(user.referrals, TransactionStatus.COMPLETED)):
+        payments += 1
+        earned += transaction.amount * REFERRAL_PAYOUT_PERCENT
+
+    bot_username = (await dialog_manager.event.bot.get_me()).username
+
+    return {
+        "referral_count": len(user.referrals),
+        "referral_payments": payments,
+        "referral_earned": earned,
+        "referral_link": f"https://t.me/{bot_username}?start=ref-{user.telegram_id}",
+    }
+
+@inject
+async def invited_users_getter(
+        dialog_manager: DialogManager,
+        user: UserDto,
+        **kwargs: Any
+) -> dict[str, Any]:
+    return {
+        "invited_users": '\n'.join([ref.name for ref in user.referrals]),
+        "invited_user_count": len(user.referrals),
     }

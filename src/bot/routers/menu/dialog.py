@@ -21,7 +21,7 @@ from src.bot.widgets import Banner, I18nFormat, IgnoreUpdate
 from src.core.constants import MIDDLEWARE_DATA_KEY, PURCHASE_PREFIX, USER_KEY
 from src.core.enums import BannerName
 
-from .getters import devices_getter, menu_getter
+from .getters import devices_getter, menu_getter, invite_getter, invited_users_getter
 from .handlers import on_device_delete, on_get_trial, show_reason
 
 menu = Window(
@@ -59,12 +59,12 @@ menu = Window(
         ),
     ),
     Row(
-        # Button(
-        #     text=I18nFormat("btn-menu-invite"),
-        #     id="invite",
-        #     on_click=show_dev_popup,
-        #     # state=MainMenu.INVITE,
-        # ),
+        Button(
+            text=I18nFormat("btn-menu-invite"),
+            id="invite",
+            on_click=show_dev_popup,
+            # state=MainMenu.INVITE,
+        ),
         Url(
             text=I18nFormat("btn-menu-support"),
             id="support",
@@ -130,17 +130,18 @@ invite = Window(
     Row(
         CopyText(
             text=I18nFormat("btn-menu-invite-copy"),
-            copy_text=Format("copy"),
+            copy_text=Format("{referral_link}"),
         ),
     ),
     Row(
         Button(
             text=I18nFormat("btn-menu-invite-qr"),
             id="qr",
+            on_click=show_dev_popup,
         ),
         SwitchInlineQueryChosenChatButton(
             text=I18nFormat("btn-menu-invite-send"),
-            query=Format("query"),
+            query=I18nFormat("msg-invite-send"),
             allow_user_chats=True,
             allow_group_chats=True,
             allow_channel_chats=True,
@@ -163,11 +164,27 @@ invite = Window(
     ),
     IgnoreUpdate(),
     state=MainMenu.INVITE,
-    # getter=invite_getter,
+    getter=invite_getter,
+)
+
+invited_users = Window(
+    Banner(BannerName.MENU),
+    I18nFormat("msg-menu-invited-users"),
+    Row(
+        SwitchTo(
+            text=I18nFormat("btn-back"),
+            id="back",
+            state=MainMenu.INVITE,
+        ),
+    ),
+    IgnoreUpdate(),
+    state=MainMenu.INVITED_USERS,
+    getter=invited_users_getter,
 )
 
 router = Dialog(
     menu,
     devices,
     invite,
+    invited_users,
 )

@@ -80,10 +80,7 @@ class User(BaseSql, TimestampMixin):
     referrals: Mapped[list["User"]] = relationship(
         "User",
         back_populates="referrer",
-    )
-    referrer: Mapped[Optional["User"]] = relationship(
-        "User",
-        back_populates="referrals",
+        lazy='selectin'
     )
     referrer_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL"),
