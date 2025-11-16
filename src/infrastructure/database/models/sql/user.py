@@ -79,7 +79,6 @@ class User(BaseSql, TimestampMixin):
     )
     referrals: Mapped[list["User"]] = relationship(
         "User",
-        back_populates="referrer",
         lazy='selectin'
     )
     referrer_id: Mapped[Optional[int]] = mapped_column(
