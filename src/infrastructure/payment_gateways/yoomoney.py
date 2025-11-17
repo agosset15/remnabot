@@ -59,7 +59,8 @@ class YoomoneyGateway(BasePaymentGateway):
 
         try:
             response = await self._client.post(query)
-            response.raise_for_status()
+            if response.status_code != 302:
+                response.raise_for_status()
             return self._get_payment_data(response.url, payment_id)
 
         except HTTPStatusError as exception:
