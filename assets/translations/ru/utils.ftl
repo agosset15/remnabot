@@ -15,7 +15,7 @@ unit-unlimited = { $value ->
 }
 
 # Other
-payment-invoice-description = { purchase-type } подписки { $name } на { $duration }
+payment-invoice-description = { purchase-type } лицензии на доступ к ПО уровень { $name } на { $duration }
 contact-support-help = Здравствуйте! Мне нужна помощь.
 contact-support-paysupport = Здравствуйте! Я бы хотел запросить возврат средств.
 cmd-start = Перезапустить бота
