@@ -80,7 +80,7 @@ class RulesMiddleware(EventTypedMiddleware):
         return await handler(event, data)
 
     def _is_click_accept(self, event: TelegramObject) -> bool:
-        return isinstance(event, CallbackQuery) and event.data == CALLBACK_RULES_ACCEPT
+        return isinstance(event, CallbackQuery) and event.data.startswith(CALLBACK_RULES_ACCEPT)
 
     async def _delete_rules_message(self, event: TelegramObject) -> None:
         if not isinstance(event, CallbackQuery):
