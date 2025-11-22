@@ -34,7 +34,7 @@ class UserMiddleware(EventTypedMiddleware):
         event: TelegramObject,
         data: dict[str, Any],
     ) -> Any:
-        aiogram_user: Optional[AiogramUser] = self._get_aiogam_user(event)
+        aiogram_user: Optional[AiogramUser] = self._get_aiogram_user(event)
 
         if aiogram_user is None or aiogram_user.is_bot:
             logger.warning("Terminating middleware: event from bot or missing user")
