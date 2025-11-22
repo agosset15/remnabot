@@ -199,8 +199,8 @@ class PaymentGatewayType(UpperStrEnum):
     YOOMONEY = auto()
     CRYPTOMUS = auto()
     HELEKET = auto()
-#    CRYPTOPAY = auto()
-#    ROBOKASSA = auto()
+    CRYPTOPAY = auto()
+    ROBOKASSA = auto()
 
 
 class Currency(UpperStrEnum):
