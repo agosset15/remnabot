@@ -1,6 +1,6 @@
 from typing import Any, Awaitable, Callable, Optional
 
-from aiogram.types import TelegramObject
+from aiogram.types import TelegramObject, Message, CallbackQuery
 from aiogram.types import User as AiogramUser
 from aiogram_dialog.api.internal import FakeUser
 from dishka import AsyncContainer
@@ -49,8 +49,12 @@ class UserMiddleware(EventTypedMiddleware):
         if user is None:
             user = await user_service.create(aiogram_user)
             referrer_id = None
-            if len(event.text.split(' ')) > 1 and "ref" == event.text.split(' ')[1].split('-')[0]:
+            if isinstance(event, Message) and len(event.text.split(' ')) > 1 and "ref" == event.text.split(' ')[1].split('-')[0]:
                 referrer_id = int(event.text.split('-')[1])
+                user.referrer_id = referrer_id
+                await user_service.update(user)
+            elif isinstance(event, CallbackQuery) and ":" in event.data:
+                referrer_id = int(event.data.split(':')[1])
                 user.referrer_id = referrer_id
                 await user_service.update(user)
             await notification_service.system_notify(

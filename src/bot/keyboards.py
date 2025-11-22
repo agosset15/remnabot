@@ -94,12 +94,15 @@ def get_channel_keyboard(channel_link: str) -> InlineKeyboardMarkup:
     return builder.as_markup()
 
 
-def get_rules_keyboard() -> InlineKeyboardMarkup:
+def get_rules_keyboard(referrer_id: int = None) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
+    data = CALLBACK_RULES_ACCEPT
+    if referrer_id:
+        data += f":{referrer_id}"
     builder.row(
         InlineKeyboardButton(
             text="btn-rules-accept",
-            callback_data=CALLBACK_RULES_ACCEPT,
+            callback_data=data,
         ),
     )
     return builder.as_markup()
