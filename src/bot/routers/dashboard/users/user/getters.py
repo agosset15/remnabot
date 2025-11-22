@@ -59,6 +59,7 @@ async def user_getter(
             "can_edit": user.role > target_user.role or config.bot.dev_id == user.telegram_id,
             "is_trial": False,
             "has_subscription": False,
+            "referrer_id": target_user.referrer_id,
         }
 
     return {
@@ -78,6 +79,7 @@ async def user_getter(
         "device_limit": i18n_format_device_limit(subscription.device_limit),
         "expire_time": i18n_format_expire_time(subscription.expire_at),
         "has_subscription": True,
+        "referrer_id": target_user.referrer_id,
     }
 
 
