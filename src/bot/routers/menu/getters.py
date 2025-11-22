@@ -13,7 +13,6 @@ from src.core.utils.formatters import (
     i18n_format_traffic_limit,
 )
 from src.core.enums import TransactionStatus
-from src.core.constants import REFERRAL_PAYOUT_PERCENT
 from src.infrastructure.database.models.dto import UserDto
 from src.services.plan import PlanService
 from src.services.remnawave import RemnawaveService
@@ -115,8 +114,6 @@ async def invite_getter(
 ) -> dict[str, Any]:
 
     payments = len(await transaction_service.get_by_referrer_and_status(user.referrals, TransactionStatus.COMPLETED))
-
-
     bot_username = (await dialog_manager.event.bot.get_me()).username
 
     return {

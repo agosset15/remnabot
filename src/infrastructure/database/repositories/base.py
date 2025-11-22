@@ -2,7 +2,7 @@ from typing import Any, Optional, Type, TypeVar, Union, cast
 
 from sqlalchemy import ColumnExpressionArgument, delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import InstrumentedAttribute
+from sqlalchemy.orm import InstrumentedAttribute, selectinload
 
 from src.infrastructure.database.models.sql import BaseSql
 
@@ -41,8 +41,12 @@ class BaseRepository:
     async def delete_instance(self, instance: T) -> None:
         await self.session.delete(instance)
 
-    async def _get_one(self, model: ModelType[T], *conditions: ConditionType) -> Optional[T]:
-        result = await self.session.execute(select(model).where(*conditions))
+    async def _get_one(self, model: ModelType[T], *conditions: ConditionType, selectin: Optional[list[InstrumentedAttribute[Any]]] = None) -> Optional[T]:
+        query = select(model).where(*conditions)
+
+        if selectin is not None:
+            query = query.options(*(selectinload(attr) for attr in selectin))
+        result = await self.session.execute(query)
         return result.unique().scalar_one_or_none()
 
     async def _get_many(
