@@ -150,7 +150,6 @@ async def send_subscription_limited_notification_task(
         ntf_type=UserNotificationType.LIMITED,
     )
 
-
 @broker.task
 @inject
 async def send_test_transaction_notification_task(
@@ -161,5 +160,18 @@ async def send_test_transaction_notification_task(
         user=user,
         payload=MessagePayload(
             i18n_key="ntf-gateway-test-payment-confirmed",
+        ),
+    )
+
+@broker.task
+@inject
+async def send_referral_payout_notification_task(
+    user: UserDto,
+    notification_service: FromDishka[NotificationService],
+) -> None:
+    await notification_service.notify_user(
+        user=user,
+        payload=MessagePayload(
+            i18n_key="ntf-referral-payout",
         ),
     )

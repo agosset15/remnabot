@@ -59,11 +59,10 @@ menu = Window(
         ),
     ),
     Row(
-        Button(
+        SwitchTo(
             text=I18nFormat("btn-menu-invite"),
             id="invite",
-            on_click=show_dev_popup,
-            # state=MainMenu.INVITE,
+            state=MainMenu.INVITE,
         ),
         Url(
             text=I18nFormat("btn-menu-support"),

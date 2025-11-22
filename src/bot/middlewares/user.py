@@ -34,7 +34,7 @@ class UserMiddleware(EventTypedMiddleware):
         event: TelegramObject,
         data: dict[str, Any],
     ) -> Any:
-        aiogram_user: Optional[AiogramUser] = self._get_aiogram_user(event)
+        aiogram_user: Optional[AiogramUser] = self._get_aiogam_user(event)
 
         if aiogram_user is None or aiogram_user.is_bot:
             logger.warning("Terminating middleware: event from bot or missing user")
@@ -48,6 +48,11 @@ class UserMiddleware(EventTypedMiddleware):
 
         if user is None:
             user = await user_service.create(aiogram_user)
+            referrer_id = None
+            if len(event.text.split(' ')) > 1 and "ref" == event.text.split(' ')[1].split('-')[0]:
+                referrer_id = int(event.text.split('-')[1])
+                user.referrer_id = referrer_id
+                await user_service.update(user)
             await notification_service.system_notify(
                 payload=MessagePayload.not_deleted(
                     i18n_key="ntf-event-new-user",
@@ -55,6 +60,7 @@ class UserMiddleware(EventTypedMiddleware):
                         "user_id": str(user.telegram_id),
                         "user_name": user.name,
                         "username": user.username or False,
+                        "referrer_id": referrer_id,
                     },
                     reply_markup=get_user_keyboard(user.telegram_id),
                 ),

@@ -114,17 +114,15 @@ async def invite_getter(
     **kwargs: Any,
 ) -> dict[str, Any]:
 
-    payments, earned = 0, 0
-    for transaction in (await transaction_service.get_by_referrer_and_status(user.referrals, TransactionStatus.COMPLETED)):
-        payments += 1
-        earned += transaction.amount * REFERRAL_PAYOUT_PERCENT
+    payments = len(await transaction_service.get_by_referrer_and_status(user.referrals, TransactionStatus.COMPLETED))
+
 
     bot_username = (await dialog_manager.event.bot.get_me()).username
 
     return {
         "referral_count": len(user.referrals),
         "referral_payments": payments,
-        "referral_earned": earned,
+        "referral_earned": user.purchase_discount if user.purchase_discount > user.personal_discount else user.personal_discount,
         "referral_link": f"https://t.me/{bot_username}?start=ref-{user.telegram_id}",
     }
 

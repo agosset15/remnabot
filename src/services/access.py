@@ -121,7 +121,7 @@ class AccessService(BaseService):
                 return True
 
     async def is_invited(self, user: UserDto) -> bool:
-        result = True  # TODO: Replace with actual referral check
+        result = bool(user.referrer_id)
         logger.debug(f"Invited check for user '{user.telegram_id}': {result}")
         return result
 

@@ -44,9 +44,11 @@ from src.infrastructure.redis import RedisRepository
 from src.infrastructure.taskiq.tasks.notifications import (
     send_system_notification_task,
     send_test_transaction_notification_task,
+    send_referral_payout_notification_task,
 )
 from src.infrastructure.taskiq.tasks.subscriptions import purchase_subscription_task
 from src.services.subscription import SubscriptionService
+from src.services.user import UserService
 
 from .base import BaseService
 from .transaction import TransactionService
@@ -67,12 +69,14 @@ class PaymentGatewayService(BaseService):
         translator_hub: TranslatorHub,
         #
         uow: UnitOfWork,
+        user_service: UserService,
         transaction_service: TransactionService,
         subscription_service: SubscriptionService,
         payment_gateway_factory: PaymentGatewayFactory,
     ) -> None:
         super().__init__(config, bot, redis_client, redis_repository, translator_hub)
         self.uow = uow
+        self.user_service = user_service
         self.transaction_service = transaction_service
         self.subscription_service = subscription_service
         self.payment_gateway_factory = payment_gateway_factory
@@ -309,7 +313,9 @@ class PaymentGatewayService(BaseService):
             await send_test_transaction_notification_task.kiq(user=transaction.user)
             return
 
-        # TODO: Add referral logic
+        if transaction.user.referrer_id:
+            await self.user_service.make_referral_payout(transaction.user.referrer_id)
+            await send_referral_payout_notification_task.kiq(user=transaction.user.referrer_id)
 
         i18n_keys = {
             PurchaseType.NEW: "ntf-event-subscription-new",
