@@ -62,12 +62,15 @@ class RulesMiddleware(EventTypedMiddleware):
             return await handler(event, data)
 
         if user is None:
+            referrer_id = None
+            if isinstance(event, Message) and len(event.text.split(' ')) > 1 and "ref" == event.text.split(' ')[1].split('-')[0]:
+                referrer_id = int(event.text.split('-')[-1])
             await notification_service.notify_user(
                 user=fake_user,
                 payload=MessagePayload(
                     i18n_key="ntf-rules-accept-required",
                     i18n_kwargs={"url": settings.rules_link.get_secret_value()},
-                    reply_markup=get_rules_keyboard(),
+                    reply_markup=get_rules_keyboard(referrer_id),
                     auto_delete_after=None,
                     add_close_button=False,
                 ),
