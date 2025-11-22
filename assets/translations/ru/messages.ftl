@@ -74,9 +74,9 @@ msg-invite-send =
 
     При переходе по моей ссылке вы получите скидку 25% на первую покупку!
 
-    <a href="{ $referral_link }">Ссылка</a>
+    { $referral_link }
 
-msg-menu-invited-users = <b>Ваши приглашенные пользователи:</b>s
+msg-menu-invited-users = <b>Ваши приглашенные пользователи:</b>
 
     { $invited_users }
 
