@@ -4,6 +4,7 @@ from aiogram_dialog import DialogManager
 from dishka import FromDishka
 from dishka.integrations.aiogram_dialog import inject
 from fluentogram import TranslatorRunner
+from loguru import logger
 
 from src.core.config import AppConfig
 from src.core.utils.formatters import (
@@ -18,6 +19,7 @@ from src.services.plan import PlanService
 from src.services.remnawave import RemnawaveService
 from src.services.subscription import SubscriptionService
 from src.services.transaction import TransactionService
+from src.services.user import UserService
 
 
 @inject
@@ -110,9 +112,12 @@ async def invite_getter(
     dialog_manager: DialogManager,
     user: UserDto,
     transaction_service: FromDishka[TransactionService],
+    user_service: FromDishka[UserService],
     **kwargs: Any,
 ) -> dict[str, Any]:
-
+    logger.debug(f"Now user {user.id} has {len(user.referrals)} referrals")
+    user = await user_service.get_referrals(user.telegram_id)
+    logger.debug(f"And now user {user.id} has {len(user.referrals)} referrals")
     payments = len(await transaction_service.get_by_referrer_and_status(user.referrals, TransactionStatus.COMPLETED))
     bot_username = (await dialog_manager.event.bot.get_me()).username
 
@@ -127,9 +132,11 @@ async def invite_getter(
 async def invited_users_getter(
         dialog_manager: DialogManager,
         user: UserDto,
+        user_service: FromDishka[UserService],
         **kwargs: Any
 ) -> dict[str, Any]:
+    user = await user_service.get_referrals(user.telegram_id)
     return {
-        "invited_users": '\n'.join([ref.name for ref in user.referrals]),
+        "invited_users": "• " + '\n• '.join([ref.name for ref in user.referrals]),
         "invited_user_count": len(user.referrals),
     }

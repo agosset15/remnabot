@@ -89,6 +89,17 @@ class UserService(BaseService):
 
         return UserDto.from_model(db_user)
 
+    @redis_cache(prefix="get_user_referrals", ttl=TIME_1M)
+    async def get_referrals(self, telegram_id: int) -> Optional[UserDto]:
+        db_user = await self.uow.repository.users.get(telegram_id)
+
+        if db_user:
+            logger.debug(f"Retrieved user '{telegram_id}'")
+        else:
+            logger.warning(f"User '{telegram_id}' not found")
+
+        return UserDto.from_model(db_user)
+
     async def update(self, user: UserDto) -> Optional[UserDto]:
         db_updated_user = await self.uow.repository.users.update(
             telegram_id=user.telegram_id,
