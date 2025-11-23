@@ -35,6 +35,7 @@ class BaseUserDto(TrackableDto):
     updated_at: Optional[datetime] = Field(default=None, frozen=True)
 
     referrer_id: Optional[int] = None
+    referrer: Optional[BaseUserDto] = None
 
     @property
     def remna_name(self) -> str:  # NOTE: DONT USE FOR GET!
@@ -67,7 +68,6 @@ class BaseUserDto(TrackableDto):
 class UserDto(BaseUserDto):
     current_subscription: Optional["BaseSubscriptionDto"] = None
     referrals: list[BaseUserDto] = []
-    referrer: Optional[BaseUserDto] = None
 
     @property
     def has_subscription(self) -> bool:

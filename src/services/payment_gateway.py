@@ -314,9 +314,8 @@ class PaymentGatewayService(BaseService):
             return
 
         if transaction.user.referrer_id:
-            referrer = await self.user_service.get(transaction.user.referrer_id)
-            await self.user_service.make_referral_payout(referrer.telegram_id)
-            await send_referral_payout_notification_task.kiq(user=referrer)
+            await self.user_service.make_referral_payout(transaction.user.referrer.telegram_id)
+            await send_referral_payout_notification_task.kiq(user=transaction.user.referrer)
 
         i18n_keys = {
             PurchaseType.NEW: "ntf-event-subscription-new",
