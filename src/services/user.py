@@ -91,7 +91,7 @@ class UserService(BaseService):
 
     @redis_cache(prefix="get_user_referrals", ttl=TIME_1M)
     async def get_referrals(self, telegram_id: int) -> Optional[UserDto]:
-        db_user = await self.uow.repository.users.get(telegram_id)
+        db_user = await self.uow.repository.users.get(telegram_id, referrals=True)
 
         if db_user:
             logger.debug(f"Retrieved user '{telegram_id}'")

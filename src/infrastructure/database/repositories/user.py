@@ -13,9 +13,10 @@ class UserRepository(BaseRepository):
         return await self.create_instance(user)
 
     async def get(self, telegram_id: int, referrals: bool = False) -> Optional[User]:
+        selectin = [User.referrer]
         if referrals:
-            return await self._get_one(User, User.telegram_id == telegram_id, selectin=[User.referrals])
-        return await self._get_one(User, User.telegram_id == telegram_id)
+            selectin += [User.referrals]
+        return await self._get_one(User, User.telegram_id == telegram_id, selectin=selectin)
 
     async def get_by_ids(self, telegram_ids: list[int]) -> list[User]:
         return await self._get_many(User, User.telegram_id.in_(telegram_ids))

@@ -12,7 +12,7 @@ class TransactionRepository(BaseRepository):
         return await self.create_instance(transaction)
 
     async def get(self, payment_id: UUID) -> Optional[Transaction]:
-        return await self._get_one(Transaction, Transaction.payment_id == payment_id)
+        return await self._get_one(Transaction, Transaction.payment_id == payment_id, selectin=[Transaction.user])
 
     async def get_by_user(self, telegram_id: int) -> list[Transaction]:
         return await self._get_many(Transaction, Transaction.user_telegram_id == telegram_id)
