@@ -56,10 +56,6 @@ frg-user-info =
         [0] { empty }
         *[HAS] (<a href="tg://user?id={ $user_id }">@{ $username }</a>)
     }
-    • <b>Реферер</b>: { $referrer_id ->
-        [0] { empty }
-        *[HAS] (<a href="tg://user?id={ $referrer_id }">{ $referrer_id }</a>)
-    }
     </blockquote>
 
 frg-user-details =
