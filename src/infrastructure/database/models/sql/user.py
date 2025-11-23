@@ -86,7 +86,7 @@ class User(BaseSql, TimestampMixin):
         remote_side=[id],
         back_populates="referrals",
         foreign_keys=[referrer_id],
-        lazy='raise',
+        lazy='selectin',
         primaryjoin="User.referrer_id==User.id"
     )
     referrals: Mapped[list["User"]] = relationship(
