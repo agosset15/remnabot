@@ -76,6 +76,16 @@ def get_renew_keyboard() -> InlineKeyboardMarkup:
     )
     return builder.as_markup()
 
+def get_goto_main_keyboard() -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.row(
+        InlineKeyboardButton(
+            text="btn-goto-main-menu",
+            callback_data=f"{GOTO_PREFIX}{MainMenu.MAIN.state}",
+        ),
+    )
+    return builder.as_markup()
+
 
 def get_channel_keyboard(channel_link: str) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
