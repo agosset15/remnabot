@@ -54,7 +54,7 @@ class UserMiddleware(EventTypedMiddleware):
             elif isinstance(event, CallbackQuery) and ":" in event.data:
                 referrer_id = int(event.data.split(':')[1])
             referrer = await user_service.get(telegram_id=referrer_id)
-            if referrer.telegram_id != user.telegram_id:
+            if referrer and referrer.telegram_id != user.telegram_id:
                 user.referrer_id = referrer.telegram_id
                 await user_service.update(user)
             await notification_service.system_notify(
