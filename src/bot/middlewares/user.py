@@ -51,13 +51,11 @@ class UserMiddleware(EventTypedMiddleware):
             referrer_id = None
             if isinstance(event, Message) and len(event.text.split(' ')) > 1 and "ref" == event.text.split(' ')[1].split('-')[0]:
                 referrer_id = int(event.text.split('-')[1])
-                referrer = await user_service.get(telegram_id=referrer_id)
-                user.referrer_id = referrer.id
-                await user_service.update(user)
             elif isinstance(event, CallbackQuery) and ":" in event.data:
                 referrer_id = int(event.data.split(':')[1])
-                referrer = await user_service.get(telegram_id=referrer_id)
-                user.referrer_id = referrer.id
+            referrer = await user_service.get(telegram_id=referrer_id)
+            if referrer.telegram_id != user.telegram_id:
+                user.referrer_id = referrer.telegram_id
                 await user_service.update(user)
             await notification_service.system_notify(
                 payload=MessagePayload.not_deleted(
