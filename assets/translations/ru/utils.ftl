@@ -15,7 +15,7 @@ unit-unlimited = { $value ->
 }
 
 # Other
-payment-invoice-description = { purchase-type } лицензии на доступ к ПО уровень { $name } на { $duration }
+payment-invoice-description = { purchase-type } подписки { $name } на { $duration }
 contact-support-help = Здравствуйте! Мне нужна помощь.
 contact-support-paysupport = Здравствуйте! Я бы хотел запросить возврат средств.
 contact-support-withdraw-points = Здравствуйте! Я бы хотел запросить обмен баллов.
@@ -25,8 +25,8 @@ cmd-help = Помощь
 
 referral-invite-message =
     { space }
-    🚀 Привет! Хочешь стабильный и быстрый VPN?  
-    
+    🚀 Рекомендую быстрый и недорогой VPN-сервис KaGo!
+
     ↘️ ЖМИ СЮДА И ПОПРОБУЙ БЕСПЛАТНО!
     { $url }
 
@@ -60,7 +60,7 @@ frg-user =
 frg-user-info =
     <blockquote>
     • <b>ID</b>: <code>{ $user_id }</code>
-    • <b>Имя</b>: { $user_name } { $username -> 
+    • <b>Имя</b>: { $user_name } { $username ->
         [0] { empty }
         *[HAS] (<a href="tg://user?id={ $user_id }">@{ $username }</a>)
     }
@@ -69,13 +69,9 @@ frg-user-info =
 frg-user-details =
     <blockquote>
     • <b>ID</b>: <code>{ $user_id }</code>
-    • <b>Имя</b>: { $user_name } { $username -> 
+    • <b>Имя</b>: { $user_name } { $username ->
         [0] { space }
         *[HAS] (<a href="tg://user?id={ $user_id }">@{ $username }</a>)
-    }
-    • <b>Реферер</b>: { $referrer_id ->
-        [0] { space }
-        *[HAS] (<a href="tg://user?id={ $referrer_id }">{ $referrer_id }</a>)
     }
     • <b>Роль</b>: { role }
     • <b>Язык</b>: { language }
