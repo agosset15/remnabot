@@ -38,6 +38,8 @@ class BaseUserDto(TrackableDto):
     created_at: Optional[datetime] = Field(default=None, frozen=True)
     updated_at: Optional[datetime] = Field(default=None, frozen=True)
 
+    referrer_id: Optional[int] = None
+
     @property
     def remna_name(self) -> str:  # NOTE: DONT USE FOR GET!
         return f"{REMNASHOP_PREFIX}{self.telegram_id}"
@@ -68,6 +70,8 @@ class BaseUserDto(TrackableDto):
 
 class UserDto(BaseUserDto):
     current_subscription: Optional["BaseSubscriptionDto"] = None
+    referrals: list[BaseUserDto] = []
+    referrer: Optional[BaseUserDto] = None
 
     _is_invited_user: bool = PrivateAttr(default=False)
     _has_any_subscription: bool = PrivateAttr(default=False)

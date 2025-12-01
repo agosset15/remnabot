@@ -101,6 +101,17 @@ class UserService(BaseService):
 
         return UserDto.from_model(db_user)
 
+    @redis_cache(prefix="get_user_referrals", ttl=TIME_1M)
+    async def get_referrals(self, telegram_id: int) -> Optional[UserDto]:
+        db_user = await self.uow.repository.users.get(telegram_id, referrals=True)
+
+        if db_user:
+            logger.debug(f"Retrieved user '{telegram_id}'")
+        else:
+            logger.warning(f"User '{telegram_id}' not found")
+
+        return UserDto.from_model(db_user)
+
     async def update(self, user: UserDto) -> Optional[UserDto]:
         db_updated_user = await self.uow.repository.users.update(
             telegram_id=user.telegram_id,
@@ -226,6 +237,20 @@ class UserService(BaseService):
         )
         await self.clear_user_cache(user.telegram_id)
         logger.info(f"Set role='{role.name}' for user '{user.telegram_id}'")
+
+    async def make_referral_payout(self, telegram_id: int):
+        user = await self.get(telegram_id)
+        if user is None:
+            logger.warning(f"User '{telegram_id}' not found")
+            return
+
+        user.personal_discount += 1
+        user.purchase_discount = 30
+        await self.uow.repository.users.update(
+            user.telegram_id,
+            **user.changed_data,
+        )
+        logger.info(f"Made referral payout for user '{user.telegram_id}'")
 
     #
 

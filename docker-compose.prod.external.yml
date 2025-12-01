@@ -12,7 +12,7 @@ services:
       - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
       - POSTGRES_DB=${DATABASE_NAME}
       - TZ=UTC
-    
+
     volumes:
       - remnashop-db-data:/var/lib/postgresql/data
 
@@ -24,7 +24,7 @@ services:
       interval: 3s
       timeout: 10s
       retries: 3
-    
+
 
   remnashop-redis:
     image: valkey/valkey:9-alpine
@@ -45,7 +45,7 @@ services:
       interval: 3s
       timeout: 10s
       retries: 3
-    
+
 
   remnashop:
     &remnashop
@@ -71,7 +71,7 @@ services:
 
     networks:
       - remnawave-network
-    
+
 
   remnashop-taskiq-worker:
     <<: *remnashop
@@ -103,8 +103,8 @@ services:
 
 networks:
   remnawave-network:
-    name: remnawave-network 
-    driver: bridge 
+    name: remnawave-network
+    driver: bridge
     external: false
 
 volumes:
@@ -112,7 +112,7 @@ volumes:
     name: remnashop-db-data
     driver: local
     external: false
-    
+
   remnashop-redis-data:
     name: remnashop-redis-data
     driver: local

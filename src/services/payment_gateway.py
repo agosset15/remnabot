@@ -44,10 +44,12 @@ from src.infrastructure.redis import RedisRepository
 from src.infrastructure.taskiq.tasks.notifications import (
     send_system_notification_task,
     send_test_transaction_notification_task,
+    send_referral_payout_notification_task,
 )
 from src.infrastructure.taskiq.tasks.subscriptions import purchase_subscription_task
 from src.services.referral import ReferralService
 from src.services.subscription import SubscriptionService
+from src.services.user import UserService
 
 from .base import BaseService
 from .transaction import TransactionService
@@ -69,6 +71,7 @@ class PaymentGatewayService(BaseService):
         translator_hub: TranslatorHub,
         #
         uow: UnitOfWork,
+        user_service: UserService,
         transaction_service: TransactionService,
         subscription_service: SubscriptionService,
         payment_gateway_factory: PaymentGatewayFactory,
@@ -76,6 +79,7 @@ class PaymentGatewayService(BaseService):
     ) -> None:
         super().__init__(config, bot, redis_client, redis_repository, translator_hub)
         self.uow = uow
+        self.user_service = user_service
         self.transaction_service = transaction_service
         self.subscription_service = subscription_service
         self.payment_gateway_factory = payment_gateway_factory
@@ -95,15 +99,15 @@ class PaymentGatewayService(BaseService):
                 case PaymentGatewayType.YOOKASSA:
                     is_active = False
                     settings = YookassaGatewaySettingsDto()
-                # case PaymentGatewayType.YOOMONEY:
-                #     is_active = False
-                #     settings = YoomoneyGatewaySettingsDto()
-                # case PaymentGatewayType.CRYPTOMUS:
-                #     is_active = False
-                #     settings = CryptomusGatewaySettingsDto()
-                # case PaymentGatewayType.HELEKET:
-                #     is_active = False
-                #     settings = HeleketGatewaySettingsDto()
+                case PaymentGatewayType.YOOMONEY:
+                    is_active = False
+                    settings = YoomoneyGatewaySettingsDto()
+                case PaymentGatewayType.CRYPTOMUS:
+                    is_active = False
+                    settings = CryptomusGatewaySettingsDto()
+                case PaymentGatewayType.HELEKET:
+                    is_active = False
+                    settings = HeleketGatewaySettingsDto()
                 # case PaymentGatewayType.CRYPTOPAY:
                 #     is_active = False
                 #     settings = CryptopayGatewaySettingsDto()

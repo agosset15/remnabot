@@ -4,6 +4,7 @@ from aiogram_dialog import DialogManager
 from dishka import FromDishka
 from dishka.integrations.aiogram_dialog import inject
 from fluentogram import TranslatorRunner
+from loguru import logger
 
 from src.core.config import AppConfig
 from src.core.enums import ReferralRewardType
@@ -13,12 +14,15 @@ from src.core.utils.formatters import (
     i18n_format_expire_time,
     i18n_format_traffic_limit,
 )
+from src.core.enums import TransactionStatus
 from src.infrastructure.database.models.dto import UserDto
 from src.services.plan import PlanService
 from src.services.referral import ReferralService
 from src.services.remnawave import RemnawaveService
 from src.services.settings import SettingsService
 from src.services.subscription import SubscriptionService
+from src.services.transaction import TransactionService
+from src.services.user import UserService
 
 
 @inject

@@ -4,9 +4,9 @@ from typing import Any, Union, cast
 from aiogram.types import BufferedInputFile
 from dishka.integrations.taskiq import FromDishka, inject
 
-from src.bot.keyboards import get_renew_keyboard
+from src.bot.keyboards import get_renew_keyboard, get_goto_main_keyboard
 from src.core.constants import BATCH_DELAY, BATCH_SIZE
-from src.core.enums import MediaType, SystemNotificationType, UserNotificationType
+from src.core.enums import MediaType, SystemNotificationType, UserNotificationType, MessageEffect
 from src.core.utils.iterables import chunked
 from src.core.utils.message_payload import MessagePayload
 from src.core.utils.types import RemnaUserDto
@@ -161,7 +161,6 @@ async def send_subscription_limited_notification_task(
         ntf_type=UserNotificationType.LIMITED,
     )
 
-
 @broker.task
 @inject
 async def send_test_transaction_notification_task(
@@ -172,5 +171,22 @@ async def send_test_transaction_notification_task(
         user=user,
         payload=MessagePayload(
             i18n_key="ntf-gateway-test-payment-confirmed",
+        ),
+    )
+
+@broker.task
+@inject
+async def send_referral_payout_notification_task(
+    user: UserDto,
+    notification_service: FromDishka[NotificationService],
+) -> None:
+    await notification_service.notify_user(
+        user=user,
+        payload=MessagePayload(
+            i18n_key="ntf-referral-payout",
+            auto_delete_after=None,
+            reply_markup=get_goto_main_keyboard(),
+            add_close_button=True,
+            message_effect=MessageEffect.CONFETTI
         ),
     )

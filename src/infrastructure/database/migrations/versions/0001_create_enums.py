@@ -16,6 +16,8 @@ def upgrade() -> None:
             'YOOMONEY',
             'CRYPTOMUS',
             'HELEKET',
+            'CRYPTOPAY',
+            'ROBOKASSA',
             'URLPAY'
         )
     """)

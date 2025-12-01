@@ -76,3 +76,22 @@ class User(BaseSql, TimestampMixin):
         uselist=False,
         lazy="selectin",
     )
+    referrer_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("users.telegram_id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    referrer: Mapped[Optional["User"]] = relationship(
+        "User",
+        remote_side=[telegram_id],
+        back_populates="referrals",
+        foreign_keys=[referrer_id],
+        lazy='selectin',
+        primaryjoin="User.referrer_id==User.telegram_id"
+    )
+    referrals: Mapped[list["User"]] = relationship(
+        "User",
+        back_populates="referrer",
+        foreign_keys="[User.referrer_id]",
+        lazy='selectin',
+        primaryjoin="User.telegram_id==User.referrer_id"
+    )
