@@ -67,18 +67,6 @@ class TransactionService(BaseService):
         logger.debug(f"Retrieved '{len(db_transactions)}' transactions with status '{status}'")
         return TransactionDto.from_model_list(db_transactions)
 
-    async def get_by_user_and_status(self, telegram_id: int, status: TransactionStatus) -> list[TransactionDto]:
-        db_transactions = await self.uow.repository.transactions.get_by_user_and_status(telegram_id, status)
-        logger.debug(f"Retrieved '{len(db_transactions)}' transactions with status '{status}' for user '{telegram_id}'")
-        return TransactionDto.from_model_list(db_transactions)
-
-    async def get_by_referrer_and_status(self, referrals: list[UserDto], status: TransactionStatus) -> list[TransactionDto]:
-        db_transactions = []
-        for ref in referrals:
-            db_transactions += await self.uow.repository.transactions.get_by_user_and_status(ref.telegram_id, status)
-        logger.debug(f"Retrieved '{len(db_transactions)}' transactions with status '{status}' for referrer")
-        return TransactionDto.from_model_list(db_transactions)
-
     async def update(self, transaction: TransactionDto) -> Optional[TransactionDto]:
         db_updated_transaction = await self.uow.repository.transactions.update(
             payment_id=transaction.payment_id,
