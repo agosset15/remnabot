@@ -1,6 +1,6 @@
 from typing import Any, Awaitable, Callable, Optional
 
-from aiogram.types import TelegramObject
+from aiogram.types import TelegramObject, Message, CallbackQuery
 from aiogram.types import User as AiogramUser
 from aiogram_dialog.api.internal import FakeUser
 from dishka import AsyncContainer

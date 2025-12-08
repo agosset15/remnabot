@@ -15,7 +15,7 @@ services:
 
     ports:
       - "5432:5432"
-      
+
     volumes:
       - remnashop-db-data:/var/lib/postgresql/data
 
@@ -27,7 +27,7 @@ services:
       interval: 3s
       timeout: 10s
       retries: 3
-    
+
 
   remnashop-redis:
     image: valkey/valkey:9-alpine
@@ -48,7 +48,7 @@ services:
       interval: 3s
       timeout: 10s
       retries: 3
-    
+
 
   remnashop:
     &remnashop
@@ -75,7 +75,7 @@ services:
 
     networks:
       - remnawave-network
-    
+
 
   remnashop-taskiq-worker:
     <<: *remnashop
@@ -115,7 +115,7 @@ volumes:
     name: remnashop-db-data
     driver: local
     external: false
-    
+
   remnashop-redis-data:
     name: remnashop-redis-data
     driver: local
