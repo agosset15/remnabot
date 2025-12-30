@@ -11,7 +11,7 @@ class RedisProvider(Provider):
     scope = Scope.APP
 
     @provide
-    async def redis(self, config: AppConfig) -> AsyncGenerator[Redis, None]:
+    async def get_redis(self, config: AppConfig) -> AsyncGenerator[Redis, None]:
         logger.debug("Connecting to Redis")
         connection_pool = ConnectionPool.from_url(url=config.redis.dsn)
         client = Redis(connection_pool=connection_pool)
@@ -19,8 +19,8 @@ class RedisProvider(Provider):
         try:
             await client.ping()  # type: ignore[misc]
             logger.debug("Successfully connected to Redis")
-        except Exception as exception:
-            logger.exception(f"Failed to connect to Redis: {exception}")
+        except Exception as e:
+            logger.exception(f"Failed to connect to Redis: {e}")
             raise
 
         yield client

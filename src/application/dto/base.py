@@ -1,48 +1,32 @@
-from typing import Any, Iterable, Optional, Type, TypeVar
-
-from pydantic import BaseModel as _BaseModel
-from pydantic import ConfigDict, PrivateAttr
-
-from src.infrastructure.database.models import BaseSQL
-
-ModelSQL = TypeVar("ModelSQL", bound=BaseSQL)
-ModelDTO = TypeVar("ModelDTO", bound="BaseDTO")
+from dataclasses import dataclass, field
+from datetime import datetime
+from typing import Any, Optional
 
 
-class BaseDTO(_BaseModel):
-    model_config = ConfigDict(
-        extra="ignore",
-        from_attributes=True,
-        populate_by_name=True,
-    )
-
-    @classmethod
-    def from_model(
-        cls: Type[ModelDTO],
-        model_instance: Optional[ModelSQL],
-    ) -> Optional[ModelDTO]:
-        if model_instance is None:
-            return None
-
-        data = model_instance.__dict__.copy()
-
-        return cls.model_validate(data)
-
-    @classmethod
-    def from_model_list(
-        cls: Type[ModelDTO],
-        model_instances: Iterable[ModelSQL],
-    ) -> list[ModelDTO]:
-        return [dto for model in model_instances if (dto := cls.from_model(model)) is not None]
+@dataclass(kw_only=True)
+class BaseDTO:
+    pass
 
 
+@dataclass(kw_only=True)
 class TrackableDTO(BaseDTO):
-    __changed_data: dict[str, Any] = PrivateAttr(default_factory=dict)
+    id: Optional[int] = field(default=None)
+    created_at: Optional[datetime] = field(default=None)
+    updated_at: Optional[datetime] = field(default=None)
+
+    _changed_data: dict[str, Any] = field(default_factory=dict, init=False, repr=False)
+    _initialized: bool = field(default=False, init=False, repr=False)
+
+    def __post_init__(self) -> None:
+        self._initialized = True
 
     def __setattr__(self, name: str, value: Any) -> None:
+        if getattr(self, "_initialized", False) and name not in ("_changed_data", "_initialized"):
+            if getattr(self, name, None) != value:
+                self._changed_data[name] = value
+
         super().__setattr__(name, value)
-        self.__changed_data[name] = value
 
     @property
     def changed_data(self) -> dict[str, Any]:
-        return self.__changed_data
+        return self._changed_data

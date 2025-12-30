@@ -9,15 +9,18 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
+from src.application.protocols.uow import UnitOfWork
 from src.core.config import AppConfig
-from src.infrastructure.database import UnitOfWork
+from src.infrastructure.database import UnitOfWorkImpl
 
 
 class DatabaseProvider(Provider):
     scope = Scope.APP
 
+    uow = provide(source=UnitOfWorkImpl, provides=UnitOfWork, scope=Scope.REQUEST)
+
     @provide
-    async def engine(self, config: AppConfig) -> AsyncIterable[AsyncEngine]:
+    async def get_engine(self, config: AppConfig) -> AsyncIterable[AsyncEngine]:
         logger.debug("Creating AsyncEngine")
         engine = create_async_engine(
             url=config.database.dsn,
@@ -33,20 +36,15 @@ class DatabaseProvider(Provider):
         await engine.dispose()
 
     @provide
-    def session_maker(self, engine: AsyncEngine) -> async_sessionmaker[AsyncSession]:
+    def get_session_maker(self, engine: AsyncEngine) -> async_sessionmaker[AsyncSession]:
         session_maker = async_sessionmaker(bind=engine, expire_on_commit=False)
         logger.debug("Created session maker")
         return session_maker
 
     @provide(scope=Scope.REQUEST)
     async def provide_session(
-        self, pool: async_sessionmaker[AsyncSession]
+        self,
+        pool: async_sessionmaker[AsyncSession],
     ) -> AsyncIterable[AsyncSession]:
-        logger.debug(f"Attempting to get session from pool for request")
-
         async with pool() as session:
-            logger.debug(f"Session obtained from pool")
             yield session
-        logger.debug(f"Session returned to pool")
-
-    uow = provide(source=UnitOfWork, scope=Scope.REQUEST)

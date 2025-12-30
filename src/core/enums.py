@@ -1,7 +1,7 @@
-from enum import Enum, StrEnum, auto
-from typing import Union
+from enum import Enum, IntEnum, StrEnum, auto
+from typing import Self, Union
 
-from aiogram.types import BotCommand
+from aiogram.types import BotCommand, ContentType
 
 
 class UpperStrEnum(StrEnum):
@@ -10,40 +10,176 @@ class UpperStrEnum(StrEnum):
         return name
 
 
-class UserRoleHierarchy(Enum):
-    DEV = 3
-    ADMIN = 2
-    USER = 1
+class ReferralRewardType(UpperStrEnum):
+    POINTS = auto()
+    EXTRA_DAYS = auto()
 
 
-class UserRole(UpperStrEnum):
-    DEV = auto()
-    ADMIN = auto()
+class ReferralLevel(IntEnum):
+    FIRST = auto()
+    SECOND = auto()
+
+
+class ReferralAccrualStrategy(UpperStrEnum):
+    ON_FIRST_PAYMENT = auto()
+    ON_EACH_PAYMENT = auto()
+
+
+class ReferralRewardStrategy(UpperStrEnum):
+    AMOUNT = auto()
+    PERCENT = auto()
+
+
+class BannerName(StrEnum):
+    DEFAULT = auto()
+    MENU = auto()
+    DASHBOARD = auto()
+    SUBSCRIPTION = auto()
+    PROMOCODE = auto()
+    REFERRAL = auto()
+
+
+class BannerFormat(StrEnum):
+    JPG = auto()
+    JPEG = auto()
+    PNG = auto()
+    GIF = auto()
+    WEBP = auto()
+
+    @property
+    def content_type(self) -> ContentType:
+        if self == self.GIF:
+            return ContentType.ANIMATION
+        else:
+            return ContentType.PHOTO
+
+
+class MessageEffectId(StrEnum):
+    # 👍 Thumbs Up
+    THUMBS_UP = "5107584321108051014"
+
+    # 👎 Thumbs Down
+    THUMBS_DOWN = "5104858069142078462"
+
+    # ❤️ Heart
+    HEART = "5159385139981059251"
+
+    # 🔥 Fire
+    FIRE = "5104841245755180586"
+
+    # 🎉 Party Popper
+    PARTY = "5046509860389126442"
+
+    # 💩 Pile of Poo
+    POOP = "5046589136895476101"
+
+
+class MediaType(UpperStrEnum):
+    PHOTO = auto()
+    VIDEO = auto()
+    DOCUMENT = auto()
+
+
+class UserRole(IntEnum):
     USER = auto()
+    ADMIN = auto()
+    DEV = auto()
+    ROOT = auto()
 
-    def __le__(self, other: Union["UserRole", str]) -> bool:
-        if isinstance(other, UserRole):
-            other_name = other.name
-        elif isinstance(other, str):
-            other_name = other
-        else:
-            raise TypeError(f"Cannot compare UserRole with '{type(other)}'")
-        return UserRoleHierarchy[self.name].value <= UserRoleHierarchy[other_name].value
+    def __str__(self) -> str:
+        return self.name
 
-    def __lt__(self, other: Union["UserRole", str]) -> bool:
-        if isinstance(other, UserRole):
-            other_name = other.name
-        elif isinstance(other, str):
-            other_name = other
-        else:
-            raise TypeError(f"Cannot compare UserRole with '{type(other)}'")
-        return UserRoleHierarchy[self.name].value < UserRoleHierarchy[other_name].value
+
+class SystemNotificationType(UpperStrEnum):
+    ERROR = auto()
+    BOT_LIFECYCLE = auto()
+    BOT_UPDATE = auto()
+    #
+    USER_REGISTERED = auto()
+    SUBSCRIPTION = auto()
+    PROMOCODE_ACTIVATED = auto()
+    TRIAL_ACTIVATED = auto()
+    #
+    NODE_STATUS_CHANGED = auto()
+    USER_FIRST_CONNECTION = auto()
+    USER_HWID_UPDATED = auto()
+
+
+class UserNotificationType(UpperStrEnum):
+    EXPIRES_IN_3_DAYS = auto()
+    EXPIRES_IN_2_DAYS = auto()
+    EXPIRES_IN_1_DAY = auto()
+    #
+    EXPIRED = auto()
+    EXPIRED_1_DAY_AGO = auto()
+    LIMITED = auto()
+    #
+    REFERRAL_ATTACHED = auto()
+    REFERRAL_REWARD_RECEIVED = auto()
+
+
+class AccessMode(UpperStrEnum):
+    PUBLIC = auto()  # Access is allowed for everyone
+    INVITED = auto()  # Invited users only
+    RESTRICTED = auto()  # All actions are completely forbidden
+
+
+class Currency(UpperStrEnum):
+    USD = auto()
+    XTR = auto()
+    RUB = auto()
+
+    @property
+    def symbol(self) -> str:
+        symbols = {
+            self.USD: "$",
+            self.XTR: "★",
+            self.RUB: "₽",
+        }
+        return symbols.get(self, "?")
+
+    @classmethod
+    def from_code(cls, code: str) -> Self:
+        return cls(code.upper())
+
+    def amount(self, amount: Union[float, int]) -> str:
+        return f"{amount} {self.symbol}"
 
 
 class Command(Enum):
     START = BotCommand(command="start", description="cmd-start")
     PAYSUPPORT = BotCommand(command="paysupport", description="cmd-paysupport")
     HELP = BotCommand(command="help", description="cmd-help")
+
+
+# https://docs.aiogram.dev/en/latest/api/types/update.html
+class MiddlewareEventType(StrEnum):
+    AIOGD_UPDATE = auto()  # AIOGRAM DIALOGS
+    UPDATE = auto()
+    MESSAGE = auto()
+    EDITED_MESSAGE = auto()
+    CHANNEL_POST = auto()
+    EDITED_CHANNEL_POST = auto()
+    BUSINESS_CONNECTION = auto()
+    BUSINESS_MESSAGE = auto()
+    EDITED_BUSINESS_MESSAGE = auto()
+    DELETED_BUSINESS_MESSAGES = auto()
+    MESSAGE_REACTION = auto()
+    MESSAGE_REACTION_COUNT = auto()
+    INLINE_QUERY = auto()
+    CHOSEN_INLINE_RESULT = auto()
+    CALLBACK_QUERY = auto()
+    SHIPPING_QUERY = auto()
+    PRE_CHECKOUT_QUERY = auto()
+    PURCHASED_PAID_MEDIA = auto()
+    POLL = auto()
+    POLL_ANSWER = auto()
+    MY_CHAT_MEMBER = auto()
+    CHAT_MEMBER = auto()
+    CHAT_JOIN_REQUEST = auto()
+    CHAT_BOOST = auto()
+    REMOVED_CHAT_BOOST = auto()
+    ERROR = auto()
 
 
 class Locale(StrEnum):
@@ -76,31 +212,12 @@ class Locale(StrEnum):
     VI = auto()  # Vietnamese
 
 
-# https://docs.aiogram.dev/en/latest/api/types/update.html
-class MiddlewareEventType(StrEnum):
-    AIOGD_UPDATE = auto()  # AIOGRAM DIALOGS
-    UPDATE = auto()
-    MESSAGE = auto()
-    EDITED_MESSAGE = auto()
-    CHANNEL_POST = auto()
-    EDITED_CHANNEL_POST = auto()
-    BUSINESS_CONNECTION = auto()
-    BUSINESS_MESSAGE = auto()
-    EDITED_BUSINESS_MESSAGE = auto()
-    DELETED_BUSINESS_MESSAGES = auto()
-    MESSAGE_REACTION = auto()
-    MESSAGE_REACTION_COUNT = auto()
-    INLINE_QUERY = auto()
-    CHOSEN_INLINE_RESULT = auto()
-    CALLBACK_QUERY = auto()
-    SHIPPING_QUERY = auto()
-    PRE_CHECKOUT_QUERY = auto()
-    PURCHASED_PAID_MEDIA = auto()
-    POLL = auto()
-    POLL_ANSWER = auto()
-    MY_CHAT_MEMBER = auto()
-    CHAT_MEMBER = auto()
-    CHAT_JOIN_REQUEST = auto()
-    CHAT_BOOST = auto()
-    REMOVED_CHAT_BOOST = auto()
+class LogLevel(UpperStrEnum):
+    CRITICAL = auto()
+    FATAL = auto()
     ERROR = auto()
+    WARN = auto()
+    WARNING = auto()
+    INFO = auto()
+    DEBUG = auto()
+    NOTSET = auto()

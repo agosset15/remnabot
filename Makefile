@@ -1,5 +1,11 @@
 ALEMBIC_INI=src/infrastructure/database/alembic.ini
 
+DATABASE_HOST ?= 0.0.0.0
+DATABASE_PORT ?= 6767
+
+RESET := $(filter reset,$(MAKECMDGOALS))
+
+
 .PHONY: setup-env
 setup-env:
 	@sed -i '' "s|^APP_CRYPT_KEY=.*|APP_CRYPT_KEY=$(shell openssl rand -base64 32 | tr -d '\n')|" .env
@@ -10,7 +16,7 @@ setup-env:
 
 .PHONY: migration
 migration:
-	alembic -c $(ALEMBIC_INI) revision --autogenerate
+	DATABASE_HOST=$(DATABASE_HOST) DATABASE_PORT=$(DATABASE_PORT) alembic -c $(ALEMBIC_INI) revision --autogenerate
 
 .PHONY: migrate
 migrate:
@@ -27,20 +33,26 @@ downgrade:
 
 .PHONY: run-local
 run-local:
+ifneq ($(RESET),)
+	@docker compose -f docker-compose.local.yml down -v
+endif
 	@docker compose -f docker-compose.local.yml up --build
 	@docker compose logs -f
-	
+
+
 .PHONY: run-prod
 run-prod:
+ifneq ($(RESET),)
+	@docker compose -f docker-compose.prod.external.yml down -v
+endif
 	@docker compose -f docker-compose.prod.external.yml up --build
 	@docker compose logs -f
+
+
+.PHONY: reset
+reset:
+	@:
 
 .PHONY: run-preview
 run-preview:
 	aiogram-dialog-preview src.bot.dispatcher:get_dispatcher_preview
-
-# .PHONY: run-dev
-# run-dev:
-# 	@docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
-# 	@docker compose logs -f
-

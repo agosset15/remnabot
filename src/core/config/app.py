@@ -6,13 +6,14 @@ from pydantic import Field, SecretStr, field_validator
 from pydantic_core.core_schema import FieldValidationInfo
 
 from src.core.constants import ASSETS_DIR, DOMAIN_REGEX
-from src.core.enums import Locale
-from src.core.utils.types import LocaleList, StringList
+from src.core.enums import Locale, LogLevel
+from src.core.types import LocaleList, StringList
 
 from .base import BaseConfig
 from .bot import BotConfig
 from .build import BuildConfig
 from .database import DatabaseConfig
+from .log import LogConfig
 from .redis import RedisConfig
 from .validators import validate_not_change_me
 
@@ -27,12 +28,14 @@ class AppConfig(BaseConfig, env_prefix="APP_"):
 
     crypt_key: SecretStr
     assets_dir: Path = ASSETS_DIR
+    log_level: LogLevel = LogLevel.DEBUG
     origins: StringList = StringList("")
 
     bot: BotConfig = Field(default_factory=BotConfig)
     database: DatabaseConfig = Field(default_factory=DatabaseConfig)
     redis: RedisConfig = Field(default_factory=RedisConfig)
     build: BuildConfig = Field(default_factory=BuildConfig)
+    log: LogConfig = Field(default_factory=LogConfig)
 
     @property
     def banners_dir(self) -> Path:

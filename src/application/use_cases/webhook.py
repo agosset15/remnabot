@@ -5,19 +5,26 @@ from aiogram.methods import SetWebhook
 from aiogram.types import WebhookInfo
 from loguru import logger
 
-from src.application.protocols import WebhookDAO
+from src.application.protocols import Cryptographer
+from src.application.protocols.dao import WebhookDAO
 from src.core.config import AppConfig
-from src.core.security.crypto import get_webhook_hash
 from src.core.utils.time import datetime_now
 
 
 class WebhookUseCase:
-    def __init__(self, dao: WebhookDAO, bot: Bot, config: AppConfig) -> None:
+    def __init__(
+        self,
+        dao: WebhookDAO,
+        bot: Bot,
+        config: AppConfig,
+        cryptographer: Cryptographer,
+    ) -> None:
         self.dao = dao
         self.bot = bot
         self.config = config
+        self.cryptographer = cryptographer
 
-    async def setup(self, allowed_updates: list[str]) -> WebhookInfo:
+    async def setup_webhook(self, allowed_updates: list[str]) -> WebhookInfo:
         safe_url = self.config.bot.safe_webhook_url(domain=self.config.domain)
 
         webhook_request = SetWebhook(
@@ -27,7 +34,7 @@ class WebhookUseCase:
             secret_token=self.config.bot.secret_token.get_secret_value(),
         )
 
-        webhook_hash = get_webhook_hash(webhook_request.model_dump(exclude_unset=True))
+        webhook_hash = self.cryptographer.get_hash(webhook_request.model_dump(exclude_unset=True))
 
         if await self.dao.is_hash_exists(self.bot.id, webhook_hash):
             if not self.config.bot.reset_webhook:
@@ -44,7 +51,7 @@ class WebhookUseCase:
         logger.info(f"Webhook set successfully for bot '{self.bot.id}' to URL '{safe_url}'")
         return await self.bot.get_webhook_info()
 
-    async def delete(self) -> None:
+    async def delete_webhook(self) -> None:
         if not self.config.bot.reset_webhook:
             logger.debug(f"Webhook reset disabled in config for bot '{self.bot.id}'")
             return

@@ -1,20 +1,23 @@
 from typing import List, Optional
 
+from adaptix import Retort
 from loguru import logger
 from redis.asyncio import Redis
 
-from src.application.protocols import WebhookDAO
-from src.core.storage.keys import WebhookLockKey
-from src.core.utils import json_utils
+from src.application.protocols.dao import WebhookDAO
+from src.infrastructure.common import json
+from src.infrastructure.redis.keys import WebhookLockKey
 
 
 class WebhookDAOImpl(WebhookDAO):
-    def __init__(self, redis: Redis):
+    def __init__(self, redis: Redis, retort: Retort):
         self.redis = redis
+        self.retort = retort
 
     async def is_hash_exists(self, bot_id: int, webhook_hash: str) -> bool:
         key = WebhookLockKey(bot_id=bot_id, webhook_hash=webhook_hash)
-        exists = await self.redis.exists(key.pack())
+        raw_key = self.retort.dump(key)
+        exists = await self.redis.exists(raw_key)
 
         if exists:
             logger.debug(f"Webhook hash '{webhook_hash}' found for bot '{bot_id}'")
@@ -23,12 +26,14 @@ class WebhookDAOImpl(WebhookDAO):
 
     async def save_hash(self, bot_id: int, webhook_hash: str) -> None:
         key = WebhookLockKey(bot_id=bot_id, webhook_hash=webhook_hash)
-        await self.redis.set(name=key.pack(), value=json_utils.encode(None))
-        logger.debug(f"Webhook lock key '{key.pack()}' saved to storage")
+        raw_key = self.retort.dump(key)
+        await self.redis.set(name=raw_key, value=json.encode(None))
+        logger.debug(f"Webhook lock key '{raw_key}' saved to storage")
 
     async def clear_all_hashes(self, bot_id: int) -> None:
         pattern_key = WebhookLockKey(bot_id=bot_id, webhook_hash="*")
-        keys: List[bytes] = await self.redis.keys(pattern_key.pack())
+        raw_pattern_key = self.retort.dump(pattern_key)
+        keys: List[bytes] = await self.redis.keys(raw_pattern_key)
 
         if not keys:
             logger.debug(f"No webhook lock keys found to clear for bot '{bot_id}'")
@@ -39,7 +44,8 @@ class WebhookDAOImpl(WebhookDAO):
 
     async def get_current_hash(self, bot_id: int) -> Optional[str]:
         pattern_key = WebhookLockKey(bot_id=bot_id, webhook_hash="*")
-        keys: list[bytes] = await self.redis.keys(pattern_key.pack())
+        raw_pattern_key = self.retort.dump(pattern_key)
+        keys: list[bytes] = await self.redis.keys(raw_pattern_key)
 
         if not keys:
             logger.debug(f"No webhook hash found in storage for bot '{bot_id}'")

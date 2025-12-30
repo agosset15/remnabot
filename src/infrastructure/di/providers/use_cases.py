@@ -1,8 +1,6 @@
 from dishka import Provider, Scope, provide
 
-from src.application.use_cases.command import CommandUseCase
-from src.application.use_cases.user import UserUseCase
-from src.application.use_cases.webhook import WebhookUseCase
+from src.application.use_cases import CommandUseCase, SettingsUseCase, UserUseCase, WebhookUseCase
 
 
 class UseCasesProvider(Provider):
@@ -11,3 +9,4 @@ class UseCasesProvider(Provider):
     command = provide(source=CommandUseCase)
     webhook = provide(source=WebhookUseCase)
     user = provide(UserUseCase, scope=Scope.REQUEST)
+    settings = provide(SettingsUseCase, scope=Scope.REQUEST)

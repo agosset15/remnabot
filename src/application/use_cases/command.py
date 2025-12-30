@@ -2,9 +2,9 @@ from typing import Optional
 
 from aiogram import Bot
 from aiogram.types import BotCommand, BotCommandScopeAllPrivateChats
-from fluentogram import TranslatorHub
 from loguru import logger
 
+from src.application.protocols import TranslatorHub
 from src.core.config import AppConfig
 from src.core.enums import Command, Locale
 
@@ -20,7 +20,7 @@ class CommandUseCase:
         self.config = config
         self.translator_hub = translator_hub
 
-    async def setup(self) -> None:
+    async def setup_commands(self) -> None:
         if not self.config.bot.setup_commands:
             logger.debug("Bot commands setup is disabled")
             return
@@ -56,7 +56,7 @@ class CommandUseCase:
             else:
                 logger.error(f"Failed to set commands for language '{display_lang}'")
 
-    async def delete(self) -> None:
+    async def delete_commands(self) -> None:
         if not self.config.bot.setup_commands:
             logger.debug("Bot commands deletion is disabled")
             return

@@ -1,0 +1,28 @@
+from aiogram import Router
+
+from .base import EventTypedMiddleware
+from .error import ErrorMiddleware
+from .garbage import GarbageMiddleware
+from .throttling import ThrottlingMiddleware
+from .user import UserMiddleware
+
+__all__ = [
+    "setup_middlewares",
+]
+
+
+def setup_middlewares(router: Router) -> None:
+    outer_middlewares: list[EventTypedMiddleware] = [
+        ErrorMiddleware(),
+        UserMiddleware(),
+        ThrottlingMiddleware(),
+    ]
+    inner_middlewares: list[EventTypedMiddleware] = [
+        GarbageMiddleware(),
+    ]
+
+    for middleware in outer_middlewares:
+        middleware.setup_outer(router=router)
+
+    for middleware in inner_middlewares:
+        middleware.setup_inner(router=router)

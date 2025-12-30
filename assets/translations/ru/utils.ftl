@@ -49,8 +49,8 @@ hdr-hwid = <b>📱 Устройство:</b>
 # Fragments
 frg-user =
     <blockquote>
-    • <b>ID</b>: <code>{ $user_id }</code>
-    • <b>Имя</b>: { $user_name }
+    • <b>ID</b>: <code>{ NUMBER($telegram_id, useGrouping: 0) }</code>
+    • <b>Имя</b>: { $name }
     { $personal_discount ->
     [0] { empty }
     *[HAS] • <b>Ваша скидка</b>: { $personal_discount }%
@@ -59,19 +59,19 @@ frg-user =
 
 frg-user-info =
     <blockquote>
-    • <b>ID</b>: <code>{ $user_id }</code>
-    • <b>Имя</b>: { $user_name } { $username -> 
+    • <b>ID</b>: <code>{ NUMBER($telegram_id, useGrouping: 0) }</code> 
+    • <b>Имя</b>: { $name } { $username -> 
         [0] { empty }
-        *[HAS] (<a href="tg://user?id={ $user_id }">@{ $username }</a>)
+        *[HAS] (<a href="tg://user?id={ $telegram_id }">@{ $username }</a>)
     }
     </blockquote>
 
 frg-user-details =
     <blockquote>
-    • <b>ID</b>: <code>{ $user_id }</code>
-    • <b>Имя</b>: { $user_name } { $username -> 
+    • <b>ID</b>: <code>{ NUMBER($telegram_id, useGrouping: 0) }</code>
+    • <b>Имя</b>: { $name } { $username -> 
         [0] { space }
-        *[HAS] (<a href="tg://user?id={ $user_id }">@{ $username }</a>)
+        *[HAS] (<a href="tg://user?id={ $telegram_id }">@{ $username }</a>)
     }
     • <b>Роль</b>: { role }
     • <b>Язык</b>: { language }

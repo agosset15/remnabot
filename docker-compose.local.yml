@@ -14,7 +14,7 @@ x-common: &common
       soft: 1048576
       hard: 1048576
 
-  restart: always
+  restart: unless-stopped
 
   networks:
     - remnawave-network

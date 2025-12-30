@@ -1,0 +1,39 @@
+from dataclasses import dataclass, field
+from typing import Any, Optional
+
+from src.core.enums import MediaType, MessageEffectId
+from src.core.types import AnyKeyboard, AnyMedia
+
+from .base import BaseDTO
+
+
+@dataclass(kw_only=True)
+class MessagePayloadDTO(BaseDTO):
+    i18n_key: str
+    i18n_kwargs: dict[str, Any] = field(default_factory=dict)
+
+    media: Optional[AnyMedia] = None
+    media_type: Optional[MediaType] = None
+
+    reply_markup: Optional[AnyKeyboard] = None
+    disable_default_markup: bool = True
+
+    delete_after: Optional[int] = 5
+    message_effect: Optional[MessageEffectId] = None
+    disable_notification: bool = False
+
+    @property
+    def is_text(self) -> bool:
+        return not self.media_type
+
+    @property
+    def is_photo(self) -> bool:
+        return self.media_type is MediaType.PHOTO
+
+    @property
+    def is_video(self) -> bool:
+        return self.media_type is MediaType.VIDEO
+
+    @property
+    def is_document(self) -> bool:
+        return self.media_type is MediaType.DOCUMENT
