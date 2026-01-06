@@ -4,6 +4,7 @@ from pydantic import SecretStr, field_validator
 from pydantic_core.core_schema import FieldValidationInfo
 
 from src.core.constants import API_V1, BOT_WEBHOOK_PATH, URL_PATTERN
+from src.core.enums import Locale
 
 from .base import BaseConfig
 from .validators import validate_not_change_me, validate_username
@@ -15,6 +16,13 @@ class BotConfig(BaseConfig, env_prefix="BOT_"):
     dev_id: int
     support_username: SecretStr
     mini_app: Union[bool, SecretStr] = False
+    default_language: Locale = Locale.EN
+
+    topic_logs_enabled: bool = False
+    topic_logs_chat_id: int = 0
+    topic_logs_thread_bot: int = 2
+    topic_logs_thread_user: int = 4
+    topic_logs_thread_node: int = 6
 
     reset_webhook: bool = False
     drop_pending_updates: bool = False
@@ -45,6 +53,14 @@ class BotConfig(BaseConfig, env_prefix="BOT_"):
 
     def safe_webhook_url(self, domain: SecretStr) -> str:
         return f"https://{domain}{self.webhook_path}"
+
+    @property
+    def list_topic_logs_threads(self) -> list[int]:
+        return [
+            self.topic_logs_thread_bot,
+            self.topic_logs_thread_user,
+            self.topic_logs_thread_node,
+        ]
 
     @field_validator("token", "secret_token", "support_username")
     @classmethod

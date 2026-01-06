@@ -61,6 +61,19 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     await telegram_webhook_endpoint.startup()
 
     bot: Bot = await container.get(Bot)
+
+    if config.bot.topic_logs_enabled:
+        logs_group = await bot.get_chat(config.bot.topic_logs_chat_id)
+        if not logs_group.is_forum:
+            logger.critical(f"Topic logs chat is not a group: {logs_group}")
+            await notification_service.system_notify(
+                ntf_type=SystemNotificationType.BOT_LIFETIME,
+                payload=MessagePayload.not_deleted(
+                    i18n_key="ntf-event-error-topic-logs",
+                    i18n_kwargs={"chat_id": logs_group.id},
+                ),
+            )
+
     bot_info = await bot.get_me()
     states: dict[Optional[bool], str] = {True: "Enabled", False: "Disabled", None: "Unknown"}
 

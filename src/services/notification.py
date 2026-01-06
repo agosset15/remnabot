@@ -89,7 +89,10 @@ class NotificationService(BaseService):
         payload: MessagePayload,
         ntf_type: SystemNotificationType,
     ) -> list[bool]:
-        devs = await self.user_service.get_by_role(role=UserRole.DEV)
+        if self.config.bot.topic_logs_enabled:
+            devs = [self._get_topic_logs_chat_user()]
+        else:
+            devs = await self.user_service.get_by_role(role=UserRole.DEV)
 
         if not devs:
             devs = [self._get_temp_dev()]
@@ -103,7 +106,7 @@ class NotificationService(BaseService):
         )
 
         async def send_to_dev(dev: UserDto) -> bool:
-            return bool(await self._send_message(user=dev, payload=payload))
+            return bool(await self._send_message(user=dev, payload=payload, thread_id=ntf_type.get_logs_topic(self.config.bot.list_topic_logs_threads)))
 
         tasks = [send_to_dev(dev) for dev in devs]
         results = await asyncio.gather(*tasks)
@@ -151,7 +154,7 @@ class NotificationService(BaseService):
 
     #
 
-    async def _send_message(self, user: BaseUserDto, payload: MessagePayload) -> Optional[Message]:
+    async def _send_message(self, user: BaseUserDto, payload: MessagePayload, thread_id: Optional[int] = None) -> Optional[Message]:
         reply_markup = self._prepare_reply_markup(
             payload.reply_markup,
             payload.add_close_button,
@@ -161,14 +164,14 @@ class NotificationService(BaseService):
         )
         try:
             if (payload.media or payload.media_id) and payload.media_type:
-                sent_message = await self._send_media_message(user, payload, reply_markup)
+                sent_message = await self._send_media_message(user, payload, reply_markup, thread_id=thread_id)
             else:
                 if (payload.media or payload.media_id) and not payload.media_type:
                     logger.warning(
                         f"Validation warning: Media provided without media_type "
                         f"for chat '{user.telegram_id}'. Sending as text message"
                     )
-                sent_message = await self._send_text_message(user, payload, reply_markup)
+                sent_message = await self._send_text_message(user, payload, reply_markup, thread_id=thread_id)
 
             if payload.auto_delete_after is not None and sent_message:
                 asyncio.create_task(
@@ -193,6 +196,7 @@ class NotificationService(BaseService):
         user: BaseUserDto,
         payload: MessagePayload,
         reply_markup: Optional[AnyKeyboard],
+        thread_id: Optional[int] = None,
     ) -> Message:
         message_text = self._get_translated_text(
             locale=user.language,
@@ -214,6 +218,7 @@ class NotificationService(BaseService):
             "reply_markup": reply_markup,
             "message_effect_id": payload.message_effect,
             media_arg_name: media_input,
+            "message_thread_id": thread_id
         }
         return cast(Message, await send_func(**tg_payload))
 
@@ -222,6 +227,7 @@ class NotificationService(BaseService):
         user: BaseUserDto,
         payload: MessagePayload,
         reply_markup: Optional[AnyKeyboard],
+        thread_id: Optional[int] = None,
     ) -> Message:
         message_text = self._get_translated_text(
             locale=user.language,
@@ -235,6 +241,7 @@ class NotificationService(BaseService):
             message_effect_id=payload.message_effect,
             reply_markup=reply_markup,
             disable_web_page_preview=True,
+            message_thread_id=thread_id,
         )
 
     def _prepare_reply_markup(
@@ -361,3 +368,10 @@ class NotificationService(BaseService):
 
         logger.warning("Fallback to temporary dev user from environment for notifications")
         return temp_dev
+
+    def _get_topic_logs_chat_user(self) -> UserDto:
+        return UserDto(
+            telegram_id=self.config.bot.topic_logs_chat_id,
+            name="TopicLogsChat",
+            role=UserRole.DEV,
+        )
