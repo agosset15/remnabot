@@ -26,7 +26,7 @@ class BaseUserDto(TrackableDto):
 
     name: str
     role: UserRole = UserRole.USER
-    language: Locale = Locale.EN
+    language: Locale = Locale.RU
 
     personal_discount: int = 0
     purchase_discount: int = 0
