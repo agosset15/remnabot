@@ -1,4 +1,4 @@
-from typing import Optional, Protocol
+from typing import Optional, Protocol, runtime_checkable
 
 from aiogram.types import Message
 
@@ -6,11 +6,13 @@ from src.application.dto import MessagePayloadDto, UserDto
 from src.core.enums import UserRole
 
 
+@runtime_checkable
 class Notifier(Protocol):
     async def notify_user(
         self,
         user: UserDto,
-        payload: MessagePayloadDto,
+        payload: Optional[MessagePayloadDto] = None,
+        i18n_key: Optional[str] = None,
     ) -> Optional[Message]: ...
 
     async def notify_admins(

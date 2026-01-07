@@ -5,8 +5,8 @@ from dishka import FromDishka
 from dishka.integrations.aiogram_dialog import inject
 from loguru import logger
 
+from src.application.common import Notifier, TranslatorRunner
 from src.application.dto import MessagePayloadDto, UserDto
-from src.application.protocols import Notifier, TranslatorRunner
 from src.core.config import AppConfig
 from src.core.enums import Command
 from src.telegram.keyboards import get_contact_support_keyboard

@@ -4,7 +4,7 @@ from typing import Optional, Self, Type
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.application.protocols.uow import UnitOfWork
+from src.application.common.uow import UnitOfWork
 
 
 class UnitOfWorkImpl(UnitOfWork):

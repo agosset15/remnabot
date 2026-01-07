@@ -18,22 +18,22 @@ CALLBACK_RULES_ACCEPT: Final[str] = "rules_accept"
 
 connect_buttons = (
     WebApp(
-        text=I18nFormat("btn-menu-connect"),
-        url=Format("{url}"),
+        text=I18nFormat("btn-menu.connect"),
+        url=Format("{connection_url}"),
         id="connect_miniapp",
-        when=F["is_app"] & F["connectable"],
+        when=F["is_mini_app"] & F["connectable"],
     ),
     Url(
-        text=I18nFormat("btn-menu-connect"),
-        url=Format("{url}"),
+        text=I18nFormat("btn-menu.connect"),
+        url=Format("{connection_url}"),
         id="connect_sub_page",
-        when=~F["is_app"] & F["connectable"],
+        when=~F["is_mini_app"] & F["connectable"],
     ),
 )
 
 main_menu_button = (
     Start(
-        text=I18nFormat("btn-main-menu"),
+        text=I18nFormat("btn-back.menu"),
         id="back_main_menu",
         state=MainMenu.MAIN,
         mode=StartMode.RESET_STACK,
@@ -43,7 +43,7 @@ main_menu_button = (
 back_main_menu_button = (
     Row(
         Start(
-            text=I18nFormat("btn-back-main-menu"),
+            text=I18nFormat("btn-back.menu-return"),
             id="back_main_menu",
             state=MainMenu.MAIN,
             mode=StartMode.RESET_STACK,
@@ -145,18 +145,18 @@ def get_remnashop_keyboard() -> InlineKeyboardMarkup:
 
     builder.row(
         InlineKeyboardButton(
-            text="btn-remnashop-github",
+            text="btn-remnashop.github",
             url=REPOSITORY,
         ),
         InlineKeyboardButton(
-            text="btn-remnashop-telegram",
+            text="btn-remnashop.telegram",
             url=f"{T_ME}remna_shop",
         ),
     )
 
     builder.row(
         InlineKeyboardButton(
-            text="btn-remnashop-donate",
+            text="btn-remnashop.donate",
             url="https://yookassa.ru/my/i/Z8AkHJ_F9sO_/l",
         )
     )
@@ -169,11 +169,11 @@ def get_remnashop_update_keyboard() -> InlineKeyboardMarkup:
 
     builder.row(
         InlineKeyboardButton(
-            text="btn-remnashop-release-latest",
+            text="btn-remnashop.release-latest",
             url=f"{REPOSITORY}/releases/latest",
         ),
         InlineKeyboardButton(
-            text="btn-remnashop-how-upgrade",
+            text="btn-remnashop.how-upgrade",
             url=f"{REPOSITORY}?tab=readme-ov-file#step-5--how-to-upgrade",
         ),
     )

@@ -4,12 +4,12 @@ from typing import Optional
 
 from src.core.enums import ReferralLevel, ReferralRewardType
 
-from .base import TrackableDto
+from .base import BaseDto, TimestampMixin, TrackableMixin
 from .user import UserDto
 
 
 @dataclass(kw_only=True)
-class ReferralDto(TrackableDto):
+class ReferralDto(BaseDto, TrackableMixin, TimestampMixin):
     level: ReferralLevel
 
     referrer: "UserDto"
@@ -17,7 +17,7 @@ class ReferralDto(TrackableDto):
 
 
 @dataclass(kw_only=True)
-class ReferralRewardDto(TrackableDto):
+class ReferralRewardDto(BaseDto, TrackableMixin, TimestampMixin):
     type: ReferralRewardType
     amount: int
     is_issued: bool = False

@@ -1,4 +1,4 @@
-from .base import BaseDto, TrackableDto
+from .base import BaseDto, TimestampMixin, TrackableMixin
 from .broadcast import BroadcastDto, BroadcastMessageDto
 from .build import BuildInfoDto
 from .message_payload import MessagePayloadDto
@@ -19,7 +19,8 @@ from .user import UserDto
 
 __all__ = [
     "BaseDto",
-    "TrackableDto",
+    "TimestampMixin",
+    "TrackableMixin",
     "BroadcastDto",
     "BroadcastMessageDto",
     "BuildInfoDto",

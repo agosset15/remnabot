@@ -7,11 +7,11 @@ from remnapy.enums.users import TrafficLimitStrategy
 
 from src.core.enums import Currency, PlanAvailability, PlanType
 
-from .base import TrackableDto
+from .base import BaseDto, TimestampMixin, TrackableMixin
 
 
 @dataclass(kw_only=True)
-class PlanSnapshotDto(TrackableDto):
+class PlanSnapshotDto:
     name: str
     tag: Optional[str] = None
 
@@ -30,7 +30,7 @@ class PlanSnapshotDto(TrackableDto):
 
 
 @dataclass(kw_only=True)
-class PlanDto(TrackableDto):
+class PlanDto(BaseDto, TrackableMixin, TimestampMixin):
     name: str = "Default Plan"
     description: Optional[str] = None
     tag: Optional[str] = None
@@ -54,13 +54,13 @@ class PlanDto(TrackableDto):
 
 
 @dataclass(kw_only=True)
-class PlanDurationDto(TrackableDto):
+class PlanDurationDto(BaseDto, TrackableMixin):
     days: int
     order_index: int = 0
     prices: list["PlanPriceDto"] = field(default_factory=list)
 
 
 @dataclass(kw_only=True)
-class PlanPriceDto(TrackableDto):
+class PlanPriceDto(BaseDto, TrackableMixin):
     currency: Currency
     price: Decimal

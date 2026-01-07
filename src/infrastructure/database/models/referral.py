@@ -1,10 +1,3 @@
-from __future__ import annotations
-
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from .user import User
-
 from sqlalchemy import BigInteger, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -12,6 +5,7 @@ from src.core.enums import ReferralLevel, ReferralRewardType
 
 from .base import BaseSql
 from .timestamp import TimestampMixin
+from .user import User
 
 
 class Referral(BaseSql, TimestampMixin):
@@ -37,7 +31,6 @@ class Referral(BaseSql, TimestampMixin):
         lazy="selectin",
     )
     referred: Mapped["User"] = relationship(
-        back_populates="referral",
         foreign_keys=[referred_telegram_id],
         lazy="selectin",
     )

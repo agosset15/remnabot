@@ -8,9 +8,9 @@ from dishka import FromDishka
 from dishka.integrations.aiogram_dialog import inject
 from loguru import logger
 
+from src.application.common import TranslatorRunner
 from src.application.dto import UserDto
-from src.application.protocols import TranslatorRunner
-from src.application.use_cases import SettingsUseCase
+from src.application.use_cases.settings import GetSettings
 from src.core.config import AppConfig
 from src.infrastructure.taskiq.tasks.test import send_error_task
 from src.infrastructure.taskiq.tasks.update import check_bot_update
@@ -25,7 +25,7 @@ async def on_test_command(
     message: Message,
     user: UserDto,
     config: AppConfig,
-    settings_use_case: FromDishka[SettingsUseCase],
+    get_settings: FromDishka[GetSettings],
 ) -> None:
     logger.info(f"{user.log} Test command executed")
     # raise UnknownState

@@ -6,9 +6,9 @@ from dishka.integrations.aiogram import AiogramMiddlewareData
 from fluentogram.storage import FileStorage
 from loguru import logger
 
+from src.application.common import TranslatorHub as TranslatorHubProtocol
+from src.application.common import TranslatorRunner as TranslatorRunnerProtocol
 from src.application.dto import UserDto
-from src.application.protocols import TranslatorHub as TranslatorHubProtocol
-from src.application.protocols import TranslatorRunner as TranslatorRunnerProtocol
 from src.core.config import AppConfig
 from src.core.constants import USER_KEY
 from src.infrastructure.services import TranslatorHubImpl

@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Optional, Self
 from uuid import UUID
 
 from loguru import logger
+from pydantic import SecretStr
 
 
 @dataclass(frozen=True)
@@ -62,6 +63,9 @@ def serialize_storage_key(key_obj: StorageKey) -> str:
 def encode_storage_value(value: Any) -> str:
     if value is None:
         return "null"
+
+    if isinstance(value, SecretStr):
+        return value.get_secret_value()
 
     if isinstance(value, Enum):
         return str(value.value)

@@ -1,29 +1,36 @@
 from __future__ import annotations
 
-from typing import Optional, Sequence
+from typing import Optional, Sequence, cast
 
 from adaptix import Retort
-from adaptix.conversion import get_converter
+from adaptix.conversion import ConversionRetort
 from loguru import logger
 from redis.asyncio import Redis
-from sqlalchemy import delete, func, or_, select, update
+from sqlalchemy import ColumnElement, and_, any_, case, delete, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from src.application.common.dao import PlanDao
 from src.application.dto import PlanDto
-from src.application.protocols.dao import PlanDAO
 from src.core.enums import PlanAvailability
 from src.infrastructure.database.models import Plan, PlanDuration
 
 
-class PlanDAOImpl(PlanDAO):
-    def __init__(self, session: AsyncSession, retort: Retort, redis: Redis) -> None:
+class PlanDaoImpl(PlanDao):
+    def __init__(
+        self,
+        session: AsyncSession,
+        retort: Retort,
+        conversion_retort: ConversionRetort,
+        redis: Redis,
+    ) -> None:
         self.session = session
         self.retort = retort
+        self.conversion_retort = conversion_retort
         self.redis = redis
 
-        self._convert_to_dto = get_converter(Plan, PlanDto)
-        self._convert_to_dto_list = get_converter(list[Plan], list[PlanDto])
+        self._convert_to_dto = self.conversion_retort.get_converter(Plan, PlanDto)
+        self._convert_to_dto_list = self.conversion_retort.get_converter(list[Plan], list[PlanDto])
 
     async def create(self, plan: PlanDto) -> PlanDto:
         plan_data = self.retort.dump(plan)
@@ -32,7 +39,7 @@ class PlanDAOImpl(PlanDAO):
         self.session.add(db_plan)
         await self.session.flush()
 
-        logger.info(f"New plan '{plan.name}' created with '{len(plan.durations)}' durations")
+        logger.debug(f"New plan '{plan.name}' created with '{len(plan.durations)}' durations")
         return self._convert_to_dto(db_plan)
 
     async def get_by_id(self, plan_id: int) -> Optional[PlanDto]:
@@ -44,7 +51,7 @@ class PlanDAOImpl(PlanDAO):
         db_plan = await self.session.scalar(stmt)
 
         if db_plan:
-            logger.debug(f"Plan '{plan_id}' found in database")
+            logger.debug(f"Plan '{plan_id}' found")
             return self._convert_to_dto(db_plan)
 
         logger.debug(f"Plan '{plan_id}' not found")
@@ -62,6 +69,7 @@ class PlanDAOImpl(PlanDAO):
             logger.debug(f"Plan with name '{name}' found")
             return self._convert_to_dto(db_plan)
 
+        logger.debug(f"Plan with name '{name}' not found")
         return None
 
     async def get_available_for_user(
@@ -88,6 +96,55 @@ class PlanDAOImpl(PlanDAO):
         logger.debug(f"Retrieved '{len(db_plans)}' plans available for user '{telegram_id}'")
         return self._convert_to_dto_list(db_plans)
 
+    async def get_trial_available_for_user(self, telegram_id: int) -> Optional[PlanDto]:
+        user_is_allowed = cast(ColumnElement[bool], telegram_id == any_(Plan.allowed_user_ids))
+        priority = case(
+            (
+                and_(
+                    Plan.availability == PlanAvailability.ALLOWED,
+                    user_is_allowed,
+                ),
+                4,
+            ),
+            (
+                Plan.availability == PlanAvailability.INVITED,
+                3,
+            ),
+            (
+                Plan.availability == PlanAvailability.NEW,
+                2,
+            ),
+            (
+                Plan.availability == PlanAvailability.ALL,
+                1,
+            ),
+            else_=0,
+        )
+
+        stmt = (
+            select(Plan)
+            .where(Plan.is_active == True)  # noqa: E712
+            .where(Plan.is_trial == True)  # noqa: E712
+            .where(
+                or_(
+                    Plan.availability != PlanAvailability.ALLOWED,
+                    user_is_allowed,
+                )
+            )
+            .order_by(priority.desc(), Plan.order_index.asc())
+            .limit(1)
+            .options(selectinload(Plan.durations).selectinload(PlanDuration.prices))
+        )
+
+        db_plan = await self.session.scalar(stmt)
+
+        if db_plan:
+            logger.debug(f"Best trial plan '{db_plan.id}' selected for user '{telegram_id}'")
+            return self._convert_to_dto(db_plan)
+
+        logger.debug(f"No trial plan available for user '{telegram_id}'")
+        return None
+
     async def get_all_active(self) -> Sequence[PlanDto]:
         stmt = (
             select(Plan)
@@ -106,9 +163,10 @@ class PlanDAOImpl(PlanDAO):
         db_plan = await self.session.scalar(stmt)
 
         if db_plan:
-            logger.info(f"Plan '{plan_id}' active status set to '{is_active}'")
+            logger.debug(f"Active status for plan '{plan_id}' set to '{is_active}'")
             return self._convert_to_dto(db_plan)
 
+        logger.warning(f"Failed to update status for plan '{plan_id}': plan not found")
         return None
 
     async def delete(self, plan_id: int) -> bool:
@@ -117,7 +175,8 @@ class PlanDAOImpl(PlanDAO):
         deleted_id = result.scalar_one_or_none()
 
         if deleted_id:
-            logger.info(f"Plan '{plan_id}' and its durations/prices deleted")
+            logger.debug(f"Plan '{plan_id}' and related data deleted")
             return True
 
+        logger.debug(f"Plan '{plan_id}' not found for deletion")
         return False

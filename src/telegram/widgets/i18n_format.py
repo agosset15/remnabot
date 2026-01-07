@@ -5,10 +5,9 @@ from aiogram_dialog.api.protocols import DialogManager
 from aiogram_dialog.widgets.common import WhenCondition
 from aiogram_dialog.widgets.text import Text
 from dishka import AsyncContainer
-from loguru import logger
 from magic_filter import MagicFilter
 
-from src.application.protocols import TranslatorRunner
+from src.application.common import TranslatorRunner
 from src.core.constants import CONTAINER_KEY
 
 
@@ -39,7 +38,6 @@ class I18nFormat(Text):
             else:
                 mapped[key] = transformer
 
-        logger.debug(f"Key '{self.key}' transformed mapping: {mapped}")
         return {**data, **mapped}
 
     async def _render_text(self, data: dict[str, Any], dialog_manager: DialogManager) -> str:

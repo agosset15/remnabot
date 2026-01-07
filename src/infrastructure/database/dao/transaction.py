@@ -1,31 +1,39 @@
-from __future__ import annotations
-
 from datetime import timedelta
 from typing import Optional, Sequence, cast
 from uuid import UUID
 
 from adaptix import Retort
-from adaptix.conversion import get_converter
+from adaptix.conversion import ConversionRetort
 from loguru import logger
 from redis.asyncio import Redis
 from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.application.common.dao import TransactionDao
 from src.application.dto import TransactionDto
-from src.application.protocols.dao import TransactionDAO
 from src.core.enums import TransactionStatus
 from src.core.utils.time import datetime_now
 from src.infrastructure.database.models import Transaction
 
 
-class TransactionDAOImpl(TransactionDAO):
-    def __init__(self, session: AsyncSession, retort: Retort, redis: Redis) -> None:
+class TransactionDaoImpl(TransactionDao):
+    def __init__(
+        self,
+        session: AsyncSession,
+        retort: Retort,
+        conversion_retort: ConversionRetort,
+        redis: Redis,
+    ) -> None:
         self.session = session
         self.retort = retort
+        self.conversion_retort = conversion_retort
         self.redis = redis
 
-        self._convert_to_dto = get_converter(Transaction, TransactionDto)
-        self._convert_to_dto_list = get_converter(list[Transaction], list[TransactionDto])
+        self._convert_to_dto = self.conversion_retort.get_converter(Transaction, TransactionDto)
+        self._convert_to_dto_list = self.conversion_retort.get_converter(
+            list[Transaction],
+            list[TransactionDto],
+        )
 
     async def create(self, transaction: TransactionDto) -> TransactionDto:
         transaction_data = self.retort.dump(transaction)
@@ -34,7 +42,7 @@ class TransactionDAOImpl(TransactionDAO):
         self.session.add(db_transaction)
         await self.session.flush()
 
-        logger.info(f"New transaction '{transaction.payment_id}' created")
+        logger.debug(f"New transaction '{transaction.payment_id}' created")
         return self._convert_to_dto(db_transaction)
 
     async def get_by_payment_id(self, payment_id: UUID) -> Optional[TransactionDto]:
@@ -42,7 +50,7 @@ class TransactionDAOImpl(TransactionDAO):
         db_transaction = await self.session.scalar(stmt)
 
         if db_transaction:
-            logger.debug(f"Transaction '{payment_id}' found in database")
+            logger.debug(f"Transaction '{payment_id}' found")
             return self._convert_to_dto(db_transaction)
 
         logger.debug(f"Transaction '{payment_id}' not found")
@@ -66,7 +74,8 @@ class TransactionDAOImpl(TransactionDAO):
         db_transactions = list(result.all())
 
         logger.debug(
-            f"Retrieved '{len(db_transactions)}' transactions with limit '{limit}' '{offset}'"
+            f"Retrieved '{len(db_transactions)}' transactions "
+            f"with limit '{limit}' and offset '{offset}'"
         )
         return self._convert_to_dto_list(db_transactions)
 
@@ -92,7 +101,7 @@ class TransactionDAOImpl(TransactionDAO):
         db_transaction = await self.session.scalar(stmt)
 
         if db_transaction:
-            logger.info(f"Transaction '{payment_id}' status updated to '{status}'")
+            logger.debug(f"Transaction '{payment_id}' status updated to '{status}'")
             return self._convert_to_dto(db_transaction)
 
         logger.warning(f"Failed to update transaction '{payment_id}': not found")
@@ -102,7 +111,7 @@ class TransactionDAOImpl(TransactionDAO):
         stmt = select(select(Transaction).where(Transaction.payment_id == payment_id).exists())
         is_exists = await self.session.scalar(stmt) or False
 
-        logger.debug(f"Transaction '{payment_id}' existence check: '{is_exists}'")
+        logger.debug(f"Transaction '{payment_id}' existence status is '{is_exists}'")
         return is_exists
 
     async def cancel_old_pending(self, minutes: int = 30) -> int:
@@ -118,7 +127,9 @@ class TransactionDAOImpl(TransactionDAO):
         count = result.rowcount  # type: ignore[attr-defined]
 
         if count > 0:
-            logger.info(f"Expired '{count}' pending transactions older than '{minutes}' minutes")
+            logger.debug(f"Cancelled '{count}' pending transactions older than '{minutes}' minutes")
+        else:
+            logger.debug(f"No pending transactions older than '{minutes}' minutes found to cancel")
 
         return cast(int, count)
 
@@ -126,5 +137,5 @@ class TransactionDAOImpl(TransactionDAO):
         stmt = select(func.count()).select_from(Transaction)
         total = await self.session.scalar(stmt) or 0
 
-        logger.debug(f"Total transactions count: '{total}'")
+        logger.debug(f"Total transactions count is '{total}'")
         return total

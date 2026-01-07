@@ -103,7 +103,7 @@ def invalidate_cache(  # noqa: C901
 ) -> Callable[[Callable[P, Coroutine[Any, Any, T]]], Callable[P, Coroutine[Any, Any, T]]]:
     def decorator(func: Callable[P, Coroutine[Any, Any, T]]) -> Callable[P, Coroutine[Any, Any, T]]:  # noqa: C901
         @wraps(func)
-        async def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
+        async def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:  # noqa: C901
             result = await func(*args, **kwargs)
             self: Any = args[0]
             redis: Redis = self.redis
@@ -128,16 +128,24 @@ def invalidate_cache(  # noqa: C901
 
                     if key:
                         await redis.delete(key)
-                        logger.info(f"Invalidated specific cache key '{key}'")
+                        logger.debug(f"Invalidated specific cache key '{key}'")
 
                 elif isinstance(key_builder, (str, list)):
                     prefixes = [key_builder] if isinstance(key_builder, str) else key_builder
                     for p in prefixes:
-                        pattern = f"cache:{p}:*"
-                        keys = [k async for k in redis.scan_iter(match=pattern)]
+                        pattern = f"cache:{p}*"
+                        keys = []
+
+                        async for k in redis.scan_iter(match=pattern):
+                            keys.append(k)
+
                         if keys:
                             await redis.delete(*keys)
-                            logger.info(f"Invalidated cache for prefix '{p}', count '{len(keys)}'")
+                            logger.debug(f"Invalidated cache for prefix '{p}', count '{len(keys)}'")
+                        else:
+                            logger.debug(
+                                f"No cache keys found to invalidate for pattern '{pattern}'"
+                            )
             except Exception as e:
                 logger.warning(f"Cache invalidation failed for '{key_builder}' error '{e}'")
 

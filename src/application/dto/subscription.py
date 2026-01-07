@@ -5,16 +5,17 @@ from uuid import UUID
 
 from remnapy.enums import TrafficLimitStrategy
 
-from src.core.enums import SubscriptionStatus
+from src.core.enums import PlanType, SubscriptionStatus
 from src.core.types import RemnaUserDto
 from src.core.utils.converters import bytes_to_gb
+from src.core.utils.time import datetime_now
 
-from .base import BaseDto, TrackableDto
+from .base import BaseDto, TimestampMixin, TrackableMixin
 from .plan import PlanSnapshotDto
 
 
 @dataclass(kw_only=True)
-class RemnaSubscriptionDto(BaseDto):
+class RemnaSubscriptionDto:
     uuid: UUID
     status: SubscriptionStatus
     expire_at: datetime
@@ -45,7 +46,7 @@ class RemnaSubscriptionDto(BaseDto):
 
 
 @dataclass(kw_only=True)
-class SubscriptionDto(TrackableDto):
+class SubscriptionDto(BaseDto, TrackableMixin, TimestampMixin):
     user_remna_id: UUID
 
     status: SubscriptionStatus = SubscriptionStatus.ACTIVE
@@ -62,4 +63,44 @@ class SubscriptionDto(TrackableDto):
     expire_at: datetime
     url: str
 
-    plan: "PlanSnapshotDto"
+    plan_snapshot: "PlanSnapshotDto"
+
+    @property
+    def is_active(self) -> bool:
+        return self.current_status == SubscriptionStatus.ACTIVE
+
+    @property
+    def is_expired(self) -> bool:
+        return self.current_status == SubscriptionStatus.EXPIRED
+
+    @property
+    def is_unlimited(self) -> bool:
+        return self.expire_at.year == 2099
+
+    @property
+    def current_status(self) -> SubscriptionStatus:
+        if datetime_now() > self.expire_at:
+            return SubscriptionStatus.EXPIRED
+        return self.status
+
+    @property
+    def limit_type(self) -> PlanType:
+        has_traffic = self.traffic_limit > 0
+        has_devices = self.device_limit > 0
+
+        if has_traffic and has_devices:
+            return PlanType.BOTH
+        elif has_traffic:
+            return PlanType.TRAFFIC
+        elif has_devices:
+            return PlanType.DEVICES
+        else:
+            return PlanType.UNLIMITED
+
+    @property
+    def has_devices_limit(self) -> bool:
+        return self.limit_type in (PlanType.DEVICES, PlanType.BOTH)
+
+    @property
+    def has_traffic_limit(self) -> bool:
+        return self.limit_type in (PlanType.TRAFFIC, PlanType.BOTH)

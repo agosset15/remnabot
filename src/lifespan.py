@@ -13,7 +13,8 @@ from src.application.events import (
     RemnawaveErrorEvent,
     WebhookErrorEvent,
 )
-from src.application.use_cases import CommandUseCase, SettingsUseCase, WebhookUseCase
+from src.application.services import CommandService, WebhookService
+from src.application.use_cases.settings import GetSettings
 from src.core.config import AppConfig
 from src.infrastructure.services import EventBusImpl
 from src.web.endpoints import TelegramWebhookEndpoint
@@ -31,23 +32,23 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     async with container(scope=Scope.REQUEST) as startup_container:
         config: AppConfig = await startup_container.get(AppConfig)
-        settings_use_case: SettingsUseCase = await startup_container.get(SettingsUseCase)
-        webhook_use_case: WebhookUseCase = await startup_container.get(WebhookUseCase)
-        command_use_case: CommandUseCase = await startup_container.get(CommandUseCase)
+        get_settings: GetSettings = await startup_container.get(GetSettings)
+        webhook_service: WebhookService = await startup_container.get(WebhookService)
+        command_service: CommandService = await startup_container.get(CommandService)
 
-        settings = await settings_use_case.get_settings()
+        settings = await get_settings()
 
         allowed_updates = dispatcher.resolve_used_update_types()
-        webhook_info: WebhookInfo = await webhook_use_case.setup_webhook(allowed_updates)
+        webhook_info: WebhookInfo = await webhook_service.setup_webhook(allowed_updates)
 
-        if webhook_use_case.has_error(webhook_info):
+        if webhook_service.has_error(webhook_info):
             logger.critical(
                 f"Webhook has a last error message: '{webhook_info.last_error_message}'"
             )
             webhook_error_event = WebhookErrorEvent()
             await event_bus.publish(webhook_error_event)
 
-        await command_use_case.setup_commands()
+        await command_service.setup_commands()
 
     await telegram_webhook_endpoint.startup()
 
@@ -104,6 +105,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     await event_bus.shutdown()
     await telegram_webhook_endpoint.shutdown()
-    await command_use_case.delete_commands()
-    await webhook_use_case.delete_webhook()
+    await command_service.delete_commands()
+    await webhook_service.delete_webhook()
     await container.close()

@@ -32,3 +32,6 @@ class WebhookLockKey(StorageKey, prefix="webhook_lock"):
 @dataclass(frozen=True)
 class LatestNotifiedVersionKey(StorageKey, prefix="latest_notified_version"):
     version: str
+
+
+class WaitlistKey(StorageKey, prefix="waitlist"): ...

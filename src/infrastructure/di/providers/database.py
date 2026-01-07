@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
-from src.application.protocols.uow import UnitOfWork
+from src.application.common.uow import UnitOfWork
 from src.core.config import AppConfig
 from src.infrastructure.database import UnitOfWorkImpl
 

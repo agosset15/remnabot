@@ -2,13 +2,8 @@ from asyncio import Protocol
 from types import TracebackType
 from typing import Optional, Self, Type
 
-from .dao import UserDAO, WebhookDAO
-
 
 class UnitOfWork(Protocol):
-    users: UserDAO
-    webhook: WebhookDAO
-
     async def __aenter__(self) -> Self: ...  # type: ignore[empty-body]
 
     async def __aexit__(

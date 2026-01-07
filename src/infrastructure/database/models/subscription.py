@@ -1,12 +1,5 @@
-from __future__ import annotations
-
-from typing import TYPE_CHECKING, Any, Optional
-
-if TYPE_CHECKING:
-    from .user import User
-
-
 from datetime import datetime
+from typing import Any, Optional
 from uuid import UUID
 
 from remnapy.enums import TrafficLimitStrategy
@@ -17,6 +10,7 @@ from src.core.enums import SubscriptionStatus
 
 from .base import BaseSql
 from .timestamp import TimestampMixin
+from .user import User
 
 
 class Subscription(BaseSql, TimestampMixin):
@@ -47,7 +41,4 @@ class Subscription(BaseSql, TimestampMixin):
 
     plan_snapshot: Mapped[dict[str, Any]]
 
-    user: Mapped["User"] = relationship(
-        back_populates="subscriptions",
-        foreign_keys=[user_telegram_id],
-    )
+    user: Mapped["User"] = relationship(foreign_keys=[user_telegram_id])

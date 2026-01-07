@@ -6,7 +6,7 @@ from cryptography.fernet import Fernet
 from loguru import logger
 from pydantic import SecretStr
 
-from src.application.protocols import Cryptographer
+from src.application.common import Cryptographer
 from src.core.config import AppConfig
 from src.core.constants import ENCRYPTED_PREFIX
 from src.infrastructure.common import json

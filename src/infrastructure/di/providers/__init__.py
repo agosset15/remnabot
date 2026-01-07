@@ -7,6 +7,7 @@ from .dao import DaoProvider
 from .database import DatabaseProvider
 from .i18n import I18nProvider
 from .redis import RedisProvider
+from .retort import RetortProvider
 from .services import ServicesProvider
 from .use_cases import UseCasesProvider
 
@@ -20,6 +21,7 @@ def get_providers() -> list[Provider]:
         DatabaseProvider(),
         I18nProvider(),
         RedisProvider(),
+        RetortProvider(),
         ServicesProvider(),
         UseCasesProvider(),
     ]

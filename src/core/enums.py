@@ -162,6 +162,9 @@ class UserRole(IntEnum):
     def __str__(self) -> str:
         return self.name
 
+    def includes(self, other: "UserRole") -> bool:
+        return self >= other
+
 
 class SystemNotificationType(UpperStrEnum):
     ERROR = auto()
@@ -195,6 +198,11 @@ class AccessMode(UpperStrEnum):
     PUBLIC = auto()  # Access is allowed for everyone
     INVITED = auto()  # Invited users only
     RESTRICTED = auto()  # All actions are completely forbidden
+
+
+class AccessRequirements(StrEnum):
+    RULES = auto()
+    CHANNEL = auto()
 
 
 class Currency(UpperStrEnum):
@@ -237,6 +245,8 @@ class YookassaVatCode(IntEnum):
     VAT_CODE_08 = auto()  # VAT at 7% rate
     VAT_CODE_09 = auto()  # VAT at calculated rate 5/105
     VAT_CODE_10 = auto()  # VAT at calculated rate 7/107
+    VAT_CODE_11 = auto()  # VAT at 22% rate
+    VAT_CODE_12 = auto()  # VAT at calculated rate 22/122
 
 
 # https://docs.aiogram.dev/en/latest/api/types/update.html

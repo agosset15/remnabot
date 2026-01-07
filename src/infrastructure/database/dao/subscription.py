@@ -1,29 +1,43 @@
-from __future__ import annotations
-
-from typing import Optional, Sequence
+from typing import Final, Optional, Sequence
 from uuid import UUID
 
 from adaptix import Retort
-from adaptix.conversion import get_converter
+from adaptix.conversion import ConversionRetort
 from loguru import logger
 from redis.asyncio import Redis
-from sqlalchemy import select, update
+from sqlalchemy import exists, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.application.common.dao import SubscriptionDao
 from src.application.dto import SubscriptionDto
-from src.application.protocols.dao import SubscriptionDAO
 from src.core.enums import SubscriptionStatus
 from src.infrastructure.database.models import Subscription
 
+USED_TRIAL_STATUSES: Final[tuple[SubscriptionStatus, ...]] = (
+    SubscriptionStatus.ACTIVE,
+    SubscriptionStatus.DISABLED,
+    SubscriptionStatus.LIMITED,
+    SubscriptionStatus.EXPIRED,
+)
 
-class SubscriptionDAOImpl(SubscriptionDAO):
-    def __init__(self, session: AsyncSession, retort: Retort, redis: Redis) -> None:
+
+class SubscriptionDaoImpl(SubscriptionDao):
+    def __init__(
+        self,
+        session: AsyncSession,
+        retort: Retort,
+        conversion_retort: ConversionRetort,
+        redis: Redis,
+    ) -> None:
         self.session = session
         self.retort = retort
+        self.conversion_retort = conversion_retort
         self.redis = redis
 
-        self._convert_to_dto = get_converter(Subscription, SubscriptionDto)
-        self._convert_to_dto_list = get_converter(list[Subscription], list[SubscriptionDto])
+        self._convert_to_dto = self.conversion_retort.get_converter(Subscription, SubscriptionDto)
+        self._convert_to_dto_list = self.conversion_retort.get_converter(
+            list[Subscription], list[SubscriptionDto]
+        )
 
     async def create(self, subscription: SubscriptionDto) -> SubscriptionDto:
         subscription_data = self.retort.dump(subscription)
@@ -32,7 +46,7 @@ class SubscriptionDAOImpl(SubscriptionDAO):
         self.session.add(db_subscription)
         await self.session.flush()
 
-        logger.info(
+        logger.debug(
             f"New subscription '{db_subscription.id}' created "
             f"for remna user '{subscription.user_remna_id}'"
         )
@@ -43,7 +57,7 @@ class SubscriptionDAOImpl(SubscriptionDAO):
         db_subscription = await self.session.scalar(stmt)
 
         if db_subscription:
-            logger.debug(f"Subscription '{subscription_id}' found in database")
+            logger.debug(f"Subscription '{subscription_id}' found")
             return self._convert_to_dto(db_subscription)
 
         logger.debug(f"Subscription '{subscription_id}' not found")
@@ -54,10 +68,10 @@ class SubscriptionDAOImpl(SubscriptionDAO):
         db_subscription = await self.session.scalar(stmt)
 
         if db_subscription:
-            logger.debug(f"Subscription found by remna id '{user_remna_id}'")
+            logger.debug(f"Subscription found by remna ID '{user_remna_id}'")
             return self._convert_to_dto(db_subscription)
 
-        logger.debug(f"Subscription with remna id '{user_remna_id}' not found")
+        logger.debug(f"Subscription with remna ID '{user_remna_id}' not found")
         return None
 
     async def get_by_telegram_id(self, telegram_id: int) -> Optional[SubscriptionDto]:
@@ -73,6 +87,7 @@ class SubscriptionDAOImpl(SubscriptionDAO):
             logger.debug(f"Last subscription for telegram user '{telegram_id}' retrieved")
             return self._convert_to_dto(db_subscription)
 
+        logger.debug(f"No subscriptions found for telegram user '{telegram_id}'")
         return None
 
     async def get_all_by_user(self, telegram_id: int) -> Sequence[SubscriptionDto]:
@@ -101,7 +116,7 @@ class SubscriptionDAOImpl(SubscriptionDAO):
             logger.debug(f"Current active subscription found for user '{telegram_id}'")
             return self._convert_to_dto(db_subscription)
 
-        logger.debug(f"No active current subscription for user '{telegram_id}'")
+        logger.debug(f"Active subscription not found for user '{telegram_id}'")
         return None
 
     async def update_status(
@@ -118,7 +133,7 @@ class SubscriptionDAOImpl(SubscriptionDAO):
         db_subscription = await self.session.scalar(stmt)
 
         if db_subscription:
-            logger.info(f"Subscription '{subscription_id}' status updated to '{status}'")
+            logger.debug(f"Subscription '{subscription_id}' status updated to '{status}'")
             return self._convert_to_dto(db_subscription)
 
         logger.warning(f"Failed to update subscription '{subscription_id}': not found")
@@ -130,5 +145,20 @@ class SubscriptionDAOImpl(SubscriptionDAO):
         )
         is_exists = await self.session.scalar(stmt) or False
 
-        logger.debug(f"Subscription existence check for remna id '{user_remna_id}': '{is_exists}'")
+        logger.debug(
+            f"Subscription existence status for remna ID '{user_remna_id}' is '{is_exists}'"
+        )
         return is_exists
+
+    async def has_used_trial(self, telegram_id: int) -> bool:
+        stmt = select(
+            exists().where(
+                Subscription.user_telegram_id == telegram_id,
+                Subscription.is_trial == True,  # noqa: E712
+                Subscription.status.in_(USED_TRIAL_STATUSES),
+            )
+        )
+        result = await self.session.scalar(stmt)
+        is_used = bool(result)
+        logger.debug(f"Trial usage check for user '{telegram_id}': '{is_used}'")
+        return is_used

@@ -1,7 +1,8 @@
-from typing import Optional, Protocol
+from typing import Optional, Protocol, runtime_checkable
 
 
-class WebhookDAO(Protocol):
+@runtime_checkable
+class WebhookDao(Protocol):
     async def is_hash_exists(self, bot_id: int, webhook_hash: str) -> bool: ...
 
     async def save_hash(self, bot_id: int, webhook_hash: str) -> None: ...

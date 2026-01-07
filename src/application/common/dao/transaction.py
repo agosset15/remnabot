@@ -1,11 +1,12 @@
-from typing import Optional, Protocol, Sequence
+from typing import Optional, Protocol, Sequence, runtime_checkable
 from uuid import UUID
 
 from src.application.dto import TransactionDto
 from src.core.enums import TransactionStatus
 
 
-class TransactionDAO(Protocol):
+@runtime_checkable
+class TransactionDao(Protocol):
     async def create(self, user: TransactionDto) -> TransactionDto: ...
 
     async def get_by_payment_id(self, payment_id: UUID) -> Optional[TransactionDto]: ...

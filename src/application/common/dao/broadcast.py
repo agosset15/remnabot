@@ -1,11 +1,12 @@
-from typing import Optional, Protocol, Sequence
+from typing import Optional, Protocol, Sequence, runtime_checkable
 from uuid import UUID
 
 from src.application.dto import BroadcastDto, BroadcastMessageDto
 from src.core.enums import BroadcastMessageStatus, BroadcastStatus
 
 
-class BroadcastDAO(Protocol):
+@runtime_checkable
+class BroadcastDao(Protocol):
     async def create(self, broadcast: BroadcastDto) -> BroadcastDto: ...
 
     async def get_by_task_id(self, task_id: UUID) -> Optional[BroadcastDto]: ...

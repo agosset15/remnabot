@@ -1,11 +1,4 @@
-from __future__ import annotations
-
-from typing import TYPE_CHECKING, Any
-
-if TYPE_CHECKING:
-    from .user import User
-
-
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import BigInteger, ForeignKey
@@ -15,6 +8,7 @@ from src.core.enums import Currency, PaymentGatewayType, PurchaseType, Transacti
 
 from .base import BaseSql
 from .timestamp import TimestampMixin
+from .user import User
 
 
 class Transaction(BaseSql, TimestampMixin):
@@ -38,4 +32,4 @@ class Transaction(BaseSql, TimestampMixin):
     currency: Mapped[Currency]
     plan_snapshot: Mapped[dict[str, Any]]
 
-    user: Mapped["User"] = relationship(back_populates="transactions")
+    user: Mapped["User"] = relationship(foreign_keys=[user_telegram_id])

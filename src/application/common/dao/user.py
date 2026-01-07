@@ -1,10 +1,11 @@
-from typing import Optional, Protocol, Union
+from typing import Optional, Protocol, Union, runtime_checkable
 
 from src.application.dto import UserDto
 from src.core.enums import UserRole
 
 
-class UserDAO(Protocol):
+@runtime_checkable
+class UserDao(Protocol):
     async def create(self, user: UserDto) -> UserDto: ...
 
     async def get_by_telegram_id(self, telegram_id: int) -> Optional[UserDto]: ...
@@ -12,6 +13,8 @@ class UserDAO(Protocol):
     async def get_by_telegram_ids(self, telegram_ids: list[int]) -> list[UserDto]: ...
 
     async def get_by_partial_name(self, query: str) -> list[UserDto]: ...
+
+    async def get_by_referral_code(self, referral_code: str) -> Optional[UserDto]: ...
 
     async def get_all(self, limit: int = 100, offset: int = 0) -> list[UserDto]: ...
 

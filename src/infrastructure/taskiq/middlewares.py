@@ -5,8 +5,8 @@ from loguru import logger
 from taskiq import TaskiqMessage, TaskiqResult
 from taskiq.abc.middleware import TaskiqMiddleware
 
+from src.application.common import EventPublisher
 from src.application.events import ErrorEvent
-from src.application.protocols import EventPublisher
 from src.core.config import AppConfig
 
 

@@ -5,16 +5,16 @@ from aiogram.methods import SetWebhook
 from aiogram.types import WebhookInfo
 from loguru import logger
 
-from src.application.protocols import Cryptographer
-from src.application.protocols.dao import WebhookDAO
+from src.application.common import Cryptographer
+from src.application.common.dao import WebhookDao
 from src.core.config import AppConfig
 from src.core.utils.time import datetime_now
 
 
-class WebhookUseCase:
+class WebhookService:
     def __init__(
         self,
-        dao: WebhookDAO,
+        dao: WebhookDao,
         bot: Bot,
         config: AppConfig,
         cryptographer: Cryptographer,

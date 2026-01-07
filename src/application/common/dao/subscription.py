@@ -1,11 +1,12 @@
-from typing import Optional, Protocol, Sequence
+from typing import Optional, Protocol, Sequence, runtime_checkable
 from uuid import UUID
 
 from src.application.dto import SubscriptionDto
 from src.core.enums import SubscriptionStatus
 
 
-class SubscriptionDAO(Protocol):
+@runtime_checkable
+class SubscriptionDao(Protocol):
     async def create(self, subscription: SubscriptionDto) -> SubscriptionDto: ...
 
     async def get_by_id(self, subscription_id: int) -> Optional[SubscriptionDto]: ...
@@ -25,3 +26,5 @@ class SubscriptionDAO(Protocol):
     ) -> Optional[SubscriptionDto]: ...
 
     async def exists(self, user_remna_id: UUID) -> bool: ...
+
+    async def has_used_trial(self, telegram_id: int) -> bool: ...

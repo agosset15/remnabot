@@ -14,6 +14,7 @@ unit-unlimited = { $value ->
     *[other] { $value }
 }
 
+
 # Other
 payment-invoice-description = { purchase-type } подписки { $name } на { $duration }
 contact-support-help = Здравствуйте! Мне нужна помощь.
@@ -45,6 +46,7 @@ hdr-payment = <b>💰 Платеж:</b>
 hdr-error = <b>⚠️ Ошибка:</b>
 hdr-node = <b>🖥 Нода:</b>
 hdr-hwid = <b>📱 Устройство:</b>
+
 
 # Fragments
 frg-user =
@@ -170,12 +172,15 @@ frg-build-info =
     </blockquote>
     }
 
+
 # Roles
+role-root = Владелец
 role-dev = Разработчик
-role-admin = Администратор
+role-support = Администратор
 role-user = Пользователь
 role = 
     { $role ->
+    [ROOT] { role-root }
     [DEV] { role-dev }
     [ADMIN] { role-admin }
     *[USER] { role-user }

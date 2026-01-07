@@ -4,11 +4,11 @@ from typing import Optional, Self
 from src.core.enums import Locale, UserRole
 from src.core.utils.time import datetime_now
 
-from .base import TrackableDto
+from .base import BaseDto, TimestampMixin, TrackableMixin
 
 
 @dataclass(kw_only=True)
-class UserDto(TrackableDto):
+class UserDto(BaseDto, TrackableMixin, TimestampMixin):
     telegram_id: int
 
     username: Optional[str] = None
@@ -27,16 +27,20 @@ class UserDto(TrackableDto):
     is_rules_accepted: bool = False
 
     @property
-    def is_dev(self) -> bool:
-        return self.role == UserRole.DEV
+    def is_privileged(self) -> bool:
+        return self.role.includes(UserRole.ADMIN)
 
     @property
     def is_admin(self) -> bool:
-        return self.role == UserRole.ADMIN
+        return self.role.includes(UserRole.ADMIN)
 
     @property
-    def is_privileged(self) -> bool:
-        return self.is_admin or self.is_dev
+    def is_dev(self) -> bool:
+        return self.role.includes(UserRole.DEV)
+
+    @property
+    def is_root(self) -> bool:
+        return self.role.includes(UserRole.ROOT)
 
     @property
     def age_days(self) -> Optional[int]:

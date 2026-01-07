@@ -8,8 +8,8 @@ from loguru import logger
 from packaging.version import Version
 from redis.asyncio import Redis
 
+from src.application.common import EventPublisher
 from src.application.events import BotUpdateEvent
-from src.application.protocols import EventPublisher
 from src.core.config import AppConfig
 from src.infrastructure.redis.keys import LatestNotifiedVersionKey
 from src.infrastructure.taskiq.broker import broker

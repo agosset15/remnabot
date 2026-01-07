@@ -1,21 +1,45 @@
-from typing import Optional
+from dataclasses import dataclass
+from typing import Optional, Self
 
 from aiogram.types import User as AiogramUser
 from loguru import logger
 
+from src.application.common import Cryptographer, EventPublisher, Interactor
+from src.application.common.dao import UserDao
+from src.application.common.uow import UnitOfWork
 from src.application.dto import UserDto
 from src.application.events import UserRegisteredEvent
-from src.application.protocols import Cryptographer, EventPublisher
-from src.application.protocols.dao import UserDAO
-from src.application.protocols.uow import UnitOfWork
 from src.core.config import AppConfig
 from src.core.enums import Locale, UserRole
 
 
-class UserUseCase:
+@dataclass(frozen=True)
+class GetOrCreateUserDto:
+    telegram_id: int
+    username: Optional[str]
+    full_name: str
+    language_code: Optional[str]
+
+    @classmethod
+    def from_aiogram(cls, user: AiogramUser) -> Self:
+        return cls(
+            telegram_id=user.id,
+            username=user.username,
+            full_name=user.full_name,
+            language_code=user.language_code,
+        )
+
+
+@dataclass(frozen=True)
+class SetBotBlockedStatusDto:
+    user: UserDto
+    is_blocked: bool
+
+
+class GetOrCreateUser(Interactor[GetOrCreateUserDto, UserDto]):
     def __init__(
         self,
-        dao: UserDAO,
+        dao: UserDao,
         uow: UnitOfWork,
         config: AppConfig,
         cryptographer: Cryptographer,
@@ -27,45 +51,57 @@ class UserUseCase:
         self.cryptographer = cryptographer
         self.event_publisher = event_publisher
 
-    async def get_or_create_user(self, aiogram_user: AiogramUser) -> UserDto:
+    async def __call__(self, data: GetOrCreateUserDto) -> UserDto:
         async with self.uow:
-            user = await self.dao.get_by_telegram_id(aiogram_user.id)
-            if user is not None:
+            user = await self.dao.get_by_telegram_id(data.telegram_id)
+            if user:
                 return user
 
-            user = UserDto(
-                telegram_id=aiogram_user.id,
-                username=aiogram_user.username,
-                referral_code=self.cryptographer.generate_short_code(aiogram_user.id),
-                name=aiogram_user.full_name,
-                role=UserRole.DEV if aiogram_user.id == self.config.bot.dev_id else UserRole.USER,
-                language=(
-                    Locale(aiogram_user.language_code)
-                    if aiogram_user.language_code in self.config.locales
-                    else self.config.default_locale
-                ),
-            )
-
-            user = await self.dao.create(user)
+            user_dto = self._create_user_dto(data)
+            user = await self.dao.create(user_dto)
             await self.uow.commit()
 
-        user_registered_event = UserRegisteredEvent(
-            telegram_id=user.telegram_id,
-            username=user.username,
-            name=user.name,
-        )
-
-        await self.event_publisher.publish(user_registered_event)
-        logger.info(f"User '{user.telegram_id}' created")
+        await self._publish_event(user)
+        logger.info(f"New user '{user.telegram_id}' created")
         return user
 
-    async def get_user(self, telegram_id: int) -> Optional[UserDto]:
-        async with self.uow:
-            return await self.dao.get_by_telegram_id(telegram_id)
+    def _create_user_dto(self, data: GetOrCreateUserDto) -> UserDto:
+        is_root = data.telegram_id == self.config.bot.dev_id
 
-    async def set_bot_blocked_status(self, telegram_id: int, is_bot_blocked: bool) -> None:
+        if data.language_code in self.config.locales:
+            locale = Locale(data.language_code)
+        else:
+            locale = self.config.default_locale
+
+        return UserDto(
+            telegram_id=data.telegram_id,
+            username=data.username,
+            referral_code=self.cryptographer.generate_short_code(data.telegram_id),
+            name=data.full_name,
+            role=UserRole.ROOT if is_root else UserRole.USER,
+            language=locale,
+        )
+
+    async def _publish_event(self, user: UserDto) -> None:
+        await self.event_publisher.publish(
+            UserRegisteredEvent(
+                telegram_id=user.telegram_id,
+                username=user.username,
+                name=user.name,
+            )
+        )
+
+
+class SetBotBlockedStatus(Interactor[SetBotBlockedStatusDto, None]):
+    def __init__(self, dao: UserDao, uow: UnitOfWork) -> None:
+        self.dao = dao
+        self.uow = uow
+
+    async def __call__(self, data: SetBotBlockedStatusDto) -> None:
         async with self.uow:
-            await self.dao.set_bot_blocked_status(telegram_id, is_bot_blocked)
+            await self.dao.set_bot_blocked_status(data.user.telegram_id, data.is_blocked)
             await self.uow.commit()
 
-        logger.info(f"Bot blocked status for user '{telegram_id}' set to '{is_bot_blocked}'")
+        logger.info(
+            f"Bot blocked status for user '{data.user.telegram_id}' set to '{data.is_blocked}'"
+        )

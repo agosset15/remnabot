@@ -1,10 +1,11 @@
-from typing import Optional, Protocol, Sequence
+from typing import Optional, Protocol, Sequence, runtime_checkable
 
 from src.application.dto import AnyGatewaySettingsDto, PaymentGatewayDto
 from src.core.enums import Currency, PaymentGatewayType
 
 
-class PaymentGatewayDAO(Protocol):
+@runtime_checkable
+class PaymentGatewayDao(Protocol):
     async def create(self, gateway: PaymentGatewayDto) -> PaymentGatewayDto: ...
 
     async def get_by_type(

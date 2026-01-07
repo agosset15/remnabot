@@ -8,14 +8,14 @@ if TYPE_CHECKING:
 from typing import Optional, Union
 
 from adaptix import Retort
-from adaptix.conversion import get_converter
+from adaptix.conversion import ConversionRetort
 from loguru import logger
 from redis.asyncio import Redis
 from sqlalchemy import delete, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.application.common.dao import UserDao
 from src.application.dto import UserDto
-from src.application.protocols.dao import UserDAO
 from src.core.constants import TTL_1H, TTL_6H
 from src.core.enums import UserRole
 from src.infrastructure.database.models import User
@@ -28,14 +28,21 @@ from src.infrastructure.redis.keys import (
 )
 
 
-class UserDAOImpl(UserDAO):
-    def __init__(self, session: AsyncSession, retort: Retort, redis: Redis) -> None:
+class UserDaoImpl(UserDao):
+    def __init__(
+        self,
+        session: AsyncSession,
+        retort: Retort,
+        conversion_retort: ConversionRetort,
+        redis: Redis,
+    ) -> None:
         self.session = session
         self.retort = retort
+        self.conversion_retort = conversion_retort
         self.redis = redis
 
-        self._convert_to_dto = get_converter(User, UserDto)
-        self._convert_to_dto_list = get_converter(list[User], list[UserDto])
+        self._convert_to_dto = self.conversion_retort.get_converter(User, UserDto)
+        self._convert_to_dto_list = self.conversion_retort.get_converter(list[User], list[UserDto])
 
     @invalidate_cache(key_builder=[USER_COUNT_PREFIX, USER_LIST_PREFIX])
     @invalidate_cache(key_builder=UserCacheKey)
@@ -46,7 +53,7 @@ class UserDAOImpl(UserDAO):
         self.session.add(db_user)
         await self.session.flush()
 
-        logger.info(f"New user '{user.telegram_id}' created in database")
+        logger.debug(f"New user '{user.telegram_id}' created in database")
         return self._convert_to_dto(db_user)
 
     @provide_cache(ttl=TTL_1H, key_builder=UserCacheKey)
@@ -69,7 +76,7 @@ class UserDAOImpl(UserDAO):
         result = await self.session.scalars(stmt)
         db_users = list(result.all())
 
-        logger.debug(f"Retrieved '{len(db_users)}' users by ID list")
+        logger.debug(f"Retrieved '{len(db_users)}' users by telegram ID list")
         return self._convert_to_dto_list(db_users)
 
     async def get_by_partial_name(self, query_name: str) -> list[UserDto]:
@@ -85,6 +92,17 @@ class UserDAOImpl(UserDAO):
 
         logger.debug(f"Found '{len(db_users)}' users matching query '{query_name}'")
         return self._convert_to_dto_list(db_users)
+
+    async def get_by_referral_code(self, referral_code: str) -> Optional[UserDto]:
+        stmt = select(User).where(User.referral_code == referral_code)
+        db_user = await self.session.scalar(stmt)
+
+        if db_user:
+            logger.debug(f"User with referral code '{referral_code}' found")
+            return self._convert_to_dto(db_user)
+
+        logger.debug(f"User with referral code '{referral_code}' not found")
+        return None
 
     @provide_cache(prefix=USER_LIST_PREFIX, ttl=TTL_1H)
     async def get_all(self, limit: int = 100, offset: int = 0) -> list[UserDto]:
@@ -102,7 +120,7 @@ class UserDAOImpl(UserDAO):
         stmt = select(select(User).where(User.telegram_id == telegram_id).exists())
         is_exists = await self.session.scalar(stmt) or False
 
-        logger.debug(f"User '{telegram_id}' existence check: '{is_exists}'")
+        logger.debug(f"User '{telegram_id}' existence status is '{is_exists}'")
         return is_exists
 
     @invalidate_cache(key_builder=[USER_COUNT_PREFIX, USER_LIST_PREFIX])
@@ -121,7 +139,7 @@ class UserDAOImpl(UserDAO):
         db_user = await self.session.scalar(stmt)
 
         if db_user:
-            logger.info(
+            logger.debug(
                 f"User '{user.telegram_id}' updated successfully with data '{user.changed_data}'"
             )
             return self._convert_to_dto(db_user)
@@ -137,7 +155,7 @@ class UserDAOImpl(UserDAO):
         deleted_id = result.scalar_one_or_none()
 
         if deleted_id:
-            logger.info(f"User '{telegram_id}' deleted from database")
+            logger.debug(f"User '{telegram_id}' deleted from database")
             return True
 
         logger.debug(f"User '{telegram_id}' not found for deletion")
@@ -173,3 +191,4 @@ class UserDAOImpl(UserDAO):
             .values(is_bot_blocked=is_bot_blocked)
         )
         await self.session.execute(stmt)
+        logger.debug(f"Bot blocked status for user '{telegram_id}' set to '{is_bot_blocked}'")

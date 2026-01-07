@@ -7,7 +7,7 @@ from aiogram_dialog.api.exceptions import (
     UnknownState,
 )
 
-from . import extra, menu
+from . import dashboard, extra, menu
 
 
 def setup_routers(router: Router) -> None:
@@ -22,6 +22,9 @@ def setup_routers(router: Router) -> None:
         #
         menu.handlers.router,
         menu.dialog.router,
+        #
+        dashboard.dialog.router,
+        dashboard.access.dialog.router,
     ]
 
     router.include_routers(*routers)

@@ -1,6 +1,7 @@
-from typing import Any, Protocol
+from typing import Any, Protocol, runtime_checkable
 
 
+@runtime_checkable
 class Cryptographer(Protocol):
     def encrypt(self, data: str) -> str: ...
 

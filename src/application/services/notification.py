@@ -15,10 +15,10 @@ from aiogram.utils.formatting import Text
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from loguru import logger
 
+from src.application.common import Notifier, TranslatorHub
+from src.application.common.dao import SettingsDao, UserDao
 from src.application.dto import MessagePayloadDto, SettingsDto, UserDto
 from src.application.events import ErrorEvent, SystemEvent
-from src.application.protocols import Notifier, TranslatorHub
-from src.application.protocols.dao import SettingsDAO, UserDAO
 from src.core.config import AppConfig
 from src.core.enums import Locale, UserRole
 from src.core.types import AnyKeyboard
@@ -32,8 +32,8 @@ class NotificationService(Notifier):
         bot: Bot,
         config: AppConfig,
         translator_hub: TranslatorHub,
-        user_dao: UserDAO,
-        settings_dao: SettingsDAO,
+        user_dao: UserDao,
+        settings_dao: SettingsDao,
     ) -> None:
         self.bot = bot
         self.config = config
@@ -41,7 +41,20 @@ class NotificationService(Notifier):
         self.user_dao = user_dao
         self.settings_dao = settings_dao
 
-    async def notify_user(self, user: UserDto, payload: MessagePayloadDto) -> Optional[Message]:
+    async def notify_user(
+        self,
+        user: UserDto,
+        payload: Optional[MessagePayloadDto] = None,
+        i18n_key: Optional[str] = None,
+    ) -> Optional[Message]:
+        if not payload and i18n_key:
+            payload = MessagePayloadDto(i18n_key=i18n_key)
+
+        if not payload:
+            raise ValueError(
+                f"Failed to notify user '{user.telegram_id}' because no payload or key provided"
+            )
+
         return await self._send_message(user, payload)
 
     async def notify_admins(
@@ -53,7 +66,7 @@ class NotificationService(Notifier):
 
         if not users:
             logger.warning(f"No users with roles '{roles}' found for notification, using fallback")
-            users.append(self._get_temp_root())
+            users.append(UserDto.temp_root(telegram_id=self.config.bot.dev_id))
 
         asyncio.create_task(self._broadcast(users, payload))
 
@@ -270,13 +283,3 @@ class NotificationService(Notifier):
         logger.debug(f"Schedule msg '{message_id}' deletion in chat '{chat_id}' after '{delay}'s")
         await asyncio.sleep(delay)
         await self.delete_notification(chat_id, message_id)
-
-    def _get_temp_root(self) -> UserDto:
-        temp_root = UserDto(
-            telegram_id=self.config.bot.dev_id,
-            name="TempRoot",
-            role=UserRole.ROOT,
-        )
-
-        logger.debug("Fallback to temporary root user from environment for notifications")
-        return temp_root

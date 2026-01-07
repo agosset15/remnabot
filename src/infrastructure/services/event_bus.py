@@ -1,14 +1,14 @@
 import asyncio
 import inspect
 from collections import defaultdict
-from typing import Any, Callable, Type, TypeVar
+from typing import Any, Callable, Optional, Type, TypeVar
 
 from dishka import AsyncContainer
 from dishka.registry import Registry
 from loguru import logger
 
+from src.application.common import EventPublisher, EventSubscriber
 from src.application.events import BaseEvent
-from src.application.protocols import EventPublisher, EventSubscriber
 
 F = TypeVar("F", bound=Callable[..., Any])
 
@@ -24,7 +24,7 @@ def on_event(*event_types: Type[BaseEvent]) -> Callable[[F], F]:
 class EventBusImpl(EventPublisher, EventSubscriber):
     def __init__(self) -> None:
         self._listeners: dict[Type[BaseEvent], list[tuple[Type[Any], Callable]]] = defaultdict(list)
-        self._container_factory: Callable[[], AsyncContainer] | None = None
+        self._container_factory: Optional[Callable[[], AsyncContainer]] = None
         self._registered_classes: set[Type[Any]] = set()
         self._background_tasks: set[asyncio.Task] = set()
         logger.info("EventBus initialized")

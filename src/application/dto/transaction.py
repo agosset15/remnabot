@@ -1,18 +1,16 @@
 from dataclasses import dataclass
-from datetime import timedelta
 from decimal import Decimal
 from typing import Self
 from uuid import UUID
 
 from src.core.enums import Currency, PaymentGatewayType, PurchaseType, TransactionStatus
-from src.core.utils.time import datetime_now
 
-from .base import TrackableDto
+from .base import BaseDto, TimestampMixin, TrackableMixin
 from .plan import PlanSnapshotDto
 
 
 @dataclass(kw_only=True)
-class PriceDetailsDto(TrackableDto):
+class PriceDetailsDto(TrackableMixin):
     original_amount: Decimal
     discount_percent: int
     final_amount: Decimal
@@ -31,7 +29,7 @@ class PriceDetailsDto(TrackableDto):
 
 
 @dataclass(kw_only=True)
-class TransactionDto(TrackableDto):
+class TransactionDto(BaseDto, TrackableMixin, TimestampMixin):
     payment_id: UUID
 
     status: TransactionStatus
@@ -47,10 +45,3 @@ class TransactionDto(TrackableDto):
     @property
     def is_completed(self) -> bool:
         return self.status == TransactionStatus.COMPLETED
-
-    @property
-    def has_old(self) -> bool:
-        if not self.created_at or self.status != TransactionStatus.PENDING:
-            return False
-
-        return datetime_now() - self.created_at > timedelta(minutes=30)

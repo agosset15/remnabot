@@ -3,8 +3,8 @@ from aiogram.types import CallbackQuery
 from dishka import FromDishka
 from dishka.integrations.aiogram_dialog import inject
 
+from src.application.common import Notifier
 from src.application.dto import UserDto
-from src.application.protocols import Notifier
 from src.telegram.states import Notification
 
 router = Router(name=__name__)

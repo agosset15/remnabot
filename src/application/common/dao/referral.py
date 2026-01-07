@@ -1,10 +1,11 @@
-from typing import Optional, Protocol, Sequence
+from typing import Optional, Protocol, Sequence, runtime_checkable
 
 from src.application.dto import ReferralDto, ReferralRewardDto
 from src.core.enums import ReferralRewardType
 
 
-class ReferralDAO(Protocol):
+@runtime_checkable
+class ReferralDao(Protocol):
     async def create_referral(self, referral: ReferralDto) -> ReferralDto: ...
 
     async def get_by_referred_id(self, referred_id: int) -> Optional[ReferralDto]: ...

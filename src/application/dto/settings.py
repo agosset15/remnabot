@@ -16,7 +16,7 @@ from src.core.enums import (
 )
 from src.core.types import NotificationType
 
-from .base import TrackableDto
+from .base import BaseDto, TimestampMixin, TrackableMixin
 
 
 def get_default_notifications() -> dict[str, bool]:
@@ -26,7 +26,7 @@ def get_default_notifications() -> dict[str, bool]:
 
 
 @dataclass(kw_only=True)
-class AccessSettingsDto:
+class AccessSettingsDto(TrackableMixin):
     mode: AccessMode = AccessMode.PUBLIC
     registration_allowed: bool = True
     purchases_allowed: bool = True
@@ -38,7 +38,7 @@ class AccessSettingsDto:
 
 
 @dataclass(kw_only=True)
-class RequirementSettingsDto:
+class RequirementSettingsDto(TrackableMixin):
     rules_required: bool = False
     channel_required: bool = False
 
@@ -59,7 +59,7 @@ class RequirementSettingsDto:
 
 
 @dataclass(kw_only=True)
-class NotificationsSettingsDto:
+class NotificationsSettingsDto(TrackableMixin):
     settings: dict[str, bool] = field(default_factory=get_default_notifications)
 
     def is_enabled(self, ntf_type: NotificationType) -> bool:
@@ -70,7 +70,7 @@ class NotificationsSettingsDto:
 
 
 @dataclass(kw_only=True)
-class ReferralRewardSettingsDto:
+class ReferralRewardSettingsDto(TrackableMixin):
     type: ReferralRewardType = ReferralRewardType.EXTRA_DAYS
     strategy: ReferralRewardStrategy = ReferralRewardStrategy.AMOUNT
     config: dict[ReferralLevel, int] = field(default_factory=lambda: {ReferralLevel.FIRST: 5})
@@ -90,7 +90,7 @@ class ReferralRewardSettingsDto:
 
 
 @dataclass(kw_only=True)
-class ReferralSettingsDto:
+class ReferralSettingsDto(TrackableMixin):
     enable: bool = True
     level: ReferralLevel = ReferralLevel.FIRST
     accrual_strategy: ReferralAccrualStrategy = ReferralAccrualStrategy.ON_FIRST_PAYMENT
@@ -98,7 +98,7 @@ class ReferralSettingsDto:
 
 
 @dataclass(kw_only=True)
-class SettingsDto(TrackableDto):
+class SettingsDto(BaseDto, TrackableMixin, TimestampMixin):
     default_currency: Currency = Currency.XTR
     access: AccessSettingsDto = field(default_factory=AccessSettingsDto)
     requirements: RequirementSettingsDto = field(default_factory=RequirementSettingsDto)

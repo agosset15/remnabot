@@ -4,7 +4,7 @@ from dishka.integrations.taskiq import setup_dishka as setup_taskiq_dishka
 from taskiq import TaskiqEvents, TaskiqState
 from taskiq_redis import RedisStreamBroker
 
-from src.application.protocols import EventSubscriber
+from src.application.common import EventSubscriber
 from src.core.config import AppConfig
 from src.core.logger import setup_logger
 from src.infrastructure.di import create_container

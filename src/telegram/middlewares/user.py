@@ -5,7 +5,7 @@ from aiogram.types import User as AiogramUser
 from dishka import AsyncContainer
 from loguru import logger
 
-from src.application.use_cases import UserUseCase
+from src.application.use_cases.user import GetOrCreateUser, GetOrCreateUserDto
 from src.core.constants import CONTAINER_KEY, USER_KEY
 from src.core.enums import MiddlewareEventType
 
@@ -35,9 +35,7 @@ class UserMiddleware(EventTypedMiddleware):
             return
 
         container: AsyncContainer = data[CONTAINER_KEY]
-        user_use_case: UserUseCase = await container.get(UserUseCase)
-
-        user = await user_use_case.get_or_create_user(aiogram_user)
-        data[USER_KEY] = user
+        get_or_create_user: GetOrCreateUser = await container.get(GetOrCreateUser)
+        data[USER_KEY] = await get_or_create_user(GetOrCreateUserDto.from_aiogram(aiogram_user))
 
         return await handler(event, data)

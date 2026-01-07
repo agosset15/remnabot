@@ -4,10 +4,17 @@ from aiogram_dialog import DialogManager
 from dishka import FromDishka
 from dishka.integrations.aiogram_dialog import inject
 
+from src.application.common import TranslatorRunner
 from src.application.dto import UserDto
-from src.application.protocols import TranslatorRunner
+from src.application.use_cases.menu import GetMenuData
 from src.core.config import AppConfig
-from src.core.exceptions import MenuRenderingError
+from src.core.exceptions import MenuRenderError
+from src.core.utils.i18n_helpers import (
+    i18n_format_device_limit,
+    i18n_format_expire_time,
+    i18n_format_traffic_limit,
+)
+from src.core.utils.time import get_traffic_reset_delta
 from src.telegram.utils import username_to_url
 
 
@@ -17,63 +24,70 @@ async def menu_getter(
     config: AppConfig,
     user: UserDto,
     i18n: FromDishka[TranslatorRunner],
-    # plan_service: FromDishka[PlanService],
-    # subscription_service: FromDishka[SubscriptionService],
-    # settings_service: FromDishka[SettingsService],
-    # referral_service: FromDishka[ReferralService],
+    get_menu_data: FromDishka[GetMenuData],
     **kwargs: Any,
 ) -> dict[str, Any]:
-    return {}
-    # try:
-    #     plan = await plan_service.get_trial_plan()
-    #     has_used_trial = await subscription_service.has_used_trial(user.telegram_id)
-    #     support_username = config.bot.support_username.get_secret_value()
-    #     ref_link = await referral_service.get_ref_link(user.referral_code)
-    #     support_link = username_to_url(support_username, i18n.get("contact-support-help"))
+    try:
+        menu_data = await get_menu_data(user)
 
-    #     base_data = {
-    #         "telegram_id": str(user.telegram_id),
-    #         "name": user.name,
-    #         "personal_discount": user.personal_discount,
-    #         "support": support_link,
-    #         "invite": i18n.get("referral-invite-message", url=ref_link),
-    #         "has_subscription": user.has_subscription,
-    #         "is_app": config.bot.is_mini_app,
-    #         "is_referral_enable": await settings_service.is_referral_enable(),
-    #     }
+        support_username = config.bot.support_username.get_secret_value()
+        support_url = username_to_url(support_username, i18n.get("contact-support-help"))
 
-    #     subscription = user.current_subscription
+        data: dict[str, Any] = {
+            # user
+            "telegram_id": user.telegram_id,
+            "name": user.name,
+            "personal_discount": user.personal_discount,
+            "dashboard_accessible": user.is_privileged,
+            # ui / config
+            "is_mini_app": config.bot.is_mini_app,
+            "support_url": support_url,
+            # referral
+            "referral_enabled": menu_data.is_referral_enabled,
+            "invite_url": i18n.get("referral-invite-message", url=menu_data.referral_link),
+            # defaults
+            "has_subscription": False,
+            "connectable": False,
+            "trial_available": False,
+            "has_device_limit": False,
+            "is_trial": False,
+            # subscription-related (nullable)
+            "status": None,
+            "subscription_type": None,
+            "traffic_limit": None,
+            "device_limit": None,
+            "expire_time": None,
+            "reset_time": None,
+            "connection_url": None,
+        }
 
-    #     if not subscription:
-    #         base_data.update(
-    #             {
-    #                 "status": None,
-    #                 "is_trial": False,
-    #                 "trial_available": not has_used_trial and plan,
-    #                 "has_device_limit": False,
-    #                 "connectable": False,
-    #             }
-    #         )
-    #         return base_data
+        if not menu_data.current_subscription:
+            data["trial_available"] = not menu_data.has_used_trial and menu_data.available_trial
+            return data
 
-    #     base_data.update(
-    #         {
-    #             "status": subscription.get_status,
-    #             "type": subscription.get_subscription_type,
-    #             "traffic_limit": i18n_format_traffic_limit(subscription.traffic_limit),
-    #             "device_limit": i18n_format_device_limit(subscription.device_limit),
-    #             "expire_time": i18n_format_expire_time(subscription.expire_at),
-    #             "is_trial": subscription.is_trial,
-    #             "traffic_strategy": subscription.traffic_limit_strategy,
-    #             "reset_time": subscription.get_expire_time,
-    #             "has_device_limit": subscription.has_devices_limit
-    #             if subscription.is_active
-    #             else False,
-    #             "connectable": subscription.is_active,
-    #             "url": config.bot.mini_app_url or subscription.url,
-    #         }
-    #     )
+        subscription = menu_data.current_subscription
 
-    #     return base_data
-    # except Exception as exception:
-    #     raise MenuRenderingError(str(exception)) from exception
+        data.update(
+            {
+                "has_subscription": True,
+                "is_trial": subscription.is_trial,
+                "status": subscription.current_status,
+                "subscription_type": subscription.limit_type,
+                "traffic_limit": i18n_format_traffic_limit(subscription.traffic_limit),
+                "device_limit": i18n_format_device_limit(subscription.device_limit),
+                "expire_time": i18n_format_expire_time(subscription.expire_at),
+                "reset_time": i18n_format_expire_time(
+                    get_traffic_reset_delta(subscription.traffic_limit_strategy)
+                ),
+                "connectable": subscription.is_active,
+                "has_device_limit": subscription.has_devices_limit
+                if subscription.is_active
+                else False,
+                "connection_url": config.bot.mini_app_url or subscription.url,
+            }
+        )
+
+        return data
+
+    except Exception as exception:
+        raise MenuRenderError(str(exception)) from exception

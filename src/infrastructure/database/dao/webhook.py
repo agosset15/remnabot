@@ -4,12 +4,12 @@ from adaptix import Retort
 from loguru import logger
 from redis.asyncio import Redis
 
-from src.application.protocols.dao import WebhookDAO
+from src.application.common.dao import WebhookDao
 from src.infrastructure.common import json
 from src.infrastructure.redis.keys import WebhookLockKey
 
 
-class WebhookDAOImpl(WebhookDAO):
+class WebhookDaoImpl(WebhookDao):
     def __init__(self, redis: Redis, retort: Retort):
         self.redis = redis
         self.retort = retort
@@ -21,6 +21,8 @@ class WebhookDAOImpl(WebhookDAO):
 
         if exists:
             logger.debug(f"Webhook hash '{webhook_hash}' found for bot '{bot_id}'")
+        else:
+            logger.debug(f"Webhook hash '{webhook_hash}' not found for bot '{bot_id}'")
 
         return bool(exists)
 
@@ -28,7 +30,7 @@ class WebhookDAOImpl(WebhookDAO):
         key = WebhookLockKey(bot_id=bot_id, webhook_hash=webhook_hash)
         raw_key = self.retort.dump(key)
         await self.redis.set(name=raw_key, value=json.encode(None))
-        logger.debug(f"Webhook lock key '{raw_key}' saved to storage")
+        logger.debug(f"Webhook lock hash '{webhook_hash}' saved for bot '{bot_id}'")
 
     async def clear_all_hashes(self, bot_id: int) -> None:
         pattern_key = WebhookLockKey(bot_id=bot_id, webhook_hash="*")
@@ -40,7 +42,7 @@ class WebhookDAOImpl(WebhookDAO):
             return
 
         await self.redis.delete(*keys)
-        logger.info(f"Cleared '{len(keys)}' old webhook lock keys for bot '{bot_id}'")
+        logger.debug(f"Cleared '{len(keys)}' old webhook lock keys for bot '{bot_id}'")
 
     async def get_current_hash(self, bot_id: int) -> Optional[str]:
         pattern_key = WebhookLockKey(bot_id=bot_id, webhook_hash="*")
@@ -48,7 +50,7 @@ class WebhookDAOImpl(WebhookDAO):
         keys: list[bytes] = await self.redis.keys(raw_pattern_key)
 
         if not keys:
-            logger.debug(f"No webhook hash found in storage for bot '{bot_id}'")
+            logger.debug(f"No webhook hash found for bot '{bot_id}'")
             return None
 
         raw_key: str = keys[0].decode()

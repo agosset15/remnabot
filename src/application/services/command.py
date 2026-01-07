@@ -4,12 +4,12 @@ from aiogram import Bot
 from aiogram.types import BotCommand, BotCommandScopeAllPrivateChats
 from loguru import logger
 
-from src.application.protocols import TranslatorHub
+from src.application.common import TranslatorHub
 from src.core.config import AppConfig
 from src.core.enums import Command, Locale
 
 
-class CommandUseCase:
+class CommandService:
     def __init__(
         self,
         bot: Bot,

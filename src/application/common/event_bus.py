@@ -1,14 +1,16 @@
-from typing import Callable, Protocol
+from typing import Callable, Protocol, runtime_checkable
 
 from dishka import AsyncContainer
 
 from src.application.events import BaseEvent
 
 
+@runtime_checkable
 class EventPublisher(Protocol):
     async def publish(self, event: BaseEvent) -> None: ...
 
 
+@runtime_checkable
 class EventSubscriber(Protocol):
     def autodiscover(self) -> None: ...
 

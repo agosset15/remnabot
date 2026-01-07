@@ -1,2 +1,4 @@
-class MenuRenderingError(Exception):
-    """Raised when main menu cannot be rendered"""
+class MenuRenderError(Exception): ...
+
+
+class PermissionDenied(Exception): ...  # noqa: N818

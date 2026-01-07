@@ -6,17 +6,17 @@ from pydantic import SecretStr
 
 from src.core.enums import Currency, PaymentGatewayType, YookassaVatCode
 
-from .base import BaseDto, TrackableDto
+from .base import BaseDto, TrackableMixin
 
 
 @dataclass(kw_only=True)
-class PaymentResult(BaseDto):
+class PaymentResult:
     id: UUID
     url: Optional[str] = None
 
 
 @dataclass(kw_only=True)
-class PaymentGatewayDto(TrackableDto):
+class PaymentGatewayDto(BaseDto, TrackableMixin):
     order_index: int
     type: PaymentGatewayType
     currency: Currency
@@ -33,7 +33,7 @@ class PaymentGatewayDto(TrackableDto):
 
 
 @dataclass(kw_only=True)
-class GatewaySettingsDto(TrackableDto):
+class GatewaySettingsDto(TrackableMixin):
     @property
     def is_configured(self) -> bool:
         for f in fields(self):
