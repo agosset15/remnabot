@@ -8,6 +8,9 @@ from fluentogram import TranslatorHub
 from loguru import logger
 from PIL import Image
 from qrcode import ERROR_CORRECT_H, QRCode  # type: ignore[attr-defined]
+from qrcode.image.styledpil import StyledPilImage
+from qrcode.image.styles.moduledrawers.pil import RoundedModuleDrawer
+from qrcode.image.styles.colormasks import ImageColorMask
 from redis.asyncio import Redis
 
 from src.core.config import AppConfig
@@ -277,7 +280,11 @@ class ReferralService(BaseService):
         qr.add_data(url)
         qr.make(fit=True)
 
-        qr_img_raw = qr.make_image(fill_color="black", back_color="white")
+        logo_path = ASSETS_DIR / "logo.png"
+        gradient_path = ASSETS_DIR / "gradient.png"
+        if not logo_path.exists():
+            logo_path = None
+        qr_img_raw = qr.make_image(image_factory=StyledPilImage, module_drawer=RoundedModuleDrawer(), color_mask=ImageColorMask(back_color=(14, 22, 33), color_mask_path=gradient_path), embedded_image_path=logo_path)
         qr_img: Image.Image
         if hasattr(qr_img_raw, "get_image"):
             qr_img = cast(Image.Image, qr_img_raw.get_image())
@@ -285,18 +292,6 @@ class ReferralService(BaseService):
             qr_img = cast(Image.Image, qr_img_raw)
 
         qr_img = qr_img.convert("RGB")
-
-        logo_path = ASSETS_DIR / "logo.png"
-        if logo_path.exists():
-            logo = Image.open(logo_path).convert("RGBA")
-
-            qr_width, qr_height = qr_img.size
-            logo_size = int(qr_width * 0.2)
-            logo = logo.resize((logo_size, logo_size), resample=Image.Resampling.LANCZOS)
-
-            pos = ((qr_width - logo_size) // 2, (qr_height - logo_size) // 2)
-            qr_img.paste(logo, pos, mask=logo)
-
         buffer = BytesIO()
         qr_img.save(buffer, format="PNG")
         buffer.seek(0)
