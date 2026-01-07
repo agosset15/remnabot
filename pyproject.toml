@@ -1,6 +1,6 @@
 [project]
 name = "remnashop"
-    version = "0.5.6"
+version = "0.5.6"
 description = "This is a Telegram bot for selling VPN subscriptions. It works with Remnawave"
 authors = [{ name = "snoups" }]
 readme = "README.md"
@@ -19,7 +19,7 @@ dependencies = [
     "msgspec~=0.19.0",
     "pydantic-settings~=2.11.0",
     "redis~=7.0.0",
-    #"remnapy @ git+https://github.com/snoups/remnapy.git@development",
+    #"remnapy @ git+https://github.com/snoups/remnapy.git@development  ",
     "remnapy>=2.3.3",
     "taskiq[orjson]~=0.12.1",
     "taskiq-redis~=1.2.0",
@@ -27,6 +27,7 @@ dependencies = [
     "cryptography>=46.0.3",
     "sqlalchemy[mypy]>=2.0.0",
     "qrcode[pil]>=8.2",
+    "aiofiles==25.1.0",
 ]
 
 [project.urls]
@@ -35,8 +36,8 @@ repository = "https://github.com/snoups/remnashop"
 
 [dependency-groups]
 dev = [
-    "mypy>=1.18.2",
-    "ruff>=0.14.2",
+    "ruff~=0.14",
+    "ty==0.0.9",
     "pytest>=8.4.2",
     "watchfiles>=1.1.1",
     "ftl-extract>=0.9.0",
@@ -63,31 +64,3 @@ lint.select = [
 ]
 lint.ignore = ["N805"]
 exclude = ["venv", ".venv", ".idea", "tests"]
-
-[tool.mypy]
-packages = ["src"]
-plugins = ["sqlalchemy.ext.mypy.plugin", "pydantic.mypy"]
-exclude = ["venv", ".venv", ".idea", "tests"]
-warn_unused_configs = true
-disallow_subclassing_any = true
-disallow_untyped_calls = true
-disallow_untyped_defs = true
-disallow_incomplete_defs = true
-check_untyped_defs = true
-disallow_untyped_decorators = true
-warn_unused_ignores = true
-warn_return_any = true
-no_implicit_reexport = true
-strict_equality = true
-extra_checks = true
-explicit_package_bases = true
-
-[[tool.mypy.overrides]]
-module = ["fluentogram.*", "remnawave.*", "qrcode.*", "remnapy.*"]
-follow_untyped_imports = true
-
-[[tool.mypy.overrides]]
-module = ["app.bot.handlers.*"]
-strict_optional = false
-warn_return_any = false
-disable_error_code = ["union-attr"]
