@@ -7,10 +7,10 @@ from aiogram.types import BufferedInputFile, Message, TelegramObject
 from fluentogram import TranslatorHub
 from loguru import logger
 from PIL import Image
-from qrcode import ERROR_CORRECT_H, QRCode  # type: ignore[attr-defined]
+from qrcode import ERROR_CORRECT_Q, QRCode  # type: ignore[attr-defined]
 from qrcode.image.styledpil import StyledPilImage
-from qrcode.image.styles.moduledrawers.pil import RoundedModuleDrawer
 from qrcode.image.styles.colormasks import ImageColorMask
+from qrcode.image.styles.moduledrawers.pil import RoundedModuleDrawer
 from redis.asyncio import Redis
 
 from src.core.config import AppConfig
@@ -259,7 +259,7 @@ class ReferralService(BaseService):
                 user_telegram_id=referrer.telegram_id,
                 reward=reward,
                 referred_name=user.name,
-            )
+            )  # type: ignore[no-matching-overload]
 
             logger.info(
                 f"Issued '{reward_type}' reward '{reward_amount}' for referrer "
@@ -272,7 +272,7 @@ class ReferralService(BaseService):
     def get_ref_qr(self, url: str) -> BufferedInputFile:
         qr: Any = QRCode(
             version=1,
-            error_correction=ERROR_CORRECT_H,
+            error_correction=ERROR_CORRECT_Q,
             box_size=10,
             border=4,
         )
@@ -280,11 +280,18 @@ class ReferralService(BaseService):
         qr.add_data(url)
         qr.make(fit=True)
 
-        logo_path = ASSETS_DIR / "logo.png"
+        logo = ASSETS_DIR / "logo.png"
         gradient_path = ASSETS_DIR / "gradient.png"
-        if not logo_path.exists():
+        if not logo.exists():
             logo_path = None
-        qr_img_raw = qr.make_image(image_factory=StyledPilImage, module_drawer=RoundedModuleDrawer(), color_mask=ImageColorMask(back_color=(14, 22, 33), color_mask_path=gradient_path), embedded_image_path=logo_path)
+        else:
+            logo_path = logo
+        qr_img_raw = qr.make_image(
+            image_factory=StyledPilImage,
+            module_drawer=RoundedModuleDrawer(),
+            color_mask=ImageColorMask(back_color=(14, 22, 33), color_mask_path=gradient_path),
+            embedded_image_path=logo_path,
+        )  # type: ignore
         qr_img: Image.Image
         if hasattr(qr_img_raw, "get_image"):
             qr_img = cast(Image.Image, qr_img_raw.get_image())
