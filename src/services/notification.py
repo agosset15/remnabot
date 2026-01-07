@@ -91,7 +91,9 @@ class NotificationService(BaseService):
     ) -> list[bool]:
         if self.config.bot.topic_logs_enabled:
             devs = [self._get_topic_logs_chat_user()]
+            thread_id = ntf_type.get_logs_topic(self.config.bot.list_topic_logs_threads)
         else:
+            thread_id = None
             devs = await self.user_service.get_by_role(role=UserRole.DEV)
 
         if not devs:
@@ -106,7 +108,7 @@ class NotificationService(BaseService):
         )
 
         async def send_to_dev(dev: UserDto) -> bool:
-            return bool(await self._send_message(user=dev, payload=payload, thread_id=ntf_type.get_logs_topic(self.config.bot.list_topic_logs_threads)))
+            return bool(await self._send_message(user=dev, payload=payload, thread_id=thread_id))
 
         tasks = [send_to_dev(dev) for dev in devs]
         results = await asyncio.gather(*tasks)
