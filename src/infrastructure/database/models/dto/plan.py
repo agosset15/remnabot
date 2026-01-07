@@ -3,7 +3,7 @@ from typing import Optional
 from uuid import UUID
 
 from pydantic import Field
-from remnawave.enums.users import TrafficLimitStrategy
+from remnapy.enums.users import TrafficLimitStrategy
 
 from src.core.enums import Currency, PlanAvailability, PlanType
 
@@ -56,7 +56,7 @@ class PlanSnapshotDto(TrackableDto):
         return cls(
             id=-1,
             name="test",
-            tag="",
+            tag=None,
             type=PlanType.UNLIMITED,
             traffic_limit=-1,
             device_limit=-1,

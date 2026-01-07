@@ -124,7 +124,7 @@ devices = Window(
             ),
         ),
         id="devices_list",
-        item_id_getter=lambda item: item["hwid"],
+        item_id_getter=lambda item: item["short_hwid"],
         items="devices",
     ),
     Row(
@@ -140,7 +140,7 @@ devices = Window(
 )
 
 invite = Window(
-    Banner(BannerName.MENU),
+    Banner(BannerName.REFERRAL),
     I18nFormat("msg-menu-invite"),
     Row(
         SwitchTo(
@@ -198,7 +198,7 @@ invite = Window(
 )
 
 invite_about = Window(
-    Banner(BannerName.MENU),
+    Banner(BannerName.REFERRAL),
     I18nFormat("msg-menu-invite-about"),
     Row(
         SwitchTo(

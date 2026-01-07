@@ -1,6 +1,5 @@
 import asyncio
 import traceback
-import uuid
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator, Optional
 
@@ -13,15 +12,12 @@ from loguru import logger
 
 from src.__version__ import __version__
 from src.api.endpoints import TelegramWebhookEndpoint
+from src.core.config.app import AppConfig
 from src.core.enums import SystemNotificationType
 from src.core.utils.message_payload import MessagePayload
-from src.infrastructure.taskiq.tasks.notifications import (
-    send_error_notification_task,
-    send_remnashop_notification_task,
-    send_system_notification_task,
-)
 from src.infrastructure.taskiq.tasks.updates import check_bot_update
 from src.services.command import CommandService
+from src.services.notification import NotificationService
 from src.services.payment_gateway import PaymentGatewayService
 from src.services.remnawave import RemnawaveService
 from src.services.settings import SettingsService
@@ -35,14 +31,16 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     container: AsyncContainer = app.state.dishka_container
 
     async with container(scope=Scope.REQUEST) as startup_container:
+        config: AppConfig = await startup_container.get(AppConfig)
         webhook_service: WebhookService = await startup_container.get(WebhookService)
         command_service: CommandService = await startup_container.get(CommandService)
         settings_service: SettingsService = await startup_container.get(SettingsService)
         gateway_service: PaymentGatewayService = await startup_container.get(PaymentGatewayService)
         remnawave_service: RemnawaveService = await startup_container.get(RemnawaveService)
+        notification_service: NotificationService = await startup_container.get(NotificationService)
 
         await gateway_service.create_default()
-        access_mode = await settings_service.get_access_mode()
+        settings = await settings_service.get()
 
     await startup_container.close()
 
@@ -51,7 +49,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     if webhook_service.has_error(webhook_info):
         logger.critical(f"Webhook has a last error message: '{webhook_info.last_error_message}'")
-        await send_system_notification_task.kiq(
+        await notification_service.system_notify(
             ntf_type=SystemNotificationType.BOT_LIFETIME,
             payload=MessagePayload.not_deleted(
                 i18n_key="ntf-event-error-webhook",
@@ -63,6 +61,19 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     await telegram_webhook_endpoint.startup()
 
     bot: Bot = await container.get(Bot)
+
+    if config.bot.topic_logs_enabled:
+        logs_group = await bot.get_chat(config.bot.topic_logs_chat_id)
+        if not logs_group.is_forum:
+            logger.critical(f"Topic logs chat is not a group: {logs_group}")
+            await notification_service.system_notify(
+                ntf_type=SystemNotificationType.BOT_LIFETIME,
+                payload=MessagePayload.not_deleted(
+                    i18n_key="ntf-event-error-topic-logs",
+                    i18n_kwargs={"chat_id": logs_group.id},
+                ),
+            )
+
     bot_info = await bot.get_me()
     states: dict[Optional[bool], str] = {True: "Enabled", False: "Disabled", None: "Unknown"}
 
@@ -77,23 +88,32 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     <cyan>                                                 | |    </>
     <cyan>                                                 |_|    </>
 
-        <green>Bot version: {__version__}</>
+        <green>Version: {__version__}</>
+        <green>Build Time: {config.build.time}</>
+        <green>Branch: {config.build.branch} ({config.build.tag})</>
+        <green>Commit: {config.build.commit}</>
         <cyan>------------------------</>
         Groups Mode  - {states[bot_info.can_join_groups]}
         Privacy Mode - {states[not bot_info.can_read_all_group_messages]}
         Inline Mode  - {states[bot_info.supports_inline_queries]}
         <cyan>------------------------</>
-        <yellow>Bot in access mode: '{access_mode}'</>
+        <yellow>Bot in access mode: '{settings.access_mode}'</>
+        <yellow>Purchases allowed: '{settings.purchases_allowed}'</>
+        <yellow>Registration allowed: '{settings.registration_allowed}'</>
         """  # noqa: W605
     )
     await check_bot_update.kiq()
-    await send_remnashop_notification_task.kiq()
+    await notification_service.remnashop_notify()
     await asyncio.sleep(2)
-    await send_system_notification_task.kiq(
+    await notification_service.system_notify(
         ntf_type=SystemNotificationType.BOT_LIFETIME,
         payload=MessagePayload.not_deleted(
             i18n_key="ntf-event-bot-startup",
-            i18n_kwargs={"access_mode": access_mode},
+            i18n_kwargs={
+                "access_mode": settings.access_mode,
+                "purchases_allowed": settings.purchases_allowed,
+                "registration_allowed": settings.registration_allowed,
+            },
         ),
     )
 
@@ -104,8 +124,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         error_type_name = type(exception).__name__
         error_message = Text(str(exception)[:512])
 
-        await send_error_notification_task.kiq(
-            error_id=str(uuid.uuid4()),
+        await notification_service.error_notify(
             traceback_str=traceback.format_exc(),
             payload=MessagePayload.not_deleted(
                 i18n_key="ntf-event-error-remnawave",
@@ -117,7 +136,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     yield
 
-    await send_system_notification_task.kiq(
+    await notification_service.system_notify(
         ntf_type=SystemNotificationType.BOT_LIFETIME,
         payload=MessagePayload.not_deleted(i18n_key="ntf-event-bot-shutdown"),
     )

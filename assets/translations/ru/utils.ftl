@@ -15,7 +15,7 @@ unit-unlimited = { $value ->
 }
 
 # Other
-payment-invoice-description = { purchase-type } подписки { $name } на { $duration }
+payment-invoice-description = { purchase-type } лицензии на доступ к ПО уровень { $name } на { $duration }
 contact-support-help = Здравствуйте! Мне нужна помощь.
 contact-support-paysupport = Здравствуйте! Я бы хотел запросить возврат средств.
 contact-support-withdraw-points = Здравствуйте! Я бы хотел запросить обмен баллов.
@@ -25,7 +25,7 @@ cmd-help = Помощь
 
 referral-invite-message =
     { space }
-    🚀 Привет! Хочешь стабильный и быстрый VPN?  
+    🚀 Рекомендую быстрый и недорогой VPN-сервис KaGo!
     
     ↘️ ЖМИ СЮДА И ПОПРОБУЙ БЕСПЛАТНО!
     { $url }
@@ -138,8 +138,14 @@ frg-node-info =
     • <b>Название</b>: { $country } { $name }
     • <b>Адрес</b>: <code>{ $address }:{ $port }</code>
     • <b>Трафик</b>: { $traffic_used } / { $traffic_limit }
-    • <b>Последний статус</b>: { $last_status_message }
-    • <b>Статус изменен</b>: { $last_status_change }
+    { $last_status_message -> 
+    [0] { empty }
+    *[HAS] • <b>Последний статус</b>: { $last_status_message }
+    }
+    { $last_status_change -> 
+    [0] { empty }
+    *[HAS] • <b>Статус изменен</b>: { $last_status_change }
+    }
     </blockquote>
 
 frg-user-hwid =
@@ -151,6 +157,18 @@ frg-user-hwid =
     • <b>Версия ОС</b>: { $os_version }
     • <b>Агент</b>: { $user_agent }
     </blockquote>
+
+frg-build-info =
+    { $has_build ->
+    [0] { space }
+    *[HAS]
+    <b>🏗️ Информация о сборке:</b>
+    <blockquote>
+    Время сборки: { $time }
+    Ветка: { $branch } ({ $tag })
+    Коммит: <a href="{ $commit_url }">{ $commit }</a>
+    </blockquote>
+    }
 
 # Roles
 role-dev = Разработчик
@@ -259,9 +277,7 @@ gateway-type = { $gateway_type ->
 
 access-mode = { $access_mode ->
     [PUBLIC] 🟢 Разрешен для всех
-    [INVITED] ⚪ Разрешен для приглашенных
-    [PURCHASE_BLOCKED] 🟡 Запрещены покупки
-    [REG_BLOCKED] 🟠 Запрещена регистрация
+    [INVITED] 🟡 Разрешен для приглашенных
     [RESTRICTED] 🔴 Запрещен для всех
     *[OTHER] { $access_mode }
 }

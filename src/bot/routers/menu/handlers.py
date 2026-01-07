@@ -1,5 +1,5 @@
 from aiogram import F, Router
-from aiogram.filters import CommandObject, CommandStart
+from aiogram.filters import CommandStart
 from aiogram.types import CallbackQuery, Message
 from aiogram_dialog import DialogManager, ShowMode, StartMode, SubManager
 from aiogram_dialog.widgets.kbd import Button
@@ -10,8 +10,9 @@ from loguru import logger
 
 from src.bot.keyboards import CALLBACK_CHANNEL_CONFIRM, CALLBACK_RULES_ACCEPT
 from src.bot.states import MainMenu
-from src.core.constants import REFERRAL_PREFIX, USER_KEY
+from src.core.constants import USER_KEY
 from src.core.enums import MediaType
+from src.core.i18n.translator import get_translated_kwargs
 from src.core.utils.formatters import format_user_log as log
 from src.core.utils.message_payload import MessagePayload
 from src.infrastructure.database.models.dto import PlanSnapshotDto, UserDto
@@ -41,17 +42,9 @@ async def on_start_dialog(
 @router.message(CommandStart(ignore_case=True))
 async def on_start_command(
     message: Message,
-    command: CommandObject,
     user: UserDto,
-    is_new_user: bool,
     dialog_manager: DialogManager,
-    referral_service: FromDishka[ReferralService],
 ) -> None:
-    if command.args and command.args.startswith(REFERRAL_PREFIX) and is_new_user:
-        referral_code = command.args
-        logger.info(f"Start with referral code: '{referral_code}'")
-        await referral_service.handle_referral(user, referral_code)
-
     await on_start_dialog(user, dialog_manager)
 
 
@@ -105,12 +98,26 @@ async def on_device_delete(
     remnawave_service: FromDishka[RemnawaveService],
 ) -> None:
     await sub_manager.load_data()
-    selected_device = sub_manager.item_id
+    selected_short_hwid = sub_manager.item_id
     user: UserDto = sub_manager.middleware_data[USER_KEY]
+    hwid_map = sub_manager.dialog_data.get("hwid_map")
 
-    if user.current_subscription and user.current_subscription.device_limit:
-        await remnawave_service.delete_device(user=user, hwid=selected_device)
-        logger.info(f"{log(user)} Deleted self device '{selected_device}'")
+    if not hwid_map:
+        raise ValueError(f"Selected '{selected_short_hwid}' HWID, but 'hwid_map' is missing")
+
+    full_hwid = next((d["hwid"] for d in hwid_map if d["short_hwid"] == selected_short_hwid), None)
+
+    if not full_hwid:
+        raise ValueError(f"Full HWID not found for '{selected_short_hwid}'")
+
+    if not (user.current_subscription and user.current_subscription.device_limit):
+        raise ValueError("User has no active subscription or device limit unlimited")
+
+    devices = await remnawave_service.delete_device(user=user, hwid=full_hwid)
+    logger.info(f"{log(user)} Deleted device '{full_hwid}'")
+
+    if devices:
+        return
 
     await sub_manager.switch_to(state=MainMenu.MAIN)
 
@@ -123,10 +130,20 @@ async def show_reason(
     i18n: FromDishka[TranslatorRunner],
 ) -> None:
     user: UserDto = dialog_manager.middleware_data[USER_KEY]
-    status = user.current_subscription.status if user.current_subscription else False
+    subscription = user.current_subscription
+
+    if subscription:
+        kwargs = {
+            "status": subscription.get_status,
+            "is_trial": subscription.is_trial,
+            "traffic_strategy": subscription.traffic_limit_strategy,
+            "reset_time": subscription.get_expire_time,
+        }
+    else:
+        kwargs = {"status": False}
 
     await callback.answer(
-        text=i18n.get("ntf-connect-not-available", status=status),
+        text=i18n.get("ntf-connect-not-available", **get_translated_kwargs(i18n, kwargs)),
         show_alert=True,
     )
 

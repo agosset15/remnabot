@@ -15,10 +15,11 @@ USERNAME_PATTERN: Pattern[str] = re.compile(r"^@[a-zA-Z0-9_]{5,32}$")
 DATETIME_FORMAT: Final[str] = "%d.%m.%Y %H:%M:%S"
 
 T_ME: Final[str] = "https://t.me/"
-API_V1: Final[str] = "/api/v1"
+API_V1: Final[str] = "/webhook/vpn_bot"
 BOT_WEBHOOK_PATH: Final[str] = "/telegram"
 PAYMENTS_WEBHOOK_PATH: Final[str] = "/payments"
 REMNAWAVE_WEBHOOK_PATH: Final[str] = "/remnawave"
+REPOSITORY: Final[str] = "https://github.com/snoups/remnashop"
 
 TIMEZONE: Final[timezone] = timezone.utc
 REMNASHOP_PREFIX: Final[str] = "rs_"
@@ -34,7 +35,6 @@ CONTAINER_KEY: Final[str] = "dishka_container"
 CONFIG_KEY: Final[str] = "config"
 USER_KEY: Final[str] = "user"
 IS_SUPER_DEV_KEY: Final[str] = "is_super_dev"
-IS_NEW_USER: Final[str] = "is_new_user"
 
 TIME_1M: Final[int] = 60
 TIME_5M: Final[int] = TIME_1M * 5

@@ -140,6 +140,15 @@ class SystemNotificationType(UpperStrEnum):  # == SystemNotificationDto
     USER_FIRST_CONNECTED = auto()
     USER_HWID = auto()
 
+    def get_logs_topic(self, topic_id_list: list[int]) -> int:
+        match self:
+            case SystemNotificationType.BOT_LIFETIME | SystemNotificationType.BOT_UPDATE:
+                return topic_id_list[0]
+            case SystemNotificationType.USER_REGISTERED | SystemNotificationType.SUBSCRIPTION | SystemNotificationType.PROMOCODE_ACTIVATED | SystemNotificationType.TRIAL_GETTED:
+                return topic_id_list[1]
+            case SystemNotificationType.NODE_STATUS | SystemNotificationType.USER_FIRST_CONNECTED | SystemNotificationType.USER_HWID:
+                return topic_id_list[2]
+
 
 class UserNotificationType(UpperStrEnum):  # == UserNotificationDto
     EXPIRES_IN_3_DAYS = auto()
@@ -265,8 +274,6 @@ class Currency(UpperStrEnum):
 class AccessMode(UpperStrEnum):
     PUBLIC = auto()  # Access is allowed for everyone
     INVITED = auto()  # Invited users only
-    PURCHASE_BLOCKED = auto()  # Purchases are forbidden
-    REG_BLOCKED = auto()  # Registration is forbidden
     RESTRICTED = auto()  # All actions are completely forbidden
 
 

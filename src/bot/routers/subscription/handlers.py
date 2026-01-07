@@ -17,12 +17,12 @@ from src.core.utils.adapter import DialogDataAdapter
 from src.core.utils.formatters import format_user_log as log
 from src.core.utils.message_payload import MessagePayload
 from src.infrastructure.database.models.dto import PlanDto, PlanSnapshotDto, UserDto
-from src.infrastructure.taskiq.tasks.notifications import send_error_notification_task
 from src.services.notification import NotificationService
 from src.services.payment_gateway import PaymentGatewayService
 from src.services.plan import PlanService
 from src.services.pricing import PricingService
 from src.services.settings import SettingsService
+from src.services.subscription import SubscriptionService
 
 PAYMENT_CACHE_KEY = "payment_cache"
 CURRENT_DURATION_KEY = "selected_duration"
@@ -94,7 +94,7 @@ async def _create_payment_and_get_data(
         error_type_name = type(exception).__name__
         error_message = Text(str(exception)[:512])
 
-        await send_error_notification_task.kiq(
+        await notification_service.error_notify(
             error_id=user.telegram_id,
             traceback_str=traceback_str,
             payload=MessagePayload.not_deleted(
@@ -152,7 +152,10 @@ async def on_purchase_type_select(
 
     if purchase_type == PurchaseType.RENEW:
         if user.current_subscription:
-            matched_plan = user.current_subscription.find_matching_plan(plans)
+            matched_plan = SubscriptionService.find_matching_plan(
+                plan_snapshot=user.current_subscription.plan,
+                plans=plans,
+            )
             logger.debug(f"Matched plan for renewal: '{matched_plan}'")
 
             if matched_plan:
@@ -223,7 +226,10 @@ async def on_subscription_plans(  # noqa: C901
 
     if purchase_type == PurchaseType.RENEW:
         if user.current_subscription:
-            matched_plan = user.current_subscription.find_matching_plan(plans)
+            matched_plan = SubscriptionService.find_matching_plan(
+                plan_snapshot=user.current_subscription.plan,
+                plans=plans,
+            )
             logger.debug(f"Matched plan for renewal: '{matched_plan}'")
 
             if matched_plan:

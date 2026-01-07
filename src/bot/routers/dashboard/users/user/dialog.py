@@ -38,6 +38,7 @@ from .getters import (
     squads_getter,
     subscription_duration_getter,
     subscription_getter,
+    sync_getter,
     traffic_limit_getter,
     transaction_getter,
     transactions_getter,
@@ -69,6 +70,8 @@ from .handlers import (
     on_subscription_duration_select,
     on_subscription_select,
     on_sync,
+    on_sync_from_remnashop,
+    on_sync_from_remnawave,
     on_traffic_limit_input,
     on_traffic_limit_select,
     on_transaction_select,
@@ -177,6 +180,7 @@ subscription = Window(
             id="device",
             state=DashboardUser.DEVICE_LIMIT,
         ),
+        when=F["can_edit"],
     ),
     Row(
         Button(
@@ -200,6 +204,7 @@ subscription = Window(
             text=I18nFormat("btn-user-subscription-squads"),
             id="squads",
             state=DashboardUser.SQUADS,
+            when=F["can_edit"],
         ),
     ),
     Row(
@@ -327,11 +332,10 @@ squads = Window(
         ),
     ),
     Row(
-        Button(
+        SwitchTo(
             text=I18nFormat("btn-user-subscription-external-squads"),
             id="external",
-            # state=DashboardUser.EXTERNAL_SQUADS,
-            on_click=show_dev_popup,
+            state=DashboardUser.EXTERNAL_SQUADS,
         ),
     ),
     Row(
@@ -420,7 +424,7 @@ devices_list = Window(
             ),
         ),
         id="devices_list",
-        item_id_getter=lambda item: item["hwid"],
+        item_id_getter=lambda item: item["short_hwid"],
         items="devices",
     ),
     Row(
@@ -433,6 +437,48 @@ devices_list = Window(
     IgnoreUpdate(),
     state=DashboardUser.DEVICES_LIST,
     getter=devices_getter,
+)
+
+sync = Window(
+    Banner(BannerName.DASHBOARD),
+    I18nFormat("msg-user-sync"),
+    Column(
+        Button(
+            text=I18nFormat("btn-user-sync-remnashop"),
+            id="sync_from_remnashop",
+            on_click=on_sync_from_remnashop,
+        ),
+        Button(
+            text=I18nFormat("btn-user-sync-remnawave"),
+            id="sync_from_remnawave",
+            on_click=on_sync_from_remnawave,
+        ),
+    ),
+    Row(
+        SwitchTo(
+            text=I18nFormat("btn-back"),
+            id="back",
+            state=DashboardUser.MAIN,
+        ),
+    ),
+    IgnoreUpdate(),
+    state=DashboardUser.SYNC,
+    getter=sync_getter,
+)
+
+sync_waiting = Window(
+    Banner(BannerName.DASHBOARD),
+    I18nFormat("msg-user-sync-waiting"),
+    Row(
+        SwitchTo(
+            text=I18nFormat("btn-back"),
+            id="back",
+            state=DashboardUser.MAIN,
+        ),
+    ),
+    IgnoreUpdate(),
+    state=DashboardUser.SYNC_WAITING,
+    getter=sync_getter,
 )
 
 give_subscription = Window(
@@ -684,6 +730,8 @@ router = Dialog(
     internal_squads,
     external_squads,
     devices_list,
+    sync,
+    sync_waiting,
     give_subscription,
     subscription_duration,
     transactions_list,

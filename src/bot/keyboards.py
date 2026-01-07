@@ -9,26 +9,12 @@ from magic_filter import F
 
 from src.bot.states import DashboardUser, MainMenu, Subscription
 from src.bot.widgets.i18n_format import I18nFormat
-from src.core.constants import GOTO_PREFIX, PURCHASE_PREFIX, T_ME
+from src.core.constants import GOTO_PREFIX, PURCHASE_PREFIX, REPOSITORY, T_ME
 from src.core.enums import PurchaseType
 from src.core.utils.formatters import format_username_to_url
 
 CALLBACK_CHANNEL_CONFIRM: Final[str] = "channel_confirm"
 CALLBACK_RULES_ACCEPT: Final[str] = "rules_accept"
-
-goto_buttons = [
-    InlineKeyboardButton(
-        text="btn-contact-support",
-    ),
-    InlineKeyboardButton(
-        text="btn-goto-subscription",
-        callback_data=f"{GOTO_PREFIX}{Subscription.MAIN.state}",
-    ),
-    InlineKeyboardButton(
-        text="btn-goto-promocode",
-        callback_data=f"{GOTO_PREFIX}{Subscription.PROMOCODE.state}",
-    ),
-]
 
 connect_buttons = (
     WebApp(
@@ -66,12 +52,49 @@ main_menu_button = (
 )
 
 
+def get_goto_buttons(is_referral_enable: bool) -> list[InlineKeyboardButton]:
+    buttons = [
+        InlineKeyboardButton(
+            text="btn-contact-support",
+        ),
+        InlineKeyboardButton(
+            text="btn-goto-subscription",
+            callback_data=f"{GOTO_PREFIX}{Subscription.MAIN.state}",
+        ),
+        InlineKeyboardButton(
+            text="btn-goto-promocode",
+            callback_data=f"{GOTO_PREFIX}{Subscription.PROMOCODE.state}",
+        ),
+    ]
+
+    if is_referral_enable:
+        buttons.append(
+            InlineKeyboardButton(
+                text="btn-goto-invite",
+                callback_data=f"{GOTO_PREFIX}{MainMenu.INVITE.state}",
+            )
+        )
+
+    return buttons
+
+
 def get_renew_keyboard() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     builder.row(
         InlineKeyboardButton(
             text="btn-goto-subscription-renew",
             callback_data=f"{GOTO_PREFIX}{PURCHASE_PREFIX}{PurchaseType.RENEW}",
+        ),
+    )
+    return builder.as_markup()
+
+
+def get_buy_keyboard() -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.row(
+        InlineKeyboardButton(
+            text="btn-goto-subscription",
+            callback_data=f"{GOTO_PREFIX}{PURCHASE_PREFIX}{PurchaseType.NEW}",
         ),
     )
     return builder.as_markup()
@@ -122,7 +145,7 @@ def get_remnashop_keyboard() -> InlineKeyboardMarkup:
     builder.row(
         InlineKeyboardButton(
             text="btn-remnashop-github",
-            url="https://github.com/snoups/remnashop",
+            url=REPOSITORY,
         ),
         InlineKeyboardButton(
             text="btn-remnashop-telegram",
@@ -150,11 +173,11 @@ def get_remnashop_update_keyboard() -> InlineKeyboardMarkup:
     builder.row(
         InlineKeyboardButton(
             text="btn-remnashop-release-latest",
-            url="https://github.com/snoups/remnashop/releases/latest",
+            url=f"{REPOSITORY}/releases/latest",
         ),
         InlineKeyboardButton(
             text="btn-remnashop-how-upgrade",
-            url="https://github.com/snoups/remnashop?tab=readme-ov-file#step-5--how-to-upgrade",
+            url=f"{REPOSITORY}?tab=readme-ov-file#step-5--how-to-upgrade",
         ),
     )
 
