@@ -1,5 +1,6 @@
 import inspect
 import logging
+import os
 import sys
 from pathlib import Path
 from typing import Final
@@ -10,7 +11,7 @@ from loguru import logger
 from src.core.constants import LOG_DIR
 
 LOG_FILENAME: Final[str] = "bot.log"
-LOG_LEVEL: Final[str] = "DEBUG"
+LOG_LEVEL: Final[str] = os.getenv("LOG_LEVEL", "DEBUG")
 LOG_ROTATION: Final[str] = "00:00"
 LOG_COMPRESSION: Final[str] = "zip"
 LOG_RETENTION: Final[str] = "7 days"
