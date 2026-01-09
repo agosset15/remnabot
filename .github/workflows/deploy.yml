@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: SSH and deploy to production
-        uses: https://github.com/appleboy/ssh-action@v1.2.4
+        uses: appleboy/ssh-action@v1
         with:
           host: ag15.ru
           username: ${{ secrets.SSH_USER }}
