@@ -12,6 +12,7 @@ jobs:
         with:
           host: ag15.ru
           username: ${{ secrets.SSH_USER }}
+          port: 22
           key: ${{ secrets.SSH_KEY }}
           script: |
             cd /home/${{ secrets.SSH_USER }}/Bots/remnabot/
