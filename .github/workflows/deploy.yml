@@ -10,10 +10,11 @@ jobs:
       - name: SSH and deploy to production
         uses: appleboy/ssh-action@v1
         with:
-          host: ag15.ru
+          host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
-          port: 22
+          port: ${{ secrets.SSH_PORT }}
           key: ${{ secrets.SSH_KEY }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
           script: |
             cd /home/${{ secrets.SSH_USER }}/Bots/remnabot/
             git pull
