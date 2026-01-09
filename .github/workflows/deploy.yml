@@ -1,0 +1,20 @@
+name: Deploy to Production
+on:
+  push:
+    branches:
+      - main
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: SSH and deploy to production
+        uses: https://github.com/appleboy/ssh-action@v1.2.4
+        with:
+          host: ag15.ru
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd /home/${{ secrets.SSH_USER }}/Bots/remnabot/
+            git pull
+            docker compose down
+            docker compose up -d
