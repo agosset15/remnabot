@@ -954,6 +954,9 @@ msg-subscription-duration =
 
     { msg-subscription-details }
 
+    <blockquote>
+    <b>Покупая подписку на год, вы получаете два месяца в подарок</b>
+    </blockquote>
 msg-subscription-payment-method =
     <b>💳 Выберите способ оплаты</b>
 
