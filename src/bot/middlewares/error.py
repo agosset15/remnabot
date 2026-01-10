@@ -76,7 +76,7 @@ class ErrorMiddleware(EventTypedMiddleware):
                     "user": True if user else False,
                     "user_id": str(user.telegram_id) if user else False,
                     "user_name": user.name if user else False,
-                    "username": user.username if user else False,
+                    "username": user.username if user and user.username else False,
                     "error": f"{error_type_name}: {error_message.as_html()}",
                 },
                 reply_markup=reply_markup,
