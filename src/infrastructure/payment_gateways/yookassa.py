@@ -53,8 +53,8 @@ class YookassaGateway(BasePaymentGateway):
             base_url=self.API_BASE,
             auth=(
                 self.data.settings.shop_id,
-                self.data.settings.api_key.get_secret_value(),  # type: ignore [arg-type, union-attr]
-            ),
+                self.data.settings.api_key.get_secret_value(),
+            ),  # type: ignore[arg-type]
         )
 
     async def handle_create_payment(self, amount: Decimal, details: str) -> PaymentResult:

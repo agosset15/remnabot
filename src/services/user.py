@@ -56,7 +56,7 @@ class UserService(BaseService):
             ),
             name=aiogram_user.full_name,
             role=(UserRole.DEV if self.config.bot.dev_id == aiogram_user.id else UserRole.USER),
-            language=(
+            language=Locale(
                 aiogram_user.language_code
                 if aiogram_user.language_code in self.config.locales
                 else self.config.default_locale
@@ -72,7 +72,7 @@ class UserService(BaseService):
 
     async def create_from_panel(self, remna_user: RemnaUserDto) -> UserDto:
         user = UserDto(
-            telegram_id=remna_user.telegram_id,
+            telegram_id=remna_user.telegram_id,  # type: ignore[invalid-argument-type]
             referral_code=generate_referral_code(
                 remna_user.telegram_id,  # type: ignore[arg-type]
                 secret=self.config.crypt_key.get_secret_value(),

@@ -57,7 +57,7 @@ class BaseRepository:
 
         if order_by is not None:
             if isinstance(order_by, (list, tuple)):
-                query = query.order_by(*order_by)
+                query = query.order_by(*order_by)  # type: ignore[invalid-argument-type]
             else:
                 query = query.order_by(order_by)
 
@@ -80,7 +80,7 @@ class BaseRepository:
         if not kwargs:
             if not load_result:
                 return None
-            return cast(Optional[T], await self._get_one(model, *conditions))
+            return await self._get_one(model, *conditions)
 
         query = update(model).where(*conditions).values(**kwargs)
 

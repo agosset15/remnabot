@@ -159,7 +159,7 @@ async def inbounds_getter(
     result = await remnawave.inbounds.get_all_inbounds()
     inbounds = []
 
-    for inbound in result.inbounds:  # type: ignore[attr-defined]
+    for inbound in result.inbounds:
         inbounds.append(
             i18n.get(
                 "msg-remnawave-inbound-details",

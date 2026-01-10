@@ -108,7 +108,7 @@ duration = Window(
             type_factory=int,
             on_click=on_duration_select,
         ),
-        width=2,
+        width=1,
     ),
     Row(
         SwitchTo(

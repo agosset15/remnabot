@@ -48,7 +48,7 @@ class I18nFormat(Text):
         logger.debug(f"Key '{self.key}' transformed mapping: {mapped}")
         return {**data, **mapped}
 
-    async def _render_text(self, data: dict[str, Any], dialog_manager: DialogManager) -> str:
+    async def _render_text(self, data: dict[str, Any], dialog_manager: DialogManager) -> str:  # type: ignore[invalid-method-override]
         container: AsyncContainer = dialog_manager.middleware_data[CONTAINER_KEY]
         i18n: TranslatorRunner = await container.get(TranslatorRunner)
 

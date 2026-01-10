@@ -7,8 +7,8 @@ class IgnoreUpdate(BaseInput):
     async def process_message(
         self,
         message: Message,
-        dialog_protocol: DialogProtocol,
-        dialog_manager: DialogManager,
+        dialog: DialogProtocol,
+        manager: DialogManager,
     ) -> bool:
-        dialog_manager.show_mode = ShowMode.NO_UPDATE
+        manager.show_mode = ShowMode.NO_UPDATE
         return True

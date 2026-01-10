@@ -37,9 +37,8 @@ repository = "https://github.com/snoups/remnashop"
 [dependency-groups]
 dev = [
     "ruff~=0.14",
-    "ty==0.0.9",
+    "ty==0.0.11",
     "pytest>=8.4.2",
-    "watchfiles>=1.1.1",
     "ftl-extract>=0.9.0",
     "types-cachetools",
 ]
@@ -64,3 +63,7 @@ lint.select = [
 ]
 lint.ignore = ["N805"]
 exclude = ["venv", ".venv", ".idea", "tests"]
+
+[tool.ty]
+src.exclude = ["venv", ".venv", ".idea", "tests"]
+rules.no-matching-overload = "ignore"

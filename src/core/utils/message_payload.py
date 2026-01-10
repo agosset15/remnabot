@@ -49,4 +49,4 @@ class MessagePayload(BaseModel):
             "add_close_button": add_close_button,
             "message_effect": message_effect,
         }
-        return cls(**data)
+        return cls(**data)  # type: ignore[invalid-argument-type]

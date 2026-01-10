@@ -156,7 +156,9 @@ class NotificationService(BaseService):
 
     #
 
-    async def _send_message(self, user: BaseUserDto, payload: MessagePayload, thread_id: Optional[int] = None) -> Optional[Message]:
+    async def _send_message(
+        self, user: BaseUserDto, payload: MessagePayload, thread_id: Optional[int] = None
+    ) -> Optional[Message]:
         reply_markup = self._prepare_reply_markup(
             payload.reply_markup,
             payload.add_close_button,
@@ -166,14 +168,18 @@ class NotificationService(BaseService):
         )
         try:
             if (payload.media or payload.media_id) and payload.media_type:
-                sent_message = await self._send_media_message(user, payload, reply_markup, thread_id=thread_id)
+                sent_message = await self._send_media_message(
+                    user, payload, reply_markup, thread_id=thread_id
+                )
             else:
                 if (payload.media or payload.media_id) and not payload.media_type:
                     logger.warning(
                         f"Validation warning: Media provided without media_type "
                         f"for chat '{user.telegram_id}'. Sending as text message"
                     )
-                sent_message = await self._send_text_message(user, payload, reply_markup, thread_id=thread_id)
+                sent_message = await self._send_text_message(
+                    user, payload, reply_markup, thread_id=thread_id
+                )
 
             if payload.auto_delete_after is not None and sent_message:
                 asyncio.create_task(
@@ -220,7 +226,7 @@ class NotificationService(BaseService):
             "reply_markup": reply_markup,
             "message_effect_id": payload.message_effect,
             media_arg_name: media_input,
-            "message_thread_id": thread_id
+            "message_thread_id": thread_id,
         }
         return cast(Message, await send_func(**tg_payload))
 

@@ -10,7 +10,7 @@ from src.lifespan import lifespan
 def create_app(config: AppConfig, dispatcher: Dispatcher) -> FastAPI:
     app: FastAPI = FastAPI(lifespan=lifespan)
     app.add_middleware(
-        CORSMiddleware,
+        CORSMiddleware,  # type: ignore[invalid-argument-type]
         allow_origins=config.origins,
         allow_credentials=True,
         allow_methods=["*"],

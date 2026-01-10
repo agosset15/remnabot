@@ -1098,7 +1098,7 @@ async def on_subscription_duration_select(
 
     new_subscription = SubscriptionDto(
         user_remna_id=remna_user.uuid,
-        status=remna_user.status,
+        status=SubscriptionStatus(remna_user.status),
         traffic_limit=plan.traffic_limit,
         device_limit=plan.device_limit,
         traffic_limit_strategy=plan.traffic_limit_strategy,

@@ -488,7 +488,7 @@ async def on_duration_input(
             prices=[
                 PlanPriceDto(
                     currency=currency,
-                    price=100,
+                    price=Decimal(100),
                 )
                 for currency in Currency
             ],

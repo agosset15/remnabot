@@ -23,12 +23,12 @@ class AppConfig(BaseConfig, env_prefix="APP_"):
     host: str = "0.0.0.0"
     port: int = 5000
 
-    locales: LocaleList = LocaleList([Locale.EN])
+    locales: LocaleList = LocaleList([Locale.EN])  # type: ignore[call-non-callable]
     default_locale: Locale = Locale.EN
 
     crypt_key: SecretStr
     assets_dir: Path = ASSETS_DIR
-    origins: StringList = StringList("")
+    origins: StringList = StringList("")  # type: ignore[call-non-callable]
 
     bot: BotConfig = Field(default_factory=BotConfig)
     remnawave: RemnawaveConfig = Field(default_factory=RemnawaveConfig)
@@ -51,7 +51,7 @@ class AppConfig(BaseConfig, env_prefix="APP_"):
 
     @classmethod
     def get(cls) -> Self:
-        return cls()
+        return cls()  # type: ignore[missing-argument]
 
     @field_validator("domain")
     @classmethod

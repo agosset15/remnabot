@@ -25,9 +25,11 @@ cmd-help = Помощь
 
 referral-invite-message =
     { space }
-    🚀 Рекомендую быстрый и недорогой VPN-сервис KaGo!
+    🚀 Привет! Хочешь стабильный, надежный и быстрый VPN?
+
+    ⚡️ KaGo VPN - недорогой и безопасный сервис для своих!
     
-    ↘️ ЖМИ СЮДА И ПОПРОБУЙ БЕСПЛАТНО!
+    ЖМИ СЮДА И ПОПРОБУЙ БЕСПЛАТНО!
     { $url }
 
 
@@ -40,7 +42,7 @@ hdr-subscription = { $is_trial ->
     *[0] <b>💳 Подписка:</b>
     }
 
-hdr-plan = <b>📦 План:</b>
+hdr-plan = <b>📦 Тариф:</b>
 hdr-payment = <b>💰 Платеж:</b>
 hdr-error = <b>⚠️ Ошибка:</b>
 hdr-node = <b>🖥 Нода:</b>
@@ -53,7 +55,7 @@ frg-user =
     • <b>Имя</b>: { $user_name }
     { $personal_discount ->
     [0] { empty }
-    *[HAS] • <b>Ваша скидка</b>: { $personal_discount }%
+    *[HAS] ❤️ <b>Ваша персональная скидка</b>: { $personal_discount }%
     }
     </blockquote>
 
@@ -117,7 +119,7 @@ frg-payment-amount = { $final_amount }{ $currency } { $discount_percent ->
 
 frg-plan-snapshot =
     <blockquote>
-    • <b>План</b>: <code>{ $plan_name }</code>
+    • <b>Тариф</b>: <code>{ $plan_name }</code>
     • <b>Тип</b>: { plan-type }
     • <b>Лимит трафика</b>: { $plan_traffic_limit }
     • <b>Лимит устройств</b>: { $plan_device_limit }
@@ -126,7 +128,7 @@ frg-plan-snapshot =
 
 frg-plan-snapshot-comparison =
     <blockquote>
-    • <b>План</b>: <code>{ $previous_plan_name }</code> -> <code>{ $plan_name }</code>
+    • <b>Тариф</b>: <code>{ $previous_plan_name }</code> -> <code>{ $plan_name }</code>
     • <b>Тип</b>: { $previous_plan_type } -> { plan-type }
     • <b>Лимит трафика</b>: { $previous_plan_traffic_limit } -> { $plan_traffic_limit }
     • <b>Лимит устройств</b>: { $previous_plan_device_limit } -> { $plan_device_limit }
@@ -284,7 +286,7 @@ access-mode = { $access_mode ->
 
 audience-type = { $audience_type ->
     [ALL] Всем
-    [PLAN] По плану
+    [PLAN] По тарифу
     [SUBSCRIBED] С подпиской
     [UNSUBSCRIBED] Без подписки
     [EXPIRED] Просроченным

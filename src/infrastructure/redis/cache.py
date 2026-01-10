@@ -34,12 +34,12 @@ def redis_cache(
         @wraps(func)
         async def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
             self: Any = args[0]
-            redis: Redis = self.redis_client
+            redis: Redis = self.redis_client  # type: ignore[unresolved-attribute]
 
             # Build cache key
             key_parts = [
                 "cache",
-                prefix or func.__name__,
+                prefix or func.__name__,  # type: ignore[unresolved-attribute]
                 *map(str, args[1:]),
                 *map(str, kwargs.values()),
             ]

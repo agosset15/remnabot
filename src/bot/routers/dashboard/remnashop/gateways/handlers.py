@@ -164,7 +164,7 @@ async def on_field_input(
     input_value = message.text
 
     if selected_field in ["api_key", "secret_key"]:
-        input_value = SecretStr(input_value)  # type: ignore[assignment]
+        input_value = SecretStr(input_value)
 
     try:
         setattr(gateway.settings, selected_field, input_value)

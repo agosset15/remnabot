@@ -1,4 +1,5 @@
 import uuid
+from decimal import Decimal
 from typing import Optional
 from uuid import UUID
 
@@ -236,7 +237,7 @@ class PaymentGatewayService(BaseService):
         if pricing.is_free:
             payment_id = uuid.uuid4()
 
-            transaction = TransactionDto(payment_id=payment_id, **transaction_data)
+            transaction = TransactionDto(payment_id=payment_id, **transaction_data)  # type: ignore[invalid-argument-type]
             await self.transaction_service.create(user, transaction)
 
             logger.info(f"Payment for user '{user.telegram_id}' not created. Pricing is free")
@@ -246,7 +247,7 @@ class PaymentGatewayService(BaseService):
             amount=pricing.final_amount,
             details=details,
         )
-        transaction = TransactionDto(payment_id=payment.id, **transaction_data)
+        transaction = TransactionDto(payment_id=payment.id, **transaction_data)  # type: ignore[invalid-argument-type]
         await self.transaction_service.create(user, transaction)
 
         logger.info(f"Created transaction '{payment.id}' for user '{user.telegram_id}'")
@@ -262,7 +263,7 @@ class PaymentGatewayService(BaseService):
         i18n = self.translator_hub.get_translator_by_locale(locale=user.language)
         test_details = i18n.get("test-payment")
 
-        test_pricing = PriceDetailsDto(original_amount=2)
+        test_pricing = PriceDetailsDto(original_amount=Decimal(2))
         test_plan = PlanSnapshotDto.test()
 
         test_payment: PaymentResult = await gateway_instance.handle_create_payment(

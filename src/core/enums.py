@@ -144,9 +144,15 @@ class SystemNotificationType(UpperStrEnum):  # == SystemNotificationDto
         match self:
             case SystemNotificationType.BOT_LIFETIME | SystemNotificationType.BOT_UPDATE:
                 return topic_id_list[0]
-            case SystemNotificationType.USER_REGISTERED | SystemNotificationType.SUBSCRIPTION | SystemNotificationType.PROMOCODE_ACTIVATED | SystemNotificationType.TRIAL_GETTED:
+            case (
+                SystemNotificationType.USER_REGISTERED
+                | SystemNotificationType.SUBSCRIPTION
+                | SystemNotificationType.PROMOCODE_ACTIVATED
+                | SystemNotificationType.TRIAL_GETTED
+                | SystemNotificationType.USER_FIRST_CONNECTED
+            ):
                 return topic_id_list[1]
-            case SystemNotificationType.NODE_STATUS | SystemNotificationType.USER_FIRST_CONNECTED | SystemNotificationType.USER_HWID:
+            case SystemNotificationType.NODE_STATUS | SystemNotificationType.USER_HWID:
                 return topic_id_list[2]
 
 

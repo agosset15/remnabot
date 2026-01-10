@@ -7,7 +7,7 @@ from aiogram.types import BufferedInputFile, Message, TelegramObject
 from fluentogram import TranslatorHub
 from loguru import logger
 from PIL import Image
-from qrcode import ERROR_CORRECT_Q, QRCode  # type: ignore[attr-defined]
+from qrcode import ERROR_CORRECT_Q, QRCode
 from qrcode.image.styledpil import StyledPilImage
 from qrcode.image.styles.colormasks import ImageColorMask
 from qrcode.image.styles.moduledrawers.pil import RoundedModuleDrawer
@@ -259,7 +259,7 @@ class ReferralService(BaseService):
                 user_telegram_id=referrer.telegram_id,
                 reward=reward,
                 referred_name=user.name,
-            )  # type: ignore[no-matching-overload]
+            )
 
             logger.info(
                 f"Issued '{reward_type}' reward '{reward_amount}' for referrer "
@@ -291,7 +291,7 @@ class ReferralService(BaseService):
             module_drawer=RoundedModuleDrawer(),
             color_mask=ImageColorMask(back_color=(14, 22, 33), color_mask_path=gradient_path),
             embedded_image_path=logo_path,
-        )  # type: ignore
+        )
         qr_img: Image.Image
         if hasattr(qr_img_raw, "get_image"):
             qr_img = cast(Image.Image, qr_img_raw.get_image())

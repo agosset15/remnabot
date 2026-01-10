@@ -39,7 +39,7 @@ class PlanSnapshotDto(TrackableDto):
     @classmethod
     def from_plan(cls, plan: "PlanDto", duration_days: int) -> "PlanSnapshotDto":
         return cls(
-            id=plan.id,
+            id=plan.id,  # type: ignore[invalid-argument-type]
             name=plan.name,
             tag=plan.tag,
             type=plan.type,

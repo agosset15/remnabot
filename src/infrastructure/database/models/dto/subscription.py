@@ -42,12 +42,12 @@ class RemnaSubscriptionDto(BaseModel):
     def from_remna_user(cls, remna_user: RemnaUserDto) -> "RemnaSubscriptionDto":
         return cls(
             uuid=remna_user.uuid,
-            status=remna_user.status,
+            status=SubscriptionStatus(remna_user.status),
             expire_at=remna_user.expire_at,
-            url=remna_user.subscription_url,
+            url=remna_user.subscription_url,  # type: ignore[invalid-argument-type]
             traffic_limit=format_bytes_to_gb(remna_user.traffic_limit_bytes),
             device_limit=format_device_count(remna_user.hwid_device_limit),
-            traffic_limit_strategy=remna_user.traffic_limit_strategy,
+            traffic_limit_strategy=TrafficLimitStrategy(remna_user.traffic_limit_strategy),
             tag=remna_user.tag,
             internal_squads=[squad.uuid for squad in remna_user.active_internal_squads],
             external_squad=remna_user.external_squad_uuid,

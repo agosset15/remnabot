@@ -57,7 +57,7 @@ async def trial_subscription_task(
         created_user = await remnawave_service.create_user(user, plan=plan)
         trial_subscription = SubscriptionDto(
             user_remna_id=created_user.uuid,
-            status=created_user.status,
+            status=SubscriptionStatus(created_user.status),
             is_trial=True,
             traffic_limit=plan.traffic_limit,
             device_limit=plan.device_limit,
@@ -152,7 +152,7 @@ async def purchase_subscription_task(
             created_user = await remnawave_service.create_user(user, plan=plan)
             new_subscription = SubscriptionDto(
                 user_remna_id=created_user.uuid,
-                status=created_user.status,
+                status=SubscriptionStatus(created_user.status),
                 traffic_limit=plan.traffic_limit,
                 device_limit=plan.device_limit,
                 traffic_limit_strategy=plan.traffic_limit_strategy,
@@ -200,7 +200,7 @@ async def purchase_subscription_task(
             )
             new_subscription = SubscriptionDto(
                 user_remna_id=updated_user.uuid,
-                status=updated_user.status,
+                status=SubscriptionStatus(updated_user.status),
                 traffic_limit=plan.traffic_limit,
                 device_limit=plan.device_limit,
                 traffic_limit_strategy=plan.traffic_limit_strategy,

@@ -7,6 +7,7 @@ from fluentogram import TranslatorHub
 from loguru import logger
 from redis.asyncio import Redis
 from remnapy import RemnawaveSDK
+from remnapy.enums.users import TrafficLimitStrategy, UserStatus
 from remnapy.exceptions import ConflictError, NotFoundError
 from remnapy.models import (
     CreateUserRequestDto,
@@ -208,7 +209,7 @@ class RemnawaveService(BaseService):
                 tag=tag,
                 expire_at=expire_at,
                 hwid_device_limit=format_device_count(device_limit),
-                status=status,
+                status=UserStatus(status),
                 telegram_id=user.telegram_id,
                 traffic_limit_bytes=format_gb_to_bytes(traffic_limit),
                 traffic_limit_strategy=strategy,
@@ -333,7 +334,9 @@ class RemnawaveService(BaseService):
                 traffic_limit=remna_subscription.traffic_limit,
                 device_limit=remna_subscription.device_limit,
                 duration=-1,
-                traffic_limit_strategy=remna_subscription.traffic_limit_strategy,
+                traffic_limit_strategy=TrafficLimitStrategy(
+                    remna_subscription.traffic_limit_strategy
+                ),
                 internal_squads=remna_subscription.internal_squads,
                 external_squad=remna_subscription.external_squad,
             )
@@ -343,7 +346,7 @@ class RemnawaveService(BaseService):
 
             subscription = SubscriptionDto(
                 user_remna_id=remna_user.uuid,
-                status=status,
+                status=SubscriptionStatus(status),
                 traffic_limit=temp_plan.traffic_limit,
                 device_limit=temp_plan.device_limit,
                 traffic_limit_strategy=temp_plan.traffic_limit_strategy,
