@@ -9,7 +9,7 @@ requires-python = ">=3.12,<3.13"
 dependencies = [
     "aiogram==3.24.0",
     "aiogram-dialog~=2.4.0",
-    "alembic~=1.16.5",
+    "alembic~=1.18.0",
     "asyncpg~=0.30.0",
     "dishka~=1.6.0",
     "fastapi>=0.120.2",
@@ -23,7 +23,7 @@ dependencies = [
     "remnapy>=2.3.3",
     "taskiq[orjson]~=0.12.1",
     "taskiq-redis~=1.2.0",
-    "uvicorn>=0.38.0",
+    "uvicorn>=0.40.0",
     "cryptography>=46.0.3",
     "sqlalchemy[mypy]>=2.0.0",
     "qrcode[pil]>=8.2",
@@ -61,7 +61,7 @@ lint.select = [
     "W",
     "YTT",
 ]
-lint.ignore = ["N805"]
+lint.ignore = ["N805", "F401"]
 exclude = ["venv", ".venv", ".idea", "tests"]
 
 [tool.ty]

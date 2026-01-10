@@ -9,7 +9,7 @@ from src.bot.states import (
     DashboardAccess,
     DashboardBroadcast,
     DashboardImporter,
-    DashboardPromocodes,
+    # DashboardPromocodes,
     DashboardRemnashop,
     DashboardRemnawave,
     DashboardStatistics,
