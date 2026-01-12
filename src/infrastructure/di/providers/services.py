@@ -2,7 +2,6 @@ from dishka import AnyOf, Provider, Scope, alias, provide
 
 from src.application.common import Cryptographer, EventPublisher, EventSubscriber, Notifier
 from src.application.services import (
-    AccessService,
     CommandService,
     NotificationService,
     ReferralService,
@@ -29,5 +28,4 @@ class ServicesProvider(Provider):
         provides=AnyOf[Notifier, NotificationService],
     )
 
-    access = provide(source=AccessService, scope=Scope.REQUEST)
     referral = provide(source=ReferralService, scope=Scope.REQUEST)

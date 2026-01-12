@@ -28,10 +28,10 @@ class ThrottlingMiddleware(EventTypedMiddleware):
         container: AsyncContainer = data[CONTAINER_KEY]
         user: UserDto = data[USER_KEY]
 
-        notifier: Notifier = await container.get(Notifier)
+        notifier = await container.get(Notifier)
 
         if user.telegram_id in self.cache:
-            await notifier.notify_user(user, i18n_key="ntf-throttling-many-requests")
+            await notifier.notify_user(user, i18n_key="ntf-common.throttling")
             logger.warning(f"User '{user.telegram_id}' throttled")
             return
 

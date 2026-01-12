@@ -4,6 +4,14 @@ btn-back =
     .menu-return = ↩️ Вернуться в главное меню
     .dashboard = ↩️ Вернуться в панель управления
 
+btn-common =
+    .notification-close = ❌ Закрыть
+    .devices-empty = ⚠️ Нет привязанных устройств
+    .squad-choice = { $selected -> 
+    [1] 🔘
+    *[0] ⚪
+    } { $name }
+
 btn-remnashop =
     .release-latest = 👀 Посмотреть
     .how-upgrade = ❓ Как обновить
@@ -145,6 +153,7 @@ btn-goto =
     .invite = 👥 Пригласить
     .subscription-renew = 🔄 Продлить подписку
     .user-profile = 👤 Перейти к пользователю
+    .contact-support = 📩 Перейти в поддержку
 
 btn-promocodes =
     .list = 📃 Список промокодов
@@ -159,10 +168,10 @@ btn-access =
     .rules = ✳️ Принятие правил
     .channel = ❇️ Подписка на канал
 
-    .purchases-toggle = { $enabled ->
+    .payments-toggle = { $enabled ->
     [1] 🔘
     *[0] ⚪
-    } Покупки
+    } Платежи
 
     .registration-toggle = { $enabled ->
     [1] 🔘
@@ -336,7 +345,6 @@ btn-plans =
     *[other] { unit-day }
     }
     
-
 btn-remnawave =
     .users = 👥 Пользователи
     .hosts = 🌐 Хосты
@@ -382,43 +390,6 @@ btn-promocode =
     [1] 🟢
     *[0] 🔴
     } Статус
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-btn-notification-close = ❌ Закрыть
-btn-contact-support = 📩 Перейти в поддержку
-
-btn-squad-choice = { $selected -> 
-    [1] 🔘
-    *[0] ⚪
-    } { $name }
-
-btn-devices-empty = ⚠️ Нет привязанных устройств
 
 btn-statistics-page =
     { $target_page1 ->

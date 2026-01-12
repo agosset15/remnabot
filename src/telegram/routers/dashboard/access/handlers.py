@@ -11,7 +11,7 @@ from src.application.use_cases.settings import (
     ChangeAccessModeDto,
     ToggleConditionRequirement,
     ToggleConditionRequirementDto,
-    TogglePurchases,
+    TogglePayments,
     ToggleRegistration,
     UpdateChannelRequirement,
     UpdateChannelRequirementDto,
@@ -32,18 +32,18 @@ async def on_access_mode_select(
     change_access_mode: FromDishka[ChangeAccessMode],
 ) -> None:
     user: UserDto = dialog_manager.middleware_data[USER_KEY]
-    await change_access_mode(ChangeAccessModeDto(user, selected_mode))
+    await change_access_mode(user, ChangeAccessModeDto(selected_mode))
 
 
 @inject
-async def on_purchases_toggle(
+async def on_payments_toggle(
     callback: CallbackQuery,
     widget: Button,
     dialog_manager: DialogManager,
-    toggle_purchases: FromDishka[TogglePurchases],
+    toggle_payments: FromDishka[TogglePayments],
 ) -> None:
     user: UserDto = dialog_manager.middleware_data[USER_KEY]
-    await toggle_purchases(user)
+    await toggle_payments(user)
 
 
 @inject
@@ -66,7 +66,7 @@ async def on_condition_toggle(
 ) -> None:
     user: UserDto = dialog_manager.middleware_data[USER_KEY]
     await toggle_condition_requirement(
-        ToggleConditionRequirementDto(user, AccessRequirements(callback.data or ""))
+        user, ToggleConditionRequirementDto(AccessRequirements(callback.data or ""))
     )
 
 
@@ -80,7 +80,7 @@ async def on_rules_input(
     dialog_manager.show_mode = ShowMode.EDIT
     user: UserDto = dialog_manager.middleware_data[USER_KEY]
 
-    if await update_rules_requirement(UpdateRulesRequirementDto(user, message.text or "")):
+    if await update_rules_requirement(user, UpdateRulesRequirementDto(message.text or "")):
         await dialog_manager.switch_to(state=DashboardAccess.CONDITIONS)
 
 
@@ -93,4 +93,4 @@ async def on_channel_input(
 ) -> None:
     dialog_manager.show_mode = ShowMode.EDIT
     user: UserDto = dialog_manager.middleware_data[USER_KEY]
-    await update_channel_requirement(UpdateChannelRequirementDto(user, message.text or ""))
+    await update_channel_requirement(user, UpdateChannelRequirementDto(message.text or ""))

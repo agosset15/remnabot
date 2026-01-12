@@ -1,11 +1,4 @@
 from aiogram import Router
-from aiogram.filters import ExceptionTypeFilter
-from aiogram_dialog.api.exceptions import (
-    InvalidStackIdError,
-    OutdatedIntent,
-    UnknownIntent,
-    UnknownState,
-)
 
 from . import dashboard, extra, menu
 
@@ -28,10 +21,3 @@ def setup_routers(router: Router) -> None:
     ]
 
     router.include_routers(*routers)
-
-
-def setup_error_handler(router: Router) -> None:
-    router.errors.register(
-        extra.lost_context.on_lost_context,
-        ExceptionTypeFilter(UnknownIntent, UnknownState, OutdatedIntent, InvalidStackIdError),
-    )

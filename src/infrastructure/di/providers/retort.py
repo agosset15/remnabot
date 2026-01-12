@@ -11,7 +11,7 @@ from src.application.dto import (
     ReferralSettingsDto,
     RequirementSettingsDto,
 )
-from src.core.enums import ReferralLevel, UserRole
+from src.core.enums import ReferralLevel, Role
 from src.infrastructure.redis.key_builder import StorageKey, serialize_storage_key
 
 
@@ -41,7 +41,7 @@ class RetortProvider(Provider):
     def get_conversion_retort(self, retort: Retort) -> ConversionRetort:
         conversion_retort = ConversionRetort(
             recipe=[
-                coercer(UserRole, UserRole, lambda v: UserRole(v)),
+                coercer(Role, Role, lambda v: Role(v)),
                 #
                 coercer(dict, PlanSnapshotDto, retort.get_loader(PlanSnapshotDto)),
                 coercer(dict, AccessSettingsDto, retort.get_loader(AccessSettingsDto)),

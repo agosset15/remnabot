@@ -4,35 +4,35 @@ from aiogram_dialog import DialogManager
 from dishka import FromDishka
 from dishka.integrations.aiogram_dialog import inject
 
-from src.application.services import AccessService
-from src.application.use_cases.settings import GetSettings
+from src.application.common.dao import SettingsDao
+from src.core.enums import AccessMode
 
 
 @inject
 async def access_getter(
     dialog_manager: DialogManager,
-    access_service: FromDishka[AccessService],
-    get_settings: FromDishka[GetSettings],
+    settings_dao: FromDishka[SettingsDao],
     **kwargs: Any,
 ) -> dict[str, Any]:
-    settings = await get_settings()
-    modes = await access_service.get_available_access_modes()
+    settings = await settings_dao.get()
+    current_access_mode = settings.access.mode
+    available_modes = [mode for mode in AccessMode if mode != current_access_mode]
 
     return {
-        "purchases_allowed": settings.access.purchases_allowed,
+        "payments_allowed": settings.access.payments_allowed,
         "registration_allowed": settings.access.registration_allowed,
-        "access_mode": settings.access.mode,
-        "modes": modes,
+        "access_mode": current_access_mode,
+        "modes": available_modes,
     }
 
 
 @inject
 async def conditions_getter(
     dialog_manager: DialogManager,
-    get_settings: FromDishka[GetSettings],
+    settings_dao: FromDishka[SettingsDao],
     **kwargs: Any,
 ) -> dict[str, Any]:
-    settings = await get_settings()
+    settings = await settings_dao.get()
 
     return {
         "rules": settings.requirements.rules_required,

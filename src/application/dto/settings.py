@@ -29,7 +29,7 @@ def get_default_notifications() -> dict[str, bool]:
 class AccessSettingsDto(TrackableMixin):
     mode: AccessMode = AccessMode.PUBLIC
     registration_allowed: bool = True
-    purchases_allowed: bool = True
+    payments_allowed: bool = True
 
     def can_register(self) -> bool:
         if self.mode == AccessMode.RESTRICTED:

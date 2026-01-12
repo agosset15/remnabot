@@ -9,25 +9,29 @@ from dishka.integrations.aiogram_dialog import inject
 from loguru import logger
 
 from src.application.common import TranslatorRunner
+from src.application.common.policy import Permission, PermissionPolicy
 from src.application.dto import UserDto
-from src.application.use_cases.settings import GetSettings
 from src.core.config import AppConfig
+from src.core.exceptions import PermissionDeniedError
 from src.infrastructure.taskiq.tasks.test import send_error_task
 from src.infrastructure.taskiq.tasks.update import check_bot_update
-from src.telegram.filters import RootFilter
 
 router = Router(name=__name__)
 
 
+# TODO: ONLY ADMIN
 @inject
-@router.message(Command("test"), RootFilter())
+@router.message(Command("test"))
 async def on_test_command(
     message: Message,
     user: UserDto,
     config: AppConfig,
-    get_settings: FromDishka[GetSettings],
 ) -> None:
+    if not PermissionPolicy.has_permission(user, Permission.COMMAND_TEST):
+        raise PermissionDeniedError
+
     logger.info(f"{user.log} Test command executed")
+
     # raise UnknownState
 
 
@@ -38,4 +42,4 @@ async def show_dev_popup(
     dialog_manager: DialogManager,
     i18n: FromDishka[TranslatorRunner],
 ) -> None:
-    await callback.answer(text=i18n.get("development"), show_alert=True)
+    await callback.answer(text=i18n.get("layout.development"), show_alert=True)

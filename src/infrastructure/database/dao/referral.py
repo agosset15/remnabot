@@ -132,18 +132,18 @@ class ReferralDaoImpl(ReferralDao):
 
     async def get_total_rewards_amount(
         self,
-        user_id: int,
+        telegram_id: int,
         reward_type: ReferralRewardType,
     ) -> int:
         stmt = (
             select(func.sum(ReferralReward.amount))
-            .where(ReferralReward.user_telegram_id == user_id)
+            .where(ReferralReward.user_telegram_id == telegram_id)
             .where(ReferralReward.type == reward_type)
             .where(ReferralReward.is_issued == True)  # noqa: E712
         )
         total = await self.session.scalar(stmt) or 0
 
         logger.debug(
-            f"Total rewards amount for user '{user_id}' with type '{reward_type}' is '{total}'"
+            f"Total rewards amount for user '{telegram_id}' with type '{reward_type}' is '{total}'"
         )
         return int(total)

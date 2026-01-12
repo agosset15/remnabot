@@ -15,7 +15,7 @@ from .settings import (
 )
 from .subscription import SubscriptionDto
 from .transaction import PriceDetailsDto, TransactionDto
-from .user import UserDto
+from .user import TempUserDto, UserDto
 
 __all__ = [
     "BaseDto",
@@ -43,5 +43,6 @@ __all__ = [
     "SubscriptionDto",
     "PriceDetailsDto",
     "TransactionDto",
+    "TempUserDto",
     "UserDto",
 ]

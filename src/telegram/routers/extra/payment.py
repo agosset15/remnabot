@@ -32,7 +32,7 @@ async def on_successful_payment(
     if not payment:
         return
 
-    if user.is_dev:
+    if user.is_owner:
         logger.info(f"{user.log} Refunding test payment '{payment.telegram_payment_charge_id}'")
         await bot.refund_star_payment(
             user_id=user.telegram_id,

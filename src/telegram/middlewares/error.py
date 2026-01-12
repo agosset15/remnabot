@@ -10,13 +10,16 @@ from aiogram_dialog.api.exceptions import (
     UnknownState,
 )
 from dishka import AsyncContainer
+from loguru import logger
 
-from src.application.common import EventPublisher
+from src.application.common import EventPublisher, Notifier
+from src.application.dto.user import TempUserDto
 from src.application.events import ErrorEvent
+from src.application.use_cases.redirect import RedirectMenu, RedirectMenuDto
 from src.core.config import AppConfig
 from src.core.constants import CONFIG_KEY, CONTAINER_KEY
 from src.core.enums import MiddlewareEventType
-from src.core.exceptions import PermissionDenied
+from src.core.exceptions import MenuRenderError, PermissionDeniedError
 
 from .base import EventTypedMiddleware
 
@@ -31,6 +34,24 @@ class ErrorMiddleware(EventTypedMiddleware):
         data: dict[str, Any],
     ) -> Any:
         event = cast(AiogramErrorEvent, event)
+        aiogram_user: Optional[AiogramUser] = self._get_aiogram_user(data)
+        config: AppConfig = data[CONFIG_KEY]
+        container: AsyncContainer = data[CONTAINER_KEY]
+
+        event_publisher = await container.get(EventPublisher)
+        notifier = await container.get(Notifier)
+        redirect_menu = await container.get(RedirectMenu)
+
+        if aiogram_user:
+            if isinstance(event.exception, PermissionDeniedError):
+                await notifier.notify_user(
+                    TempUserDto.from_aiogram(aiogram_user),
+                    i18n_key="ntf-error.permission-denied",
+                )
+                return
+
+            if not isinstance(event.exception, MenuRenderError):
+                await redirect_menu.system(RedirectMenuDto(aiogram_user.id))
 
         if isinstance(
             event.exception,
@@ -43,21 +64,6 @@ class ErrorMiddleware(EventTypedMiddleware):
         ):
             return await handler(event, data)
 
-        aiogram_user: Optional[AiogramUser] = self._get_aiogram_user(data)
-        config: AppConfig = data[CONFIG_KEY]
-
-        container: AsyncContainer = data[CONTAINER_KEY]
-        event_publisher: EventPublisher = await container.get(EventPublisher)
-
-        # TODO: redirect to main menu (only role=user)
-        # if aiogram_user:
-        #     if user and not user.is_dev and not isinstance(error, MenuRenderingError):
-        #         await redirect_to_main_menu_task.kiq(aiogram_user.id)
-
-        if isinstance(event.exception, PermissionDenied):
-            # TODO: ban user
-            pass
-
         error_event = ErrorEvent(
             **config.build.data,
             #
@@ -69,3 +75,4 @@ class ErrorMiddleware(EventTypedMiddleware):
         )
 
         await event_publisher.publish(error_event)
+        logger.exception(event.exception)

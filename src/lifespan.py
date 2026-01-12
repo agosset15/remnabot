@@ -7,6 +7,7 @@ from dishka import AsyncContainer, Scope
 from fastapi import FastAPI
 from loguru import logger
 
+from src.application.common.dao import SettingsDao
 from src.application.events import (
     BotShutdownEvent,
     BotStartupEvent,
@@ -14,8 +15,9 @@ from src.application.events import (
     WebhookErrorEvent,
 )
 from src.application.services import CommandService, WebhookService
-from src.application.use_cases.settings import GetSettings
 from src.core.config import AppConfig
+from src.core.utils.i18n_helpers import i18n_format_seconds
+from src.core.utils.time import get_uptime
 from src.infrastructure.services import EventBusImpl
 from src.web.endpoints import TelegramWebhookEndpoint
 
@@ -31,13 +33,12 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     event_bus.autodiscover()
 
     async with container(scope=Scope.REQUEST) as startup_container:
-        config: AppConfig = await startup_container.get(AppConfig)
-        get_settings: GetSettings = await startup_container.get(GetSettings)
-        webhook_service: WebhookService = await startup_container.get(WebhookService)
-        command_service: CommandService = await startup_container.get(CommandService)
+        config = await startup_container.get(AppConfig)
+        settings_dao = await startup_container.get(SettingsDao)
+        webhook_service = await startup_container.get(WebhookService)
+        command_service = await startup_container.get(CommandService)
 
-        settings = await get_settings()
-
+        settings = await settings_dao.get()
         allowed_updates = dispatcher.resolve_used_update_types()
         webhook_info: WebhookInfo = await webhook_service.setup_webhook(allowed_updates)
 
@@ -52,7 +53,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     await telegram_webhook_endpoint.startup()
 
-    bot: Bot = await container.get(Bot)
+    bot = await container.get(Bot)
     bot_info = await bot.get_me()
     states: dict[Optional[bool], str] = {True: "Enabled", False: "Disabled", None: "Unknown"}
 
@@ -76,7 +77,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         Inline Mode  - {states[bot_info.supports_inline_queries]}
         <cyan>------------------------</>
         <yellow>Bot in access mode: '{settings.access.mode}'</>
-        <yellow>Purchases allowed: '{settings.access.purchases_allowed}'</>
+        <yellow>Payments allowed: '{settings.access.payments_allowed}'</>
         <yellow>Registration allowed: '{settings.access.registration_allowed}'</>
         """  # noqa: W605
     )
@@ -84,7 +85,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     bot_startup_event = BotStartupEvent(
         **config.build.data,
         access_mode=settings.access.mode,
-        purchases_allowed=settings.access.purchases_allowed,
+        payments_allowed=settings.access.payments_allowed,
         registration_allowed=settings.access.registration_allowed,
     )
     await event_bus.publish(bot_startup_event)
@@ -100,7 +101,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     yield
 
-    bot_shutdown_event = BotShutdownEvent()
+    bot_shutdown_event = BotShutdownEvent(
+        **config.build.data,
+        uptime=i18n_format_seconds(get_uptime()),
+    )
     await event_bus.publish(bot_shutdown_event)
 
     await event_bus.shutdown()

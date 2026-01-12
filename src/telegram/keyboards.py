@@ -7,7 +7,7 @@ from aiogram_dialog.widgets.kbd import Row, Start, Url, WebApp
 from aiogram_dialog.widgets.text import Format
 from magic_filter import F
 
-from src.core.constants import GOTO_PREFIX, PURCHASE_PREFIX, REPOSITORY, T_ME
+from src.core.constants import GOTO_PREFIX, PAYMENT_PREFIX, REPOSITORY, T_ME
 from src.core.enums import PurchaseType
 from src.telegram.states import DashboardUser, MainMenu, Subscription
 from src.telegram.utils import username_to_url
@@ -84,7 +84,7 @@ def get_renew_keyboard() -> InlineKeyboardMarkup:
     builder.row(
         InlineKeyboardButton(
             text="btn-goto-subscription-renew",
-            callback_data=f"{GOTO_PREFIX}{PURCHASE_PREFIX}{PurchaseType.RENEW}",
+            callback_data=f"{GOTO_PREFIX}{PAYMENT_PREFIX}{PurchaseType.RENEW}",
         ),
     )
     return builder.as_markup()
@@ -95,7 +95,7 @@ def get_buy_keyboard() -> InlineKeyboardMarkup:
     builder.row(
         InlineKeyboardButton(
             text="btn-goto-subscription",
-            callback_data=f"{GOTO_PREFIX}{PURCHASE_PREFIX}{PurchaseType.NEW}",
+            callback_data=f"{GOTO_PREFIX}{PAYMENT_PREFIX}{PurchaseType.NEW}",
         ),
     )
     return builder.as_markup()

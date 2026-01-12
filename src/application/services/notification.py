@@ -1,6 +1,6 @@
 import asyncio
 import traceback
-from typing import Any, Callable, Optional, Sequence
+from typing import Any, Callable, Optional, Sequence, Union
 
 from aiogram import Bot
 from aiogram.exceptions import TelegramForbiddenError
@@ -17,11 +17,12 @@ from loguru import logger
 
 from src.application.common import Notifier, TranslatorHub
 from src.application.common.dao import SettingsDao, UserDao
-from src.application.dto import MessagePayloadDto, SettingsDto, UserDto
+from src.application.dto import MessagePayloadDto, SettingsDto, TempUserDto, UserDto
 from src.application.events import ErrorEvent, SystemEvent
 from src.core.config import AppConfig
-from src.core.enums import Locale, UserRole
+from src.core.enums import Locale, Role
 from src.core.types import AnyKeyboard
+from src.infrastructure.common.safe_task import create_safe_task
 from src.infrastructure.services.event_bus import on_event
 from src.telegram.states import Notification
 
@@ -43,7 +44,7 @@ class NotificationService(Notifier):
 
     async def notify_user(
         self,
-        user: UserDto,
+        user: Union[TempUserDto, UserDto],
         payload: Optional[MessagePayloadDto] = None,
         i18n_key: Optional[str] = None,
     ) -> Optional[Message]:
@@ -60,15 +61,17 @@ class NotificationService(Notifier):
     async def notify_admins(
         self,
         payload: MessagePayloadDto,
-        roles: list[UserRole] = [UserRole.ROOT, UserRole.DEV, UserRole.ADMIN],
+        roles: list[Role] = [Role.OWNER, Role.DEV, Role.ADMIN],
     ) -> None:
         users = await self.user_dao.filter_by_role(roles)
 
         if not users:
-            logger.warning(f"No users with roles '{roles}' found for notification, using fallback")
-            users.append(UserDto.temp_root(telegram_id=self.config.bot.dev_id))
+            logger.warning(
+                f"No users with roles '{roles}' found for notification, using 'owner_id'"
+            )
+            temp_owner = [TempUserDto.as_temp_owner(telegram_id=self.config.bot.owner_id)]
 
-        asyncio.create_task(self._broadcast(users, payload))
+        create_safe_task(self._broadcast(users or temp_owner, payload))
 
     @on_event(SystemEvent)
     async def on_system_event(self, event: SystemEvent) -> None:
@@ -103,7 +106,7 @@ class NotificationService(Notifier):
 
         await self.notify_admins(
             event.as_payload(error_file, error_type, error_message),
-            roles=[UserRole.ROOT, UserRole.DEV],
+            roles=[Role.OWNER, Role.DEV],
         )
 
     async def delete_notification(self, chat_id: int, message_id: int) -> None:
@@ -126,14 +129,27 @@ class NotificationService(Notifier):
         except Exception as e:
             logger.error(f"Failed to remove keyboard from '{message_id}': {e}")
 
-    async def _broadcast(self, users: Sequence[UserDto], payload: MessagePayloadDto) -> None:
+    async def _broadcast(
+        self,
+        users: Sequence[Union[TempUserDto, UserDto]],
+        payload: MessagePayloadDto,
+    ) -> None:
         logger.debug(f"Starting broadcast to '{len(users)}' users")
-        await asyncio.gather(
+
+        results = await asyncio.gather(
             *(self._send_message(user, payload) for user in users),
             return_exceptions=True,
         )
 
-    async def _send_message(self, user: UserDto, payload: MessagePayloadDto) -> Optional[Message]:
+        for user, result in zip(users, results):
+            if isinstance(result, Exception):
+                logger.error(f"Broadcast failed for user '{user.telegram_id}': {result}")
+
+    async def _send_message(
+        self,
+        user: Union[TempUserDto, UserDto],
+        payload: MessagePayloadDto,
+    ) -> Optional[Message]:
         reply_markup = self._prepare_reply_markup(
             payload.reply_markup,
             payload.disable_default_markup,
@@ -247,7 +263,7 @@ class NotificationService(Notifier):
         return translated_markup
 
     def _get_close_notification_button(self, locale: Locale) -> InlineKeyboardButton:
-        text = self._get_translated_text(locale, "btn-notification-close")
+        text = self._get_translated_text(locale, "btn-common.notification-close")
         return InlineKeyboardButton(text=text, callback_data=Notification.CLOSE.state)
 
     def _get_default_keyboard(self, button: InlineKeyboardButton) -> InlineKeyboardMarkup:

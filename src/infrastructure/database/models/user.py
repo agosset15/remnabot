@@ -3,7 +3,7 @@ from typing import Optional
 from sqlalchemy import BigInteger, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from src.core.enums import Locale, UserRole
+from src.core.enums import Locale, Role
 
 from .base import BaseSql
 from .timestamp import TimestampMixin
@@ -19,7 +19,7 @@ class User(BaseSql, TimestampMixin):
     referral_code: Mapped[str] = mapped_column(String(64), index=True, unique=True)
 
     name: Mapped[str] = mapped_column(String(128))
-    role: Mapped[UserRole] = mapped_column(index=True)
+    role: Mapped[Role] = mapped_column(index=True)
     language: Mapped[Locale]
 
     personal_discount: Mapped[int]

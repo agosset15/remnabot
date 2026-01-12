@@ -79,7 +79,7 @@ class BroadcastDaoImpl(BroadcastDao):
     async def update_message_status(
         self,
         task_id: UUID,
-        user_telegram_id: int,
+        telegram_id: int,
         status: BroadcastMessageStatus,
         message_id: Optional[int] = None,
     ) -> None:
@@ -90,13 +90,12 @@ class BroadcastDaoImpl(BroadcastDao):
         stmt = (
             update(BroadcastMessage)
             .where(BroadcastMessage.broadcast_id == broadcast_id_stmt)
-            .where(BroadcastMessage.user_telegram_id == user_telegram_id)
+            .where(BroadcastMessage.user_telegram_id == telegram_id)
             .values(status=status, message_id=message_id)
         )
         await self.session.execute(stmt)
         logger.debug(
-            f"Message status for user '{user_telegram_id}' "
-            f"in task '{task_id}' updated to '{status}'"
+            f"Message status for user '{telegram_id}' in task '{task_id}' updated to '{status}'"
         )
 
     async def increment_stats(self, task_id: UUID, success: bool = True) -> None:

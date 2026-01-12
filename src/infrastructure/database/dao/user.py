@@ -17,14 +17,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.application.common.dao import UserDao
 from src.application.dto import UserDto
 from src.core.constants import TTL_1H, TTL_6H
-from src.core.enums import UserRole
+from src.core.enums import Role
 from src.infrastructure.database.models import User
 from src.infrastructure.redis.cache import invalidate_cache, provide_cache
 from src.infrastructure.redis.keys import (
     USER_COUNT_PREFIX,
     USER_LIST_PREFIX,
+    RoleKey,
     UserCacheKey,
-    UserRoleKey,
 )
 
 
@@ -169,8 +169,8 @@ class UserDaoImpl(UserDao):
         logger.debug(f"Total users count requested: '{total}'")
         return total
 
-    @provide_cache(ttl=TTL_1H, key_builder=UserRoleKey)
-    async def filter_by_role(self, role: Union[UserRole, list[UserRole]]) -> list[UserDto]:
+    @provide_cache(ttl=TTL_1H, key_builder=RoleKey)
+    async def filter_by_role(self, role: Union[Role, list[Role]]) -> list[UserDto]:
         stmt = select(User)
 
         if isinstance(role, list):

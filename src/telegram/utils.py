@@ -1,10 +1,13 @@
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Callable, Optional
 from urllib.parse import quote
 
 from aiogram_dialog import DialogManager
+from aiogram_dialog.widgets.common.when import Whenable
 
-from src.core.constants import T_ME
+from src.application.common.policy import Permission, PermissionPolicy
+from src.application.dto import UserDto
+from src.core.constants import T_ME, USER_KEY
 from src.core.utils.time import datetime_now
 
 
@@ -24,3 +27,15 @@ def username_to_url(username: str, text: Optional[str]) -> str:
     clean_username = username.lstrip("@")
     encoded_text = quote(text or "")
     return f"{T_ME}{clean_username}?text={encoded_text}"
+
+
+def require_permission(permission: Permission) -> Callable:
+    def checker(
+        data: dict,
+        widget: Whenable,
+        manager: DialogManager,
+    ) -> bool:
+        user: UserDto = manager.middleware_data[USER_KEY]
+        return PermissionPolicy.has_permission(user, permission)
+
+    return checker

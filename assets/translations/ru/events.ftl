@@ -1,4 +1,3 @@
-
 event-error =
     #ErrorEvent
 
@@ -54,7 +53,7 @@ event-bot-startup =
     <b>🔓 Доступность:</b>
     <blockquote>
     • <b>Режим</b>: { access-mode }
-    • <b>Покупки</b>: { $purchases_allowed ->
+    • <b>Платежи</b>: { $payments_allowed ->
     [0] запрещены
     *[1] разрешены
     }
@@ -68,6 +67,12 @@ event-bot-shutdown =
     #BotShutdownEvent
 
     <b>🔅 Событие: Бот остановлен!</b>
+
+    { frg-build-info }
+
+    <blockquote>
+    • <b>Аптайм</b>: { $uptime }
+    </blockquote>
 
 event-bot-update =
     #BotUpdateEvent
@@ -100,13 +105,6 @@ event-user-registered =
     }
     </blockquote>
     }
-    
-
-
-
-
-
-
     
 event-subscription-trial =
     #TrialGettedEvent
@@ -184,28 +182,6 @@ event-node-traffic =
 
     { hdr-node }
     { frg-node-info }
-
-# event-user-sync =
-#     #UserEvent
-
-#     <b>🔅 Событие: Синхронизация пользователя!</b>
-
-#     { hdr-user }
-#     { frg-user-info }
-
-#     { hdr-subscription }
-#     { frg-subscription-details }
-
-# event-user-deleted =
-#     #UserEvent
-
-#     <b>🔅 Событие: Пользователь удален из панели!</b>
-
-#     { hdr-user }
-#     { frg-user-info }
-
-#     { hdr-subscription }
-#     { frg-subscription-details }
 
 event-user-first-connected =
     #UserEvent

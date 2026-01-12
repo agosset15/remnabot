@@ -3,7 +3,7 @@ from typing import Optional
 
 from src.application.common import Interactor
 from src.application.common.dao import PlanDao, SettingsDao, SubscriptionDao
-from src.application.common.uow import UnitOfWork
+from src.application.common.policy import Permission
 from src.application.dto import PlanDto, SubscriptionDto, UserDto
 from src.application.services import ReferralService
 
@@ -17,35 +17,33 @@ class MenuDataDto:
     referral_link: str
 
 
-class GetMenuData(Interactor[UserDto, MenuDataDto]):
+class GetMenuData(Interactor[None, MenuDataDto]):
+    required_permission: Permission = Permission.PUBLIC
+
     def __init__(
         self,
         plan_dao: PlanDao,
         settings_dao: SettingsDao,
         subscription_dao: SubscriptionDao,
         referral_service: ReferralService,
-        uow: UnitOfWork,
     ) -> None:
         self.plan_dao = plan_dao
         self.settings_dao = settings_dao
         self.subscription_dao = subscription_dao
         self.referral_service = referral_service
-        self.uow = uow
 
-    async def __call__(self, data: UserDto) -> MenuDataDto:
-        async with self.uow:
-            has_used_trial = await self.subscription_dao.has_used_trial(data.telegram_id)
-            current_subscription = await self.subscription_dao.get_current(data.telegram_id)
+    async def _execute(self, actor: UserDto, data: None) -> MenuDataDto:
+        has_used_trial = await self.subscription_dao.has_used_trial(actor.telegram_id)
+        current_subscription = await self.subscription_dao.get_current(actor.telegram_id)
 
-            if has_used_trial:
-                plan = None
-            else:
-                plan = await self.plan_dao.get_trial_available_for_user(data.telegram_id)
+        plan = None
+        if not has_used_trial:
+            plan = await self.plan_dao.get_trial_available_for_user(actor.telegram_id)
 
-            settings = await self.settings_dao.get()
-            is_referral_enabled = settings.referral.enable
+        settings = await self.settings_dao.get()
+        is_referral_enabled = settings.referral.enable
 
-        referral_link = await self.referral_service.get_referral_link(data.referral_code)
+        referral_link = await self.referral_service.get_referral_link(actor.referral_code)
 
         return MenuDataDto(
             is_referral_enabled=is_referral_enabled,

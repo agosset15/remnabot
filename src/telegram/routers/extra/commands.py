@@ -6,6 +6,7 @@ from dishka.integrations.aiogram_dialog import inject
 from loguru import logger
 
 from src.application.common import Notifier, TranslatorRunner
+from src.application.common.dao import SettingsDao
 from src.application.dto import MessagePayloadDto, UserDto
 from src.core.config import AppConfig
 from src.core.enums import Command
@@ -25,14 +26,35 @@ async def on_paysupport_command(
 ) -> None:
     logger.info(f"{user.log} Called '/paysupport' command")
 
-    text = i18n.get("contact-support-paysupport")
+    text = i18n.get("message.paysupport")
     support_username = config.bot.support_username.get_secret_value()
 
     await notifier.notify_user(
         user=user,
         payload=MessagePayloadDto(
-            i18n_key="ntf-command-paysupport",
+            i18n_key="ntf-command.paysupport",
             reply_markup=get_contact_support_keyboard(support_username, text),
+            delete_after=False,
+        ),
+    )
+
+
+@inject
+@router.message(FilterCommand(Command.RULES.value.command))
+async def on_rules_command(
+    message: Message,
+    user: UserDto,
+    notifier: FromDishka[Notifier],
+    settings_dao: FromDishka[SettingsDao],
+) -> None:
+    logger.info(f"{user.log} Called '/rules' command")
+
+    settings = await settings_dao.get()
+    await notifier.notify_user(
+        user=user,
+        payload=MessagePayloadDto(
+            i18n_key="ntf-command.rules",
+            i18n_kwargs={"url": settings.requirements.rules_link.get_secret_value()},
             delete_after=False,
         ),
     )
@@ -49,13 +71,13 @@ async def on_help_command(
 ) -> None:
     logger.info(f"{user.log} Called '/help' command")
 
-    text = i18n.get("contact-support-help")
+    text = i18n.get("message.help")
     support_username = config.bot.support_username.get_secret_value()
 
     await notifier.notify_user(
         user=user,
         payload=MessagePayloadDto(
-            i18n_key="ntf-command-help",
+            i18n_key="ntf-command.help",
             reply_markup=get_contact_support_keyboard(support_username, text),
             delete_after=False,
         ),

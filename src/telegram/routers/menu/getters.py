@@ -31,20 +31,19 @@ async def menu_getter(
         menu_data = await get_menu_data(user)
 
         support_username = config.bot.support_username.get_secret_value()
-        support_url = username_to_url(support_username, i18n.get("contact-support-help"))
+        support_url = username_to_url(support_username, i18n.get("message.help"))
 
         data: dict[str, Any] = {
             # user
             "telegram_id": user.telegram_id,
             "name": user.name,
             "personal_discount": user.personal_discount,
-            "dashboard_accessible": user.is_privileged,
             # ui / config
             "is_mini_app": config.bot.is_mini_app,
             "support_url": support_url,
             # referral
             "referral_enabled": menu_data.is_referral_enabled,
-            "invite_url": i18n.get("referral-invite-message", url=menu_data.referral_link),
+            "invite_url": i18n.get("message.referral-invite", url=menu_data.referral_link),
             # defaults
             "has_subscription": False,
             "connectable": False,
@@ -89,5 +88,5 @@ async def menu_getter(
 
         return data
 
-    except Exception as exception:
-        raise MenuRenderError(str(exception)) from exception
+    except Exception as e:
+        raise MenuRenderError(str(e)) from e

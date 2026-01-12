@@ -153,16 +153,18 @@ class MediaType(UpperStrEnum):
     DOCUMENT = auto()
 
 
-class UserRole(IntEnum):
+class Role(IntEnum):
     USER = auto()
+    PREVIEW = auto()
     ADMIN = auto()
     DEV = auto()
-    ROOT = auto()
+    OWNER = auto()
+    SYSTEM = auto()
 
     def __str__(self) -> str:
         return self.name
 
-    def includes(self, other: "UserRole") -> bool:
+    def includes(self, other: "Role") -> bool:
         return self >= other
 
 
@@ -228,9 +230,10 @@ class Currency(UpperStrEnum):
 
 
 class Command(Enum):
-    START = BotCommand(command="start", description="cmd-start")
-    PAYSUPPORT = BotCommand(command="paysupport", description="cmd-paysupport")
-    HELP = BotCommand(command="help", description="cmd-help")
+    START = BotCommand(command="start", description="command.start")
+    PAYSUPPORT = BotCommand(command="paysupport", description="command.paysupport")
+    RULES = BotCommand(command="rules", description="command.rules")
+    HELP = BotCommand(command="help", description="command.help")
 
 
 # https://yookassa.ru/developers/payment-acceptance/receipts/54fz/yoomoney/parameters-values#vat-codes

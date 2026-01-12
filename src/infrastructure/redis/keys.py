@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Union
 
-from src.core.enums import UserRole
+from src.core.enums import Role
 
 from .key_builder import StorageKey
 
@@ -19,8 +19,8 @@ class UserCacheKey(StorageKey, prefix="user"):
 
 
 @dataclass(frozen=True)
-class UserRoleKey(StorageKey, prefix="user_list"):
-    role: Union[UserRole, tuple[UserRole, ...]]
+class RoleKey(StorageKey, prefix="user_list"):
+    role: Union[Role, tuple[Role, ...]]
 
 
 @dataclass(frozen=True)
@@ -34,4 +34,4 @@ class LatestNotifiedVersionKey(StorageKey, prefix="latest_notified_version"):
     version: str
 
 
-class WaitlistKey(StorageKey, prefix="waitlist"): ...
+class PaymentWaitlistKey(StorageKey, prefix="payment_waitlist"): ...

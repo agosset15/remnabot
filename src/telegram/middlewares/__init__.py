@@ -1,5 +1,6 @@
 from aiogram import Router
 
+from .access import AccessMiddleware
 from .base import EventTypedMiddleware
 from .error import ErrorMiddleware
 from .garbage import GarbageMiddleware
@@ -13,6 +14,7 @@ __all__ = [
 
 def setup_middlewares(router: Router) -> None:
     outer_middlewares: list[EventTypedMiddleware] = [
+        AccessMiddleware(),
         ErrorMiddleware(),
         UserMiddleware(),
         ThrottlingMiddleware(),

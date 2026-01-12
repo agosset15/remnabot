@@ -1,3 +1,5 @@
+from typing import Optional
+
 from aiogram import Router
 from aiogram.filters import JOIN_TRANSITION, LEAVE_TRANSITION, ChatMemberUpdatedFilter
 from aiogram.types import ChatMemberUpdated
@@ -14,16 +16,22 @@ router = Router(name=__name__)
 @router.my_chat_member(ChatMemberUpdatedFilter(JOIN_TRANSITION))
 async def on_unblocked(
     member: ChatMemberUpdated,
-    user: UserDto,
+    user: Optional[UserDto],
     set_bot_blocked_status: FromDishka[SetBotBlockedStatus],
 ) -> None:
-    await set_bot_blocked_status(SetBotBlockedStatusDto(user, False))
+    if not user:
+        return
+
+    await set_bot_blocked_status.system(SetBotBlockedStatusDto(user.telegram_id, False))
 
 
 @router.my_chat_member(ChatMemberUpdatedFilter(LEAVE_TRANSITION))
 async def on_blocked(
     member: ChatMemberUpdated,
-    user: UserDto,
+    user: Optional[UserDto],
     set_bot_blocked_status: FromDishka[SetBotBlockedStatus],
 ) -> None:
-    await set_bot_blocked_status(SetBotBlockedStatusDto(user, True))
+    if not user:
+        return
+
+    await set_bot_blocked_status.system(SetBotBlockedStatusDto(user.telegram_id, True))

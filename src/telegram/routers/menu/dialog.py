@@ -11,10 +11,12 @@ from aiogram_dialog.widgets.kbd import (
 from aiogram_dialog.widgets.text import Format
 from magic_filter import F
 
-from src.core.constants import PURCHASE_PREFIX
+from src.application.common.policy import Permission
+from src.core.constants import PAYMENT_PREFIX
 from src.core.enums import BannerName
 from src.telegram.keyboards import connect_buttons
 from src.telegram.states import Dashboard, MainMenu, Subscription
+from src.telegram.utils import require_permission
 from src.telegram.widgets import Banner, I18nFormat, IgnoreUpdate
 from src.telegram.window import Window
 
@@ -50,7 +52,7 @@ menu = Window(
         ),
         Start(
             text=I18nFormat("btn-menu.subscription"),
-            id=f"{PURCHASE_PREFIX}subscription",
+            id=f"{PAYMENT_PREFIX}subscription",
             state=Subscription.MAIN,
         ),
     ),
@@ -82,7 +84,7 @@ menu = Window(
             id="dashboard",
             state=Dashboard.MAIN,
             mode=StartMode.RESET_STACK,
-            when=F["dashboard_accessible"],
+            when=require_permission(Permission.VIEW_DASHBOARD),
         ),
     ),
     # MessageInput(func=on_user_search),

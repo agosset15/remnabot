@@ -56,14 +56,12 @@ class TransactionDaoImpl(TransactionDao):
         logger.debug(f"Transaction '{payment_id}' not found")
         return None
 
-    async def get_by_user(self, user_telegram_id: int) -> Sequence[TransactionDto]:
-        stmt = select(Transaction).where(Transaction.user_telegram_id == user_telegram_id)
+    async def get_by_user(self, telegram_id: int) -> Sequence[TransactionDto]:
+        stmt = select(Transaction).where(Transaction.user_telegram_id == telegram_id)
         result = await self.session.scalars(stmt)
         db_transactions = list(result.all())
 
-        logger.debug(
-            f"Retrieved '{len(db_transactions)}' transactions for user '{user_telegram_id}'"
-        )
+        logger.debug(f"Retrieved '{len(db_transactions)}' transactions for user '{telegram_id}'")
         return self._convert_to_dto_list(db_transactions)
 
     async def get_all(self, limit: int = 100, offset: int = 0) -> Sequence[TransactionDto]:

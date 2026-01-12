@@ -1,10 +1,31 @@
 from dataclasses import dataclass
 from typing import Optional, Self
 
-from src.core.enums import Locale, UserRole
+from aiogram.types import User as AiogramUser
+
+from src.core.enums import Locale, Role
 from src.core.utils.time import datetime_now
 
 from .base import BaseDto, TimestampMixin, TrackableMixin
+
+
+@dataclass(kw_only=True)
+class TempUserDto:
+    telegram_id: int
+    name: str
+    role: Role = Role.USER
+    language: Locale = Locale.EN
+
+    @classmethod
+    def from_aiogram(cls, aiogram_user: AiogramUser) -> Self:
+        return cls(
+            telegram_id=aiogram_user.id,
+            name=aiogram_user.full_name,
+        )
+
+    @classmethod
+    def as_temp_owner(cls, telegram_id: int) -> Self:
+        return cls(telegram_id=telegram_id, name="OWNER", role=Role.OWNER)
 
 
 @dataclass(kw_only=True)
@@ -15,7 +36,7 @@ class UserDto(BaseDto, TrackableMixin, TimestampMixin):
     referral_code: str = ""
 
     name: str
-    role: UserRole = UserRole.USER
+    role: Role = Role.USER
     language: Locale = Locale.EN
 
     personal_discount: int = 0
@@ -28,19 +49,11 @@ class UserDto(BaseDto, TrackableMixin, TimestampMixin):
 
     @property
     def is_privileged(self) -> bool:
-        return self.role.includes(UserRole.ADMIN)
+        return self.role.includes(Role.ADMIN)
 
     @property
-    def is_admin(self) -> bool:
-        return self.role.includes(UserRole.ADMIN)
-
-    @property
-    def is_dev(self) -> bool:
-        return self.role.includes(UserRole.DEV)
-
-    @property
-    def is_root(self) -> bool:
-        return self.role.includes(UserRole.ROOT)
+    def is_owner(self) -> bool:
+        return self.role.includes(Role.OWNER)
 
     @property
     def age_days(self) -> Optional[int]:
@@ -52,11 +65,3 @@ class UserDto(BaseDto, TrackableMixin, TimestampMixin):
     @property
     def log(self) -> str:
         return f"[{self.role}:{self.telegram_id} ({self.name})]"
-
-    @classmethod
-    def temp_user(cls, telegram_id: int, name: str = "TempUser") -> Self:
-        return cls(telegram_id=telegram_id, name=name, role=UserRole.USER)
-
-    @classmethod
-    def temp_root(cls, telegram_id: int) -> Self:
-        return cls(telegram_id=telegram_id, name="TempRoot", role=UserRole.ROOT)

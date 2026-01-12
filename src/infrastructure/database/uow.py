@@ -8,14 +8,11 @@ from src.application.common.uow import UnitOfWork
 
 
 class UnitOfWorkImpl(UnitOfWork):
-    _active_sessions: int = 0
-
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
 
     async def __aenter__(self) -> Self:
-        self._active_sessions += 1
-        logger.debug(f"SQL session started. Active sessions: '{self._active_sessions}'")
+        logger.debug("SQL transaction started")
         return self
 
     async def __aexit__(
@@ -24,17 +21,12 @@ class UnitOfWorkImpl(UnitOfWork):
         exc_val: Optional[BaseException],
         exc_tb: Optional[TracebackType],
     ) -> None:
-        try:
-            if exc_type:
-                await self.rollback()
-        finally:
-            await self.session.close()
-            self._active_sessions -= 1
-            logger.debug(f"SQL session closed. Active sessions: '{self._active_sessions}'")
+        if exc_type:
+            await self.rollback()
 
     async def commit(self) -> None:
         await self.session.commit()
-        logger.debug("SQL transaction committed successfully")
+        logger.debug("SQL transaction committed")
 
     async def rollback(self) -> None:
         await self.session.rollback()

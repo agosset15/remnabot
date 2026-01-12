@@ -27,7 +27,10 @@ class ErrorMiddleware(TaskiqMiddleware):
             logger.error("Dishka container not found in taskiq broker context")
             return
 
-        config: AppConfig = await container.get(AppConfig)
-        event_publisher: EventPublisher = await container.get(EventPublisher)
-        error_event = ErrorEvent(**config.build.data, exception=exception)
-        await event_publisher.publish(error_event)
+        try:
+            config = await container.get(AppConfig)
+            event_publisher = await container.get(EventPublisher)
+            error_event = ErrorEvent(**config.build.data, exception=exception)
+            await event_publisher.publish(error_event)
+        except Exception as e:
+            logger.error(f"Failed to publish error event: {e}")

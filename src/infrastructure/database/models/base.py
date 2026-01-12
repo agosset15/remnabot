@@ -22,9 +22,9 @@ from src.core.enums import (
     ReferralLevel,
     ReferralRewardStrategy,
     ReferralRewardType,
+    Role,
     SubscriptionStatus,
     TransactionStatus,
-    UserRole,
 )
 
 mapper_registry = registry(
@@ -35,10 +35,10 @@ mapper_registry = registry(
         datetime: DateTime(timezone=True),
         #
         Locale: Enum(Locale, name="locale"),
-        UserRole: Enum(UserRole, name="user_role"),
+        Role: Enum(Role, name="user_role"),
         Currency: Enum(Currency, name="currency"),
         PaymentGatewayType: Enum(PaymentGatewayType, name="payment_gateway_type"),
-        PurchaseType: Enum(PurchaseType, name="purchasetype"),
+        PurchaseType: Enum(PurchaseType, name="purchase_type"),
         TransactionStatus: Enum(TransactionStatus, name="transaction_status"),
         SubscriptionStatus: Enum(SubscriptionStatus, name="subscription_status"),
         TrafficLimitStrategy: Enum(TrafficLimitStrategy, name="traffic_limit_strategy"),

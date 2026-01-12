@@ -1,10 +1,8 @@
 from aiogram import Router
 
 from .private import PrivateFilter
-from .root import RootFilter
 
 __all__ = [
-    "RootFilter",
     "setup_global_filters",
 ]
 

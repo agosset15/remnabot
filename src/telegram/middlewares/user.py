@@ -35,7 +35,9 @@ class UserMiddleware(EventTypedMiddleware):
             return
 
         container: AsyncContainer = data[CONTAINER_KEY]
-        get_or_create_user: GetOrCreateUser = await container.get(GetOrCreateUser)
-        data[USER_KEY] = await get_or_create_user(GetOrCreateUserDto.from_aiogram(aiogram_user))
+        get_or_create_user = await container.get(GetOrCreateUser)
+        data[USER_KEY] = await get_or_create_user.system(
+            GetOrCreateUserDto.from_aiogram(aiogram_user, event.__class__.__name__)
+        )
 
         return await handler(event, data)

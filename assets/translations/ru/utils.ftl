@@ -1,54 +1,44 @@
-# Layout
 space = {" "}
 empty = { "!empty!" }
 btn-test = Кнопка
 msg-test = Сообщение
 development = Временно недоступно!
 test-payment = Тестовый платеж
-unlimited = ∞
 unknown = —
 
-unit-unlimited = { $value ->
-    [-1] { unlimited }
-    [0] { unlimited }
-    *[other] { $value }
-}
-
-
-# Other
 payment-invoice-description = { purchase-type } подписки { $name } на { $duration }
-contact-support-help = Здравствуйте! Мне нужна помощь.
-contact-support-paysupport = Здравствуйте! Я бы хотел запросить возврат средств.
-contact-support-withdraw-points = Здравствуйте! Я бы хотел запросить обмен баллов.
-cmd-start = Перезапустить бота
-cmd-paysupport = Возврат средств
-cmd-help = Помощь
 
-referral-invite-message =
+
+message =
+    .referral-invite =
     { space }
     🚀 Привет! Хочешь стабильный и быстрый VPN?  
     
     ↘️ ЖМИ СЮДА И ПОПРОБУЙ БЕСПЛАТНО!
     { $url }
+    .withdraw-points = Здравствуйте! Я бы хотел запросить обмен баллов.
+    .paysupport = Здравствуйте! Я бы хотел запросить возврат средств.
+    .help = Здравствуйте! Мне нужна помощь.
 
+command =
+    .start = Перезапустить бота
+    .paysupport = Возврат средств
+    .rules = Условия использования
+    .help = Помощь
 
-# Headers
 hdr-user = <b>👤 Пользователь:</b>
 hdr-user-profile = <b>👤 Профиль:</b>
-
-hdr-subscription = { $is_trial ->
-    [1] <b>🎁 Пробная подписка:</b>
-    *[0] <b>💳 Подписка:</b>
-    }
-
 hdr-plan = <b>📦 План:</b>
 hdr-payment = <b>💰 Платеж:</b>
 hdr-error = <b>⚠️ Ошибка:</b>
 hdr-node = <b>🖥 Нода:</b>
 hdr-hwid = <b>📱 Устройство:</b>
 
+hdr-subscription = { $is_trial ->
+    [1] <b>🎁 Пробная подписка:</b>
+    *[0] <b>💳 Подписка:</b>
+}
 
-# Fragments
 frg-user =
     <blockquote>
     • <b>ID</b>: <code>{ NUMBER($telegram_id, useGrouping: 0) }</code>
@@ -172,22 +162,26 @@ frg-build-info =
     </blockquote>
     }
 
-
-# Roles
-role-root = Владелец
+role-owner = Владелец
 role-dev = Разработчик
-role-support = Администратор
+role-admin = Администратор
 role-user = Пользователь
 role = 
     { $role ->
-    [ROOT] { role-root }
+    [OWNER] { role-root }
     [DEV] { role-dev }
     [ADMIN] { role-admin }
     *[USER] { role-user }
 }
 
+unlimited = ∞
 
-# Units
+unit-unlimited = { $value ->
+    [-1] { unlimited }
+    [0] { unlimited }
+    *[other] { $value }
+}
+
 unit-device = { $value -> 
     [-1] { unlimited }
     *[other] { $value } 
@@ -241,7 +235,6 @@ unit-year = { $value } { $value ->
 }
 
 
-# Types
 plan-type = { $plan_type -> 
     [TRAFFIC] Трафик
     [DEVICES] Устройства

@@ -267,7 +267,7 @@ msg-access-main =
     
     <blockquote>
     • <b>Режим</b>: { access-mode }
-    • <b>Покупки</b>: { $purchases_allowed ->
+    • <b>Платежи</b>: { $payments_allowed ->
     [0] запрещены
     *[1] разрешены
     }.
@@ -960,11 +960,11 @@ msg-subscription-payment-method =
     { msg-subscription-details }
 
 msg-subscription-confirm =
-    { $purchase_type ->
-    [RENEW] <b>🛒 Подтверждение продления подписки</b>
-    [CHANGE] <b>🛒 Подтверждение изменения подписки</b>
-    *[OTHER] <b>🛒 Подтверждение покупки подписки</b>
-    }
+    <b>🛒 Подтверждение { $purchase_type ->
+    [RENEW] продления
+    [CHANGE] изменения
+    *[OTHER] покупки
+    } подписки</b>
 
     { msg-subscription-details }
 

@@ -1,7 +1,7 @@
 from typing import Optional, Protocol, Union, runtime_checkable
 
 from src.application.dto import UserDto
-from src.core.enums import UserRole
+from src.core.enums import Role
 
 
 @runtime_checkable
@@ -26,6 +26,6 @@ class UserDao(Protocol):
 
     async def count(self) -> int: ...
 
-    async def filter_by_role(self, role: Union[UserRole, list[UserRole]]) -> list[UserDto]: ...
+    async def filter_by_role(self, role: Union[Role, list[Role]]) -> list[UserDto]: ...
 
     async def set_bot_blocked_status(self, telegram_id: int, is_bot_blocked: bool) -> None: ...

@@ -13,7 +13,7 @@ from .handlers import (
     on_access_mode_select,
     on_channel_input,
     on_condition_toggle,
-    on_purchases_toggle,
+    on_payments_toggle,
     on_registration_toggle,
     on_rules_input,
 )
@@ -30,9 +30,9 @@ access = Window(
     ),
     Row(
         Button(
-            text=I18nFormat("btn-access.purchases-toggle", enabled=F["purchases_allowed"]),
-            id="purchases",
-            on_click=on_purchases_toggle,
+            text=I18nFormat("btn-access.payments-toggle", enabled=F["payments_allowed"]),
+            id="payments",
+            on_click=on_payments_toggle,
         ),
         Button(
             text=I18nFormat("btn-access.registration-toggle", enabled=F["registration_allowed"]),

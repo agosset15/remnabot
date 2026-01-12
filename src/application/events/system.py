@@ -1,5 +1,5 @@
 from dataclasses import asdict, dataclass, field
-from typing import Optional
+from typing import Any, Optional
 
 from aiogram.types import BufferedInputFile
 from aiogram.utils.formatting import Text
@@ -97,7 +97,7 @@ class BotLifecycleEvent(SystemEvent):
 @dataclass(frozen=True, kw_only=True)
 class BotStartupEvent(BotLifecycleEvent, BuildInfoDto):
     access_mode: AccessMode
-    purchases_allowed: bool
+    payments_allowed: bool
     registration_allowed: bool
 
     @property
@@ -106,7 +106,9 @@ class BotStartupEvent(BotLifecycleEvent, BuildInfoDto):
 
 
 @dataclass(frozen=True, kw_only=True)
-class BotShutdownEvent(BotLifecycleEvent):
+class BotShutdownEvent(BotLifecycleEvent, BuildInfoDto):
+    uptime: Any
+
     @property
     def event_key(self) -> str:
         return "event-bot-shutdown"

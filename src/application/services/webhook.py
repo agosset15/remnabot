@@ -14,12 +14,12 @@ from src.core.utils.time import datetime_now
 class WebhookService:
     def __init__(
         self,
-        dao: WebhookDao,
+        webhook_dao: WebhookDao,
         bot: Bot,
         config: AppConfig,
         cryptographer: Cryptographer,
     ) -> None:
-        self.dao = dao
+        self.webhook_dao = webhook_dao
         self.bot = bot
         self.config = config
         self.cryptographer = cryptographer
@@ -36,7 +36,7 @@ class WebhookService:
 
         webhook_hash = self.cryptographer.get_hash(webhook_request.model_dump(exclude_unset=True))
 
-        if await self.dao.is_hash_exists(self.bot.id, webhook_hash):
+        if await self.webhook_dao.is_hash_exists(self.bot.id, webhook_hash):
             if not self.config.bot.reset_webhook:
                 logger.info(f"Webhook setup skipped for bot '{self.bot.id}', hash matches")
                 return await self.bot.get_webhook_info()
@@ -45,8 +45,8 @@ class WebhookService:
             logger.error(f"Failed to set webhook for bot '{self.bot.id}' on URL '{safe_url}'")
             raise RuntimeError(f"Could not set webhook for bot '{self.bot.id}'")
 
-        await self.dao.clear_all_hashes(self.bot.id)
-        await self.dao.save_hash(self.bot.id, webhook_hash)
+        await self.webhook_dao.clear_all_hashes(self.bot.id)
+        await self.webhook_dao.save_hash(self.bot.id, webhook_hash)
 
         logger.info(f"Webhook set successfully for bot '{self.bot.id}' to URL '{safe_url}'")
         return await self.bot.get_webhook_info()
@@ -57,7 +57,7 @@ class WebhookService:
             return
 
         if await self.bot.delete_webhook():
-            await self.dao.clear_all_hashes(self.bot.id)
+            await self.webhook_dao.clear_all_hashes(self.bot.id)
             logger.info(f"Webhook deleted successfully for bot '{self.bot.id}'")
         else:
             logger.error(f"Failed to delete webhook for bot '{self.bot.id}'")

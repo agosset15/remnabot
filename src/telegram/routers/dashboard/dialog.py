@@ -1,7 +1,7 @@
 from aiogram_dialog import Dialog, StartMode, Window
 from aiogram_dialog.widgets.kbd import Button, Row, Start
-from magic_filter import F
 
+from src.application.common.policy import Permission
 from src.core.enums import BannerName
 from src.telegram.keyboards import back_main_menu_button
 from src.telegram.routers.extra.test import show_dev_popup
@@ -15,9 +15,8 @@ from src.telegram.states import (
     DashboardStatistics,
     DashboardUsers,
 )
+from src.telegram.utils import require_permission
 from src.telegram.widgets import Banner, I18nFormat, IgnoreUpdate
-
-from .getters import dashboard_getter
 
 dashboard = Window(
     Banner(BannerName.DASHBOARD),
@@ -71,7 +70,7 @@ dashboard = Window(
             state=DashboardRemnashop.MAIN,
             mode=StartMode.RESET_STACK,
         ),
-        when=F["remnashop_accessible"],
+        when=require_permission(Permission.VIEW_REMNA),
     ),
     Row(
         Start(
@@ -79,12 +78,11 @@ dashboard = Window(
             id="importer",
             state=DashboardImporter.MAIN,
         ),
-        when=F["importer_accessible"],
+        when=require_permission(Permission.VIEW_IMPORTER),
     ),
     *back_main_menu_button,
     IgnoreUpdate(),
     state=Dashboard.MAIN,
-    getter=dashboard_getter,
 )
 
 router = Dialog(dashboard)

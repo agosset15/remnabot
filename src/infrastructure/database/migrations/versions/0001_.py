@@ -91,7 +91,9 @@ def upgrade() -> None:
         sa.Column("referral_code", sa.String(length=64), nullable=False),
         sa.Column("name", sa.String(length=128), nullable=False),
         sa.Column(
-            "role", sa.Enum("USER", "ADMIN", "DEV", "ROOT", name="user_role"), nullable=False
+            "role",
+            sa.Enum("USER", "PREVIEW", "ADMIN", "DEV", "OWNER", "SYSTEM", name="user_role"),
+            nullable=False,
         ),
         sa.Column(
             "language",
@@ -265,7 +267,7 @@ def upgrade() -> None:
         ),
         sa.Column("is_test", sa.Boolean(), nullable=False),
         sa.Column(
-            "purchase_type", sa.Enum("NEW", "RENEW", "CHANGE", name="purchasetype"), nullable=False
+            "purchase_type", sa.Enum("NEW", "RENEW", "CHANGE", name="purchase_type"), nullable=False
         ),
         sa.Column(
             "gateway_type",
