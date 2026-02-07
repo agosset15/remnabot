@@ -49,6 +49,7 @@ from .handlers import (
     on_description_remove,
     on_devices_input,
     on_duration_input,
+    on_duration_move,
     on_duration_remove,
     on_duration_select,
     on_export,
@@ -478,6 +479,11 @@ durations = Window(
                 text=I18nFormat("btn-common.duration", value=F["item"]["days"]),
                 id="duration_select",
                 on_click=on_duration_select,
+            ),
+            Button(
+                text=Format("🔼"),
+                id="duration_move",
+                on_click=on_duration_move,
             ),
             Button(
                 text=Format("❌"),

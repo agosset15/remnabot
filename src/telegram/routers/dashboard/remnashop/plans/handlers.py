@@ -26,6 +26,8 @@ from src.application.use_cases.plan import (
     CommitPlan,
     DeletePlan,
     ExportPlans,
+    MoveDurationUp,
+    MoveDurationUpDto,
     MovePlanUp,
     ParsePlansImport,
     RemovePlanDuration,
@@ -501,8 +503,28 @@ async def on_duration_select(
     duration_id = int(dialog_manager.item_id)  # type: ignore[attr-defined]
     dialog_manager.dialog_data["selected_duration"] = duration_id
 
-    logger.debug(f"{user.log} Selected duration ID '{duration_id}'")
+    logger.debug(f"{user.log} Selected duration '{duration_id}'")
     await dialog_manager.switch_to(state=RemnashopPlans.PRICES)
+
+
+@inject
+async def on_duration_move(
+    callback: CallbackQuery,
+    widget: Button,
+    dialog_manager: DialogManager,
+    retort: FromDishka[Retort],
+    move_duration_up: FromDishka[MoveDurationUp],
+) -> None:
+    await dialog_manager.load_data()
+    user: UserDto = dialog_manager.middleware_data[USER_KEY]
+    current_plan = retort.load(dialog_manager.dialog_data[PlanDto.__name__], PlanDto)
+
+    plan = await move_duration_up(
+        user,
+        MoveDurationUpDto(current_plan, int(dialog_manager.item_id)),  # type: ignore[attr-defined]
+    )
+
+    dialog_manager.dialog_data[PlanDto.__name__] = retort.dump(plan)
 
 
 @inject
