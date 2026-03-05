@@ -64,7 +64,13 @@ class PaymentGatewayType(UpperStrEnum):
     CRYPTOMUS = auto()
     HELEKET = auto()
     CRYPTOPAY = auto()
+    FREEKASSA = auto()
+    MULENPAY = auto()
+    PAYMASTER = auto()
+    PLATEGA = auto()
     ROBOKASSA = auto()
+    URLPAY = auto()
+    WATA = auto()
 
 
 class PurchaseType(UpperStrEnum):
@@ -243,10 +249,16 @@ class Currency(UpperStrEnum):
             PaymentGatewayType.TELEGRAM_STARS: cls.XTR,
             PaymentGatewayType.YOOKASSA: cls.RUB,
             PaymentGatewayType.YOOMONEY: cls.RUB,
-            PaymentGatewayType.ROBOKASSA: cls.RUB,
             PaymentGatewayType.CRYPTOMUS: cls.USD,
             PaymentGatewayType.HELEKET: cls.USD,
             PaymentGatewayType.CRYPTOPAY: cls.USD,
+            PaymentGatewayType.FREEKASSA: cls.RUB,
+            PaymentGatewayType.MULENPAY: cls.RUB,
+            PaymentGatewayType.PAYMASTER: cls.RUB,
+            PaymentGatewayType.PLATEGA: cls.RUB,
+            PaymentGatewayType.ROBOKASSA: cls.RUB,
+            PaymentGatewayType.URLPAY: cls.RUB,
+            PaymentGatewayType.WATA: cls.RUB,
         }
 
         try:

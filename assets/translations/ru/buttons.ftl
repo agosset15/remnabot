@@ -449,13 +449,3 @@ btn-statistics-current-page =
     [6] [👪]
     *[OTHER] [page]
     }
-
-
-
-
-
-
-
-
-
-

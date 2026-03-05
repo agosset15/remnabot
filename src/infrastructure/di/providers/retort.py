@@ -31,8 +31,14 @@ from src.application.dto import (
 from src.application.dto.payment_gateway import (
     CryptomusGatewaySettingsDto,
     CryptopayGatewaySettingsDto,
+    FreeKassaGatewaySettingsDto,
     HeleketGatewaySettingsDto,
+    MulenPayGatewaySettingsDto,
+    PayMasterGatewaySettingsDto,
+    PlategaGatewaySettingsDto,
     RobokassaGatewaySettingsDto,
+    UrlPayGatewaySettingsDto,
+    WataGatewaySettingsDto,
     YookassaGatewaySettingsDto,
     YoomoneyGatewaySettingsDto,
 )
@@ -92,7 +98,13 @@ class RetortProvider(Provider):
                 PaymentGatewayType.CRYPTOMUS: CryptomusGatewaySettingsDto,
                 PaymentGatewayType.HELEKET: HeleketGatewaySettingsDto,
                 PaymentGatewayType.CRYPTOPAY: CryptopayGatewaySettingsDto,
+                PaymentGatewayType.FREEKASSA: FreeKassaGatewaySettingsDto,
+                PaymentGatewayType.MULENPAY: MulenPayGatewaySettingsDto,
+                PaymentGatewayType.PAYMASTER: PayMasterGatewaySettingsDto,
+                PaymentGatewayType.PLATEGA: PlategaGatewaySettingsDto,
                 PaymentGatewayType.ROBOKASSA: RobokassaGatewaySettingsDto,
+                PaymentGatewayType.URLPAY: UrlPayGatewaySettingsDto,
+                PaymentGatewayType.WATA: WataGatewaySettingsDto,
             }
 
             dto_class = type_mapping.get(pg_type)

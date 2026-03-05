@@ -14,7 +14,7 @@ from src.application.common import Notifier
 from src.application.dto import MessagePayloadDto, UserDto
 from src.application.use_cases.importer.commands.processing import ProcessImportFile
 from src.core.constants import USER_KEY
-from src.infrastructure.redis.keys import SyncRunningKey
+from src.infrastructure.redis.keys import ImportRunningKey, SyncRunningKey
 from src.infrastructure.taskiq.tasks.importer import (
     import_exported_users_task,
     sync_all_users_from_panel_task,
@@ -142,11 +142,20 @@ async def on_import_active_xui(
     callback: CallbackQuery,
     widget: Button,
     dialog_manager: DialogManager,
+    retort: FromDishka[Retort],
+    redis: FromDishka[Redis],
     notifier: FromDishka[Notifier],
 ) -> None:
     user: UserDto = dialog_manager.middleware_data[USER_KEY]
     users = dialog_manager.dialog_data["users"]
     selected_squads = dialog_manager.dialog_data.get("selected_squads", [])
+
+    key = retort.dump(ImportRunningKey())
+    await redis.set(key, value=True, ex=3600)
+
+    if await redis.get(key):
+        await notifier.notify_user(user, i18n_key="ntf-importer.already-running")
+        return
 
     if not selected_squads:
         await notifier.notify_user(user, i18n_key="ntf-common.internal-squads-empty")
@@ -171,6 +180,8 @@ async def on_import_active_xui(
         "success_count": success_count,
         "failed_count": failed_count,
     }
+
+    await redis.delete(key)
     await dialog_manager.switch_to(state=DashboardImporter.IMPORT_COMPLETED)
 
 

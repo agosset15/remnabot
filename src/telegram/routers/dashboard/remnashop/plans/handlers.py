@@ -55,10 +55,12 @@ from src.application.use_cases.plan.exchange import ExportPlans, ParsePlansImpor
 from src.core.constants import USER_KEY
 from src.core.enums import Currency, MediaType, PlanAvailability, PlanType
 from src.core.exceptions import (
+    DurationAlreadyExistsError,
     PlanError,
     PlanNameAlreadyExistsError,
     SquadsEmptyError,
     TrialDurationError,
+    UserAlreadyAllowedError,
 )
 from src.telegram.states import RemnashopPlans
 from src.telegram.utils import is_double_click
@@ -575,6 +577,8 @@ async def on_duration_input(
 
     except ValueError:
         await notifier.notify_user(user, i18n_key="ntf-common.invalid-value")
+    except DurationAlreadyExistsError:
+        await notifier.notify_user(user, i18n_key="ntf-plan.duration-already-exists")
 
 
 async def on_currency_select(
@@ -658,6 +662,8 @@ async def on_allowed_user_input(
 
     except ValueError:
         await notifier.notify_user(user, i18n_key="ntf-common.invalid-value")
+    except UserAlreadyAllowedError:
+        await notifier.notify_user(user, i18n_key="ntf-plan.user-already-allowed")
 
 
 @inject

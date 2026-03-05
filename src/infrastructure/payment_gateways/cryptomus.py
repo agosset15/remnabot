@@ -24,6 +24,7 @@ from src.core.enums import Currency, TransactionStatus
 from .base import BasePaymentGateway
 
 
+# https://doc.cryptomus.com/
 class CryptomusGateway(BasePaymentGateway):
     _client: AsyncClient
 

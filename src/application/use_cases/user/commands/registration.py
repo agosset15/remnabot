@@ -76,8 +76,9 @@ class GetOrCreateUser(Interactor[GetOrCreateUserDto, Optional[UserDto]]):
             if is_owner:
                 data.role = Role.OWNER
                 old_owner = await self.user_dao.filter_by_role([Role.OWNER])
-                old_owner[0].role = Role.DEV
-                await self.user_dao.update(old_owner[0])
+                if old_owner:
+                    old_owner[0].role = Role.DEV
+                    await self.user_dao.update(old_owner[0])
 
             user_dto = self._create_user_dto(data)
             user = await self.user_dao.create(user_dto)

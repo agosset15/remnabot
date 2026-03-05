@@ -20,6 +20,7 @@ from src.core.enums import TransactionStatus
 from .base import BasePaymentGateway
 
 
+# https://yookassa.ru/developers
 class YookassaGateway(BasePaymentGateway):
     _client: AsyncClient
 

@@ -30,9 +30,15 @@ from src.application.dto import (
 from src.application.dto.payment_gateway import (
     CryptomusGatewaySettingsDto,
     CryptopayGatewaySettingsDto,
+    FreeKassaGatewaySettingsDto,
     HeleketGatewaySettingsDto,
+    MulenPayGatewaySettingsDto,
+    PayMasterGatewaySettingsDto,
     PaymentGatewayDto,
+    PlategaGatewaySettingsDto,
     RobokassaGatewaySettingsDto,
+    UrlPayGatewaySettingsDto,
+    WataGatewaySettingsDto,
     YookassaGatewaySettingsDto,
     YoomoneyGatewaySettingsDto,
 )
@@ -75,7 +81,13 @@ class CreateDefaultPaymentGateway(Interactor[None, None]):
                     PaymentGatewayType.CRYPTOMUS: CryptomusGatewaySettingsDto,
                     PaymentGatewayType.HELEKET: HeleketGatewaySettingsDto,
                     PaymentGatewayType.CRYPTOPAY: CryptopayGatewaySettingsDto,
+                    PaymentGatewayType.FREEKASSA: FreeKassaGatewaySettingsDto,
+                    PaymentGatewayType.MULENPAY: MulenPayGatewaySettingsDto,
+                    PaymentGatewayType.PAYMASTER: PayMasterGatewaySettingsDto,
+                    PaymentGatewayType.PLATEGA: PlategaGatewaySettingsDto,
                     PaymentGatewayType.ROBOKASSA: RobokassaGatewaySettingsDto,
+                    PaymentGatewayType.URLPAY: UrlPayGatewaySettingsDto,
+                    PaymentGatewayType.WATA: WataGatewaySettingsDto,
                 }
                 dto_class = settings_map.get(gateway_type)
                 settings = dto_class() if dto_class else None

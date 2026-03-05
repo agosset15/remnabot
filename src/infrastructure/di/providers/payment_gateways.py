@@ -12,9 +12,17 @@ from src.core.enums import PaymentGatewayType
 from src.infrastructure.payment_gateways import (
     BasePaymentGateway,
     CryptomusGateway,
+    CryptoPayGateway,
+    FreeKassaGateway,
     HeleketGateway,
+    MulenPayGateway,
+    PayMasterGateway,
     PaymentGatewayFactory,
+    PlategaGateway,
+    RobokassaGateway,
     TelegramStarsGateway,
+    UrlPayGateway,
+    WataGateway,
     YookassaGateway,
     YoomoneyGateway,
 )
@@ -25,6 +33,14 @@ GATEWAY_MAP: dict[PaymentGatewayType, Type[BasePaymentGateway]] = {
     PaymentGatewayType.YOOMONEY: YoomoneyGateway,
     PaymentGatewayType.CRYPTOMUS: CryptomusGateway,
     PaymentGatewayType.HELEKET: HeleketGateway,
+    PaymentGatewayType.CRYPTOPAY: CryptoPayGateway,
+    PaymentGatewayType.FREEKASSA: FreeKassaGateway,
+    PaymentGatewayType.MULENPAY: MulenPayGateway,
+    PaymentGatewayType.PAYMASTER: PayMasterGateway,
+    PaymentGatewayType.PLATEGA: PlategaGateway,
+    PaymentGatewayType.ROBOKASSA: RobokassaGateway,
+    PaymentGatewayType.URLPAY: UrlPayGateway,
+    PaymentGatewayType.WATA: WataGateway,
 }
 
 

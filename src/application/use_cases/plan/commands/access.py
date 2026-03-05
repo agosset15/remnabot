@@ -7,6 +7,7 @@ from src.application.common.dao import PlanDao
 from src.application.common.policy import Permission
 from src.application.common.uow import UnitOfWork
 from src.application.dto import PlanDto, UserDto
+from src.core.exceptions import UserAlreadyAllowedError
 
 
 @dataclass(frozen=True)
@@ -27,7 +28,7 @@ class AddAllowedUserToPlan(Interactor[AddAllowedUserToPlanDto, PlanDto]):
 
         if allowed_telegram_id in data.plan.allowed_user_ids:
             logger.warning(f"{actor.log} User '{allowed_telegram_id}' is already in allowed list")
-            raise ValueError(f"User '{allowed_telegram_id}' already allowed")
+            raise UserAlreadyAllowedError(f"User '{allowed_telegram_id}' already allowed")
 
         data.plan.allowed_user_ids.append(allowed_telegram_id)
 

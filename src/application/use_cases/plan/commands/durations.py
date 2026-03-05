@@ -7,6 +7,7 @@ from src.application.common import Interactor
 from src.application.common.policy import Permission
 from src.application.dto import PlanDto, PlanDurationDto, PlanPriceDto, UserDto
 from src.core.enums import Currency
+from src.core.exceptions import DurationAlreadyExistsError
 
 
 @dataclass(frozen=True)
@@ -27,7 +28,7 @@ class AddPlanDuration(Interactor[AddPlanDurationDto, PlanDto]):
 
         if any(d.days == days for d in data.plan.durations):
             logger.warning(f"{actor.log} Duration '{days}' already exists in plan")
-            raise ValueError(f"Duration '{days}' already exists")
+            raise DurationAlreadyExistsError(f"Duration '{days}' already exists")
 
         new_duration = PlanDurationDto(
             days=days,

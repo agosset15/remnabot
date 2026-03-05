@@ -7,6 +7,7 @@ from aiogram_dialog.widgets.kbd import (
     Group,
     ListGroup,
     Row,
+    ScrollingGroup,
     Select,
     Start,
     SwitchTo,
@@ -39,27 +40,33 @@ from .handlers import (
 gateways = Window(
     Banner(BannerName.DASHBOARD),
     I18nFormat("msg-gateways-main"),
-    ListGroup(
-        Row(
-            Button(
-                text=I18nFormat("btn-gateway.title", gateway_type=F["item"]["gateway_type"]),
-                id="select_gateway",
-                on_click=on_gateway_select,
+    ScrollingGroup(
+        ListGroup(
+            Row(
+                Button(
+                    text=I18nFormat("btn-gateway.title", gateway_type=F["item"]["gateway_type"]),
+                    id="select_gateway",
+                    on_click=on_gateway_select,
+                ),
+                Button(
+                    text=I18nFormat("btn-gateway.test"),
+                    id="test_gateway",
+                    on_click=on_gateway_test,
+                ),
+                Button(
+                    text=I18nFormat("btn-gateway.active", is_active=F["item"]["is_active"]),
+                    id="active_toggle",
+                    on_click=on_active_toggle,
+                ),
             ),
-            Button(
-                text=I18nFormat("btn-gateway.test"),
-                id="test_gateway",
-                on_click=on_gateway_test,
-            ),
-            Button(
-                text=I18nFormat("btn-gateway.active", is_active=F["item"]["is_active"]),
-                id="active_toggle",
-                on_click=on_active_toggle,
-            ),
+            id="gateways_list",
+            item_id_getter=lambda item: item["id"],
+            items="gateways",
         ),
-        id="gateways_list",
-        item_id_getter=lambda item: item["id"],
-        items="gateways",
+        id="scroll",
+        width=3,
+        height=7,
+        hide_on_single_page=True,
     ),
     Row(
         SwitchTo(
