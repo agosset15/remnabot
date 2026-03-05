@@ -997,6 +997,25 @@ msg-subscription-plans = <b>📦 Выберите план</b>
 msg-subscription-new-success = Чтобы начать пользоваться нашим сервисом, нажмите кнопку <code>`{ btn-subscription.connect }`</code> и следуйте инструкциям!
 msg-subscription-renew-success = Ваша подписка продлена на { $added_duration }.
 
+msg-subscription-plan = 
+    <b>📦 Доступный план по ссылке</b>
+    
+    Вам доступен план <b>{ $name }</b> по ссылке. Нажмите кнопку ниже чтобы перейти к выбору длительности и способа оплаты.
+
+    { $description ->
+    [0] { space }
+    *[HAS]
+    <blockquote>
+    { $description }
+    </blockquote>
+    }
+
+    { $purchase_type ->
+    [RENEW] <i>⚠️ Текущая подписка будет <u>продлена</u> на выбранный срок.</i>
+    [CHANGE] <i>⚠️ Текущая подписка будет <u>заменена</u> данным планом без пересчета оставшегося срока.</i>
+    *[OTHER] { empty }
+    }
+    
 msg-subscription-details =
     <b>{ $plan }:</b>
     <blockquote>

@@ -7,8 +7,10 @@ from dishka.integrations.aiogram_dialog import inject
 
 from src.application.common import TranslatorRunner
 from src.application.common.dao import PaymentGatewayDao, SettingsDao, SubscriptionDao
+from src.application.common.dao.plan import PlanDao
 from src.application.dto import PlanDto, PriceDetailsDto, UserDto
 from src.application.services import PricingService
+from src.application.use_cases.plan.queries.match import MatchPlan, MatchPlanDto
 from src.application.use_cases.user.queries.plans import GetAvailablePlans
 from src.core.config import AppConfig
 from src.core.enums import PurchaseType
@@ -33,6 +35,47 @@ async def subscription_getter(
     return {
         "has_active_subscription": has_active,
         "is_not_unlimited": not is_unlimited,
+    }
+
+
+@inject
+async def plan_getter(
+    dialog_manager: DialogManager,
+    user: UserDto,
+    i18n: FromDishka[TranslatorRunner],
+    plan_dao: FromDishka[PlanDao],
+    subscription_dao: FromDishka[SubscriptionDao],
+    match_plan: FromDishka[MatchPlan],
+    **kwargs: Any,
+) -> dict[str, Any]:
+    plan_id: int = dialog_manager.start_data["plan_id"]  # type: ignore[call-overload, index, assignment]
+    plan = await plan_dao.get_by_id(plan_id)
+
+    if not plan:
+        raise ValueError(f"Plan with id '{plan_id}' not found")
+
+    current_subscription = await subscription_dao.get_current(user.telegram_id)
+
+    if current_subscription:
+        matched_plan = await match_plan.system(
+            MatchPlanDto(plan_snapshot=current_subscription.plan_snapshot, plans=[plan])
+        )
+
+        if matched_plan and not current_subscription.is_unlimited:
+            purchase_type = PurchaseType.RENEW
+        else:
+            purchase_type = PurchaseType.CHANGE
+    else:
+        purchase_type = PurchaseType.NEW
+
+    dialog_manager.dialog_data["only_single_plan"] = True
+    dialog_manager.dialog_data["purchase_type"] = purchase_type
+
+    return {
+        "plan_id": [plan.id],
+        "name": i18n.get(plan.name),
+        "description": i18n.get(plan.description) if plan.description else False,
+        "purchase_type": purchase_type,
     }
 
 
@@ -96,8 +139,8 @@ async def duration_getter(
         )
 
     return {
-        "plan": plan.name,
-        "description": plan.description or False,
+        "plan": i18n.get(plan.name),
+        "description": i18n.get(plan.description) if plan.description else False,
         "type": plan.type,
         "devices": i18n_format_device_limit(plan.device_limit),
         "traffic": i18n_format_traffic_limit(plan.traffic_limit),
@@ -144,8 +187,8 @@ async def payment_method_getter(
     key, kw = i18n_format_days(duration.days)
 
     return {
-        "plan": plan.name,
-        "description": plan.description or False,
+        "plan": i18n.get(plan.name),
+        "description": i18n.get(plan.description) if plan.description else False,
         "type": plan.type,
         "devices": i18n_format_device_limit(plan.device_limit),
         "traffic": i18n_format_traffic_limit(plan.traffic_limit),
@@ -194,8 +237,8 @@ async def confirm_getter(
 
     return {
         "purchase_type": purchase_type,
-        "plan": plan.name,
-        "description": plan.description or False,
+        "plan": i18n.get(plan.name),
+        "description": i18n.get(plan.description) if plan.description else False,
         "type": plan.type,
         "devices": i18n_format_device_limit(plan.device_limit),
         "traffic": i18n_format_traffic_limit(plan.traffic_limit),

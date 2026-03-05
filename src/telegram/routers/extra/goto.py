@@ -1,10 +1,14 @@
 from aiogram import F, Router
-from aiogram.types import CallbackQuery
+from aiogram.filters import CommandObject, CommandStart
+from aiogram.types import CallbackQuery, Message
 from aiogram_dialog import DialogManager, ShowMode, StartMode
+from dishka import FromDishka
+from dishka.integrations.aiogram_dialog import inject
 from loguru import logger
 
 from src.application.dto import UserDto
-from src.core.constants import GOTO_PREFIX, PAYMENT_PREFIX, TARGET_TELEGRAM_ID
+from src.application.use_cases.user.queries.plans import GetAvailablePlanByCode
+from src.core.constants import GOTO_PREFIX, PAYMENT_PREFIX, PLAN_PREFIX, TARGET_TELEGRAM_ID
 from src.telegram.states import DashboardUser, Subscription, state_from_string
 
 router = Router(name=__name__)
@@ -12,7 +16,7 @@ router = Router(name=__name__)
 
 @router.callback_query(F.data.startswith(GOTO_PREFIX))
 async def on_goto(callback: CallbackQuery, dialog_manager: DialogManager, user: UserDto) -> None:
-    logger.info(f"{user.log} Go to '{callback.data}'")
+    logger.info(f"{user.log} Try go to '{callback.data}'")
     data = callback.data.removeprefix(GOTO_PREFIX)  # type: ignore[union-attr]
 
     if data.startswith(PAYMENT_PREFIX):
@@ -67,3 +71,40 @@ async def on_goto(callback: CallbackQuery, dialog_manager: DialogManager, user: 
         show_mode=ShowMode.DELETE_AND_SEND,
     )
     await callback.answer()
+
+
+@inject
+@router.message(CommandStart(deep_link=True, ignore_case=True))
+async def on_goto_plan(
+    message: Message,
+    command: CommandObject,
+    dialog_manager: DialogManager,
+    user: UserDto,
+    get_available_plan_by_code: FromDishka[GetAvailablePlanByCode],
+) -> None:
+    args = command.args or ""
+
+    if not args.startswith(PLAN_PREFIX):
+        return
+
+    public_code = args.removeprefix(PLAN_PREFIX)
+    plan = await get_available_plan_by_code(user, public_code)
+
+    # TODO: Handle brootforce of plan codes
+
+    if not plan:
+        logger.warning(f"{user.log} Plan with code '{public_code}' not found or not available")
+        await message.answer("Plan not found or not available.")
+        return
+
+    logger.info(f"{user.log} Redirected to plan '{public_code}'")
+
+    await dialog_manager.bg(
+        user_id=user.telegram_id,
+        chat_id=user.telegram_id,
+    ).start(
+        state=Subscription.PLAN,
+        data={"plan_id": plan.id},
+        mode=StartMode.RESET_STACK,
+        show_mode=ShowMode.DELETE_AND_SEND,
+    )

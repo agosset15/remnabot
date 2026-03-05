@@ -16,6 +16,7 @@ from .getters import (
     duration_getter,
     getter_connect,
     payment_method_getter,
+    plan_getter,
     plans_getter,
     subscription_getter,
     success_payment_getter,
@@ -64,6 +65,26 @@ subscription = Window(
     state=Subscription.MAIN,
     getter=subscription_getter,
 )
+
+plan = Window(
+    Banner(BannerName.SUBSCRIPTION),
+    I18nFormat("msg-subscription-plan"),
+    Column(
+        Select(
+            text=I18nFormat("btn-subscription.plan"),
+            id=f"{PAYMENT_PREFIX}select_plan",
+            item_id_getter=lambda item: item,
+            items="plan_id",
+            type_factory=int,
+            on_click=on_plan_select,
+        ),
+    ),
+    *back_main_menu_button,
+    IgnoreUpdate(),
+    state=Subscription.PLAN,
+    getter=plan_getter,
+)
+
 
 plans = Window(
     Banner(BannerName.SUBSCRIPTION),
@@ -230,6 +251,7 @@ failed = Window(
 
 router = Dialog(
     subscription,
+    plan,
     plans,
     duration,
     payment_method,

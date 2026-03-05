@@ -16,13 +16,14 @@ from src.core.config import AppConfig
 from src.core.enums import Locale, Role
 
 
-@dataclass(frozen=True)
+@dataclass
 class GetOrCreateUserDto:
     telegram_id: int
     username: Optional[str]
     full_name: str
     language_code: Optional[str]
     event: TelegramObject
+    role: Role = Role.USER
 
     @classmethod
     def from_aiogram(cls, user: AiogramUser, event: TelegramObject) -> Self:
@@ -69,6 +70,14 @@ class GetOrCreateUser(Interactor[GetOrCreateUserDto, Optional[UserDto]]):
                 )
                 return None
 
+            is_owner = data.telegram_id == self.config.bot.owner_id
+
+            if is_owner:
+                data.role = Role.OWNER
+                old_owner = await self.user_dao.filter_by_role([Role.OWNER])
+                old_owner[0].role = Role.DEV
+                await self.user_dao.update(old_owner[0])
+
             user_dto = self._create_user_dto(data)
             user = await self.user_dao.create(user_dto)
             await self.uow.commit()
@@ -95,8 +104,6 @@ class GetOrCreateUser(Interactor[GetOrCreateUserDto, Optional[UserDto]]):
         return user
 
     def _create_user_dto(self, data: GetOrCreateUserDto) -> UserDto:
-        is_owner = data.telegram_id == self.config.bot.owner_id
-
         if data.language_code in self.config.locales:
             locale = Locale(data.language_code)
         else:
@@ -107,6 +114,6 @@ class GetOrCreateUser(Interactor[GetOrCreateUserDto, Optional[UserDto]]):
             username=data.username,
             referral_code=self.cryptographer.generate_short_code(data.telegram_id),
             name=data.full_name,
-            role=Role.OWNER if is_owner else Role.USER,
+            role=data.role,
             language=locale,
         )

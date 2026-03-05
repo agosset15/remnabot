@@ -270,7 +270,6 @@ async def on_plan_select(
     logger.info(f"{user.log} Selected plan '{plan.id}'")
 
     dialog_manager.dialog_data[PlanDto.__name__] = retort.dump(plan)
-
     dialog_manager.dialog_data.pop(PAYMENT_CACHE_KEY, None)
     dialog_manager.dialog_data.pop(CURRENT_DURATION_KEY, None)
     dialog_manager.dialog_data.pop(CURRENT_METHOD_KEY, None)

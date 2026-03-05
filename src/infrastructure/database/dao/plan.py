@@ -119,6 +119,21 @@ class PlanDaoImpl(PlanDao):
         logger.debug(f"Retrieved '{len(db_plans)}' all plans")
         return self._convert_to_dto_list(db_plans)
 
+    async def get_by_public_code(self, public_code: str) -> Optional[PlanDto]:
+        stmt = (
+            select(Plan)
+            .where(Plan.public_code == public_code)
+            .options(selectinload(Plan.durations).selectinload(PlanDuration.prices))
+        )
+        db_plan = await self.session.scalar(stmt)
+
+        if db_plan:
+            logger.debug(f"Plan with public code '{public_code}' found")
+            return self._convert_to_dto(db_plan)
+
+        logger.debug(f"Plan with public code '{public_code}' not found")
+        return None
+
     async def update(self, plan: PlanDto) -> Optional[PlanDto]:
         stmt = (
             select(Plan)

@@ -396,6 +396,7 @@ btn-importer =
     .import-active = ❇️ Импортировать активных
 
 btn-subscription =
+    .plan = 💳 Перейти к оформлению подписки
     .new = 💸 Купить подписку
     .renew = 🔄 Продлить
     .change = 🔃 Изменить

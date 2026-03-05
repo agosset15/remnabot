@@ -7,7 +7,7 @@ from .commands.messaging import SendMessageToUser
 from .commands.profile_edit import ChangeUserPoints, SetUserPersonalDiscount
 from .commands.registration import GetOrCreateUser
 from .commands.roles import GetAdmins, RevokeRole, SetUserRole
-from .queries.plans import GetAvailablePlans, GetAvailableTrial
+from .queries.plans import GetAvailablePlanByCode, GetAvailablePlans, GetAvailableTrial
 from .queries.profile import GetUserDevices, GetUserProfile, GetUserProfileSubscription
 from .queries.search import SearchUsers
 
@@ -28,4 +28,5 @@ USER_USE_CASES: Final[tuple[type[Interactor], ...]] = (
     ChangeUserPoints,
     SendMessageToUser,
     GetAvailableTrial,
+    GetAvailablePlanByCode,
 )

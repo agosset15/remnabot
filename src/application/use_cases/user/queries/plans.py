@@ -4,6 +4,7 @@ from loguru import logger
 
 from src.application.common import Interactor
 from src.application.common.dao import PlanDao, UserDao
+from src.application.common.policy import Permission
 from src.application.dto import PlanDto, UserDto
 from src.core.enums import PlanAvailability
 
@@ -110,3 +111,46 @@ class GetAvailableTrial(Interactor[UserDto, Optional[PlanDto]]):
             f"with availability '{available_plan.availability}'"
         )
         return available_plan
+
+
+class GetAvailablePlanByCode(Interactor[str, Optional[PlanDto]]):
+    required_permission = Permission.PUBLIC
+
+    def __init__(self, plan_dao: PlanDao, user_dao: UserDao):
+        self.plan_dao = plan_dao
+        self.user_dao = user_dao
+
+    async def _execute(self, actor: UserDto, code: str) -> Optional[PlanDto]:
+        plan = await self.plan_dao.get_by_public_code(code)
+
+        if not plan or not plan.is_active:
+            logger.info(f"{actor.log} Plan with code '{code}' not found or inactive")
+            return None
+
+        is_available = await self._check_availability(actor, plan)
+
+        if not is_available:
+            logger.info(f"{actor.log} Plan with code '{code}' is not available for user")
+            return None
+
+        return plan
+
+    async def _check_availability(self, user: UserDto, plan: PlanDto) -> bool:
+        has_sub = await self.user_dao.has_any_subscription(user.telegram_id)
+        is_invited_user = await self.user_dao.is_invited_user(user.telegram_id)
+
+        match plan.availability:
+            case PlanAvailability.LINK:
+                return True
+            case PlanAvailability.ALL:
+                return True
+            case PlanAvailability.NEW:
+                return not has_sub
+            case PlanAvailability.EXISTING:
+                return has_sub
+            case PlanAvailability.INVITED:
+                return is_invited_user
+            case PlanAvailability.ALLOWED:
+                return user.telegram_id in plan.allowed_user_ids
+            case _:
+                return False

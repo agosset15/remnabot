@@ -1,9 +1,10 @@
 from dataclasses import dataclass
+from datetime import timedelta
 from typing import Optional
 
 from loguru import logger
 
-from src.application.common import EventPublisher, Interactor, Redirect, Remnawave
+from src.application.common import EventPublisher, Interactor, Redirect, Remnawave, TranslatorRunner
 from src.application.common.dao import SubscriptionDao, TransactionDao, UserDao
 from src.application.common.uow import UnitOfWork
 from src.application.dto import PlanSnapshotDto, SubscriptionDto, TransactionDto, UserDto
@@ -16,6 +17,7 @@ from src.core.utils.i18n_helpers import (
     i18n_format_device_limit,
     i18n_format_traffic_limit,
 )
+from src.core.utils.time import datetime_now
 
 
 @dataclass(frozen=True)
@@ -35,6 +37,7 @@ class ActivateTrialSubscription(Interactor[ActivateTrialSubscriptionDto, None]):
         remnawave: Remnawave,
         event_publisher: EventPublisher,
         redirect: Redirect,
+        i18n: TranslatorRunner,
     ) -> None:
         self.uow = uow
         self.user_dao = user_dao
@@ -42,6 +45,7 @@ class ActivateTrialSubscription(Interactor[ActivateTrialSubscriptionDto, None]):
         self.remnawave = remnawave
         self.event_publisher = event_publisher
         self.redirect = redirect
+        self.i18n = i18n
 
     async def _execute(self, actor: UserDto, data: ActivateTrialSubscriptionDto) -> None:
         user = data.user
@@ -83,7 +87,7 @@ class ActivateTrialSubscription(Interactor[ActivateTrialSubscriptionDto, None]):
                 telegram_id=user.telegram_id,
                 username=user.username,
                 name=user.name,
-                plan_name=plan.name,
+                plan_name=self.i18n.get(plan.name),
                 plan_type=plan.type,
                 plan_traffic_limit=i18n_format_traffic_limit(plan.traffic_limit),
                 plan_device_limit=i18n_format_device_limit(plan.device_limit),
@@ -170,6 +174,10 @@ class PurchaseSubscription(Interactor[PurchaseSubscriptionDto, None]):
                             f"No subscription found for renewal for user '{user.telegram_id}'"
                         )
 
+                    base_date = max(subscription.expire_at, datetime_now())
+                    new_expire = base_date + timedelta(days=transaction.plan_snapshot.duration)
+                    subscription.expire_at = new_expire
+
                     updated_user = await self.remnawave.update_user(
                         user=user,
                         uuid=subscription.user_remna_id,
@@ -177,7 +185,6 @@ class PurchaseSubscription(Interactor[PurchaseSubscriptionDto, None]):
                         reset_traffic=True,
                     )
 
-                    subscription.expire_at = updated_user.expire_at
                     subscription.plan_snapshot = plan
                     await self.subscription_dao.update(subscription)
                     await self.uow.commit()

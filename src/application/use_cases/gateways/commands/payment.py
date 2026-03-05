@@ -4,7 +4,13 @@ from uuid import UUID
 
 from loguru import logger
 
-from src.application.common import EventPublisher, Interactor, Notifier, TranslatorHub
+from src.application.common import (
+    EventPublisher,
+    Interactor,
+    Notifier,
+    TranslatorHub,
+    TranslatorRunner,
+)
 from src.application.common.dao import (
     PaymentGatewayDao,
     ReferralDao,
@@ -224,6 +230,7 @@ class ProcessPayment(Interactor[ProcessPaymentDto, None]):
         referral_dao: ReferralDao,
         event_publisher: EventPublisher,
         notifier: Notifier,
+        i18n: TranslatorRunner,
         assign_referral_rewards: AssignReferralRewards,
         purchase_subscription: PurchaseSubscription,
     ) -> None:
@@ -234,6 +241,7 @@ class ProcessPayment(Interactor[ProcessPaymentDto, None]):
         self.referral_dao = referral_dao
         self.event_publisher = event_publisher
         self.notifier = notifier
+        self.i18n = i18n
         self.assign_referral_rewards = assign_referral_rewards
         self.purchase_subscription = purchase_subscription
 
@@ -306,7 +314,7 @@ class ProcessPayment(Interactor[ProcessPaymentDto, None]):
             plan_device_limit=i18n_format_device_limit(transaction.plan_snapshot.device_limit),
             plan_duration=i18n_format_days(transaction.plan_snapshot.duration),
             #
-            previous_plan_name=old_plan.name if old_plan else "N/A",
+            previous_plan_name=self.i18n.get(old_plan.name) if old_plan else "N/A",
             previous_plan_type={
                 "key": "plan-type",
                 "plan_type": old_plan.type if old_plan else "N/A",
