@@ -44,7 +44,7 @@ menu = Window(
             on_click=show_reason,
             when=~F["connectable"],
         ),
-        when=F["subscription_exists"],
+        when=F["has_subscription"],
     ),
     Row(
         Button(
@@ -60,7 +60,7 @@ menu = Window(
             text=I18nFormat("btn-menu.devices"),
             id="devices",
             state=MainMenu.DEVICES,
-            when=F["devices_available"],
+            when=F["has_device_limit"],
         ),
         Start(
             text=I18nFormat("btn-menu.subscription"),

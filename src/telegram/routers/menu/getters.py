@@ -3,6 +3,7 @@ from typing import Any
 from aiogram_dialog import DialogManager
 from dishka import FromDishka
 from dishka.integrations.aiogram_dialog import inject
+from loguru import logger
 
 from src.application.common import Remnawave, TranslatorRunner
 from src.application.common.dao import ReferralDao, SettingsDao, SubscriptionDao
@@ -63,6 +64,7 @@ async def menu_getter(
         }
 
         if not menu_data.current_subscription:
+            logger.debug(f"User {user.telegram_id} has no active subscription")
             data["trial_available"] = menu_data.is_trial_available and menu_data.available_trial
             return data
 
@@ -84,10 +86,12 @@ async def menu_getter(
                 "has_device_limit": subscription.has_devices_limit
                 if subscription.is_active
                 else False,
-                "connection_url": config.bot.mini_app_url or subscription.url,
+                "connection_url": config.bot.mini_app_url
+                if isinstance(config.bot.mini_app_url, str)
+                else subscription.url,
             }
         )
-
+        logger.debug(f"Menu data for user {user.telegram_id}: {data}")
         return data
 
     except Exception as e:
