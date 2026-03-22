@@ -156,7 +156,7 @@ async def on_import_active_xui(
         await notifier.notify_user(user, i18n_key="ntf-importer.already-running")
         return
 
-    await redis.set(key, 1, ex=3600)
+    await redis.set(key, 1, ex=600)
 
     if not selected_squads:
         await notifier.notify_user(user, i18n_key="ntf-common.internal-squads-empty")
@@ -209,7 +209,7 @@ async def on_sync(
         key="sync_confirm",
         cooldown=10,
     ):
-        await redis.set(key, value=1, ex=3600)
+        await redis.set(key, value=1, ex=600)
 
         notification = await notifier.notify_user(
             user,

@@ -4,6 +4,7 @@ from aiogram_dialog.widgets.input import MessageInput
 from aiogram_dialog.widgets.kbd import (
     Button,
     CopyText,
+    ListGroup,
     Row,
     Start,
     SwitchInlineQueryChosenChatButton,
@@ -24,8 +25,9 @@ from src.telegram.utils import require_permission
 from src.telegram.widgets import Banner, I18nFormat, IgnoreUpdate
 from src.telegram.window import Window
 
-from .getters import invite_about_getter, invite_getter, menu_getter
+from .getters import devices_getter, invite_about_getter, invite_getter, menu_getter
 from .handlers import (
+    on_device_delete,
     on_get_trial,
     on_invite,
     on_show_qr,
@@ -106,6 +108,43 @@ menu = Window(
     getter=menu_getter,
 )
 
+devices = Window(
+    Banner(BannerName.MENU),
+    I18nFormat("msg-menu-devices"),
+    Row(
+        Button(
+            text=I18nFormat("btn-common.devices-empty"),
+            id="devices_empty",
+            when=F["devices_empty"],
+        ),
+    ),
+    ListGroup(
+        Row(
+            CopyText(
+                text=Format("{item[platform]} - {item[device_model]}"),
+                copy_text=Format("{item[platform]} - {item[device_model]}"),
+            ),
+            Button(
+                text=Format("❌"),
+                id="delete",
+                on_click=on_device_delete,
+            ),
+        ),
+        id="devices_list",
+        item_id_getter=lambda item: item["short_hwid"],
+        items="devices",
+    ),
+    Row(
+        SwitchTo(
+            text=I18nFormat("btn-back.general"),
+            id="back",
+            state=MainMenu.MAIN,
+        ),
+    ),
+    IgnoreUpdate(),
+    state=MainMenu.DEVICES,
+    getter=devices_getter,
+)
 
 invite = Window(
     Banner(BannerName.REFERRAL),
@@ -183,6 +222,7 @@ invite_about = Window(
 
 router = Dialog(
     menu,
+    devices,
     invite,
     invite_about,
 )
