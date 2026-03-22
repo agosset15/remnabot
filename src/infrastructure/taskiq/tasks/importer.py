@@ -107,8 +107,9 @@ async def sync_all_users_from_panel_task(
                         await sync_remna_user.system(SyncRemnaUserDto(remna_user, True))
                         added_subscription += 1
                     else:
-                        await sync_remna_user.system(SyncRemnaUserDto(remna_user, True))
-                        updated += 1
+                        changed = await sync_remna_user.system(SyncRemnaUserDto(remna_user, True))
+                        if changed:
+                            updated += 1
 
             except Exception as exception:
                 logger.exception(
