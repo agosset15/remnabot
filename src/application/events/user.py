@@ -6,6 +6,7 @@ from remnapy.enums.users import TrafficLimitStrategy
 from src.application.dto.message_payload import MessagePayloadDto
 from src.core.enums import MessageEffectId, ReferralRewardType, UserNotificationType
 from src.core.types import NotificationType
+from src.telegram.keyboards import get_buy_keyboard, get_renew_keyboard
 
 from .base import UserEvent
 
@@ -21,6 +22,21 @@ class SubscriptionLimitedEvent(UserEvent):
     traffic_strategy: TrafficLimitStrategy
     reset_time: Any
 
+    @property
+    def event_key(self) -> str:
+        return "event-subscription.limited"
+
+    def as_payload(self) -> "MessagePayloadDto":
+        keyboard = get_buy_keyboard() if self.is_trial else get_renew_keyboard()
+
+        return MessagePayloadDto(
+            i18n_key=self.event_key,
+            i18n_kwargs={**asdict(self)},
+            reply_markup=keyboard,
+            disable_default_markup=False,
+            delete_after=None,
+        )
+
 
 @dataclass(frozen=True, kw_only=True)
 class SubscriptionExpiredEvent(UserEvent):
@@ -28,6 +44,23 @@ class SubscriptionExpiredEvent(UserEvent):
         default=UserNotificationType.EXPIRED,
         init=True,
     )
+
+    is_trial: bool
+
+    @property
+    def event_key(self) -> str:
+        return "event-subscription.expired"
+
+    def as_payload(self) -> "MessagePayloadDto":
+        keyboard = get_buy_keyboard() if self.is_trial else get_renew_keyboard()
+
+        return MessagePayloadDto(
+            i18n_key=self.event_key,
+            i18n_kwargs={**asdict(self)},
+            reply_markup=keyboard,
+            disable_default_markup=False,
+            delete_after=None,
+        )
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -37,7 +70,23 @@ class SubscriptionExpiresEvent(UserEvent):
         init=True,
     )
 
+    is_trial: bool
     day: int
+
+    @property
+    def event_key(self) -> str:
+        return "event-subscription.expiring"
+
+    def as_payload(self) -> "MessagePayloadDto":
+        keyboard = get_buy_keyboard() if self.is_trial else get_renew_keyboard()
+
+        return MessagePayloadDto(
+            i18n_key=self.event_key,
+            i18n_kwargs={**asdict(self)},
+            reply_markup=keyboard,
+            disable_default_markup=False,
+            delete_after=None,
+        )
 
 
 @dataclass(frozen=True, kw_only=True)

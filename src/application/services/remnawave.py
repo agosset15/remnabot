@@ -99,7 +99,9 @@ class RemnaWebhookService:
         elif event == RemnaUserEvent.EXPIRED_24_HOURS_AGO:
             await self.event_bus.publish(
                 SubscriptionExpiredEvent(
-                    user=user, notification_type=UserNotificationType.EXPIRED_1_DAY_AGO
+                    notification_type=UserNotificationType.EXPIRED_1_DAY_AGO,
+                    user=user,
+                    is_trial=current_subscription.is_trial,
                 )
             )
 
@@ -113,7 +115,13 @@ class RemnaWebhookService:
                 RemnaUserEvent.EXPIRES_IN_48_HOURS: 2,
                 RemnaUserEvent.EXPIRES_IN_24_HOURS: 1,
             }
-            await self.event_bus.publish(SubscriptionExpiresEvent(user=user, day=expire_map[event]))
+            await self.event_bus.publish(
+                SubscriptionExpiresEvent(
+                    day=expire_map[event],
+                    user=user,
+                    is_trial=current_subscription.is_trial,
+                )
+            )
 
         elif event == RemnaUserEvent.FIRST_CONNECTED:
             await self.event_bus.publish(
@@ -299,7 +307,9 @@ class RemnaWebhookService:
                     f"more than 3 days passed"
                 )
                 return
-            await self.event_bus.publish(SubscriptionExpiredEvent(user=user))
+            await self.event_bus.publish(
+                SubscriptionExpiredEvent(user=user, is_trial=current_subscription.is_trial)
+            )
 
         if event == RemnaUserEvent.REVOKED:
             await self.event_bus.publish(
