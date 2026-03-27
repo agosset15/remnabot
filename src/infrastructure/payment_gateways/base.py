@@ -96,4 +96,8 @@ class BasePaymentGateway(ABC):
         if not ip:
             raise PermissionError("Client IP not found in request headers")
 
+        ip = ip.strip()
+        if ip.startswith("::ffff:"):
+            ip = ip[7:]
+
         return ip
