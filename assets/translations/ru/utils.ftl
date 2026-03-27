@@ -8,15 +8,15 @@ unknown = —
 
 development-promocode = Промокоды еще не реализованы, для мотивации и ускорения разработки можете закинуть монет.
 
-payment-invoice-description = { purchase-type } подписки { $name } на { $duration }
+payment-invoice-description = { purchase-type } лицензии на доступ к ПО уровень { $name } на { $duration }
 
 inline-invite =
     .title = Пригласить друга
     .description = Нажмите, чтобы отправить пригласительную ссылку!
     .message =
-        🚀 Привет! Хочешь стабильный и быстрый VPN?
+        🚀 Привет! Рекомендую быстрый и недорогой VPN.
         
-        { $bot_name } - поможет тебе с этим!
+        { $bot_name } - стабильный доступ в интернет!
 
         ↘️ ЖМИ КНОПКУ И ПОПРОБУЙ БЕСПЛАТНО!
     .start = 🚀 Присоединиться
@@ -45,8 +45,8 @@ hdr-subscription = { $is_trial ->
 }
 
 hdr-plan = { $is_trial_plan ->
-    [1] <b>🎁 Пробный план:</b>
-    *[0] <b>📦 План:</b>
+    [1] <b>🎁 Пробный тариф:</b>
+    *[0] <b>📦 Тариф:</b>
 }
 
 frg-user =
@@ -91,7 +91,7 @@ frg-user-discounts-details =
 
 frg-subscription =
     <blockquote>
-    • <b>Лимит трафика</b>: { $traffic_limit }
+    • <b>Лимит трафика на LTE-серверах</b>: { $traffic_limit }
     • <b>Лимит устройств</b>: { $device_limit }
     • <b>Осталось</b>: { $expire_time }
     </blockquote>

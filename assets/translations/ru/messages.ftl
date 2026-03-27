@@ -421,7 +421,7 @@ msg-user-main =
     </blockquote>
     [LIMITED]
     <blockquote>
-    • Превышен лимит трафика.
+    • Превышен лимит трафика на LTE-серверах.
     </blockquote>
     [DISABLED]
     <blockquote>
@@ -1076,14 +1076,14 @@ msg-notifications-system = <b>⚙️ Системные уведомления</
 
 # Subscription
 msg-subscription-main = <b>💳 Подписка</b>
-msg-subscription-plans = <b>📦 Выберите план</b>
+msg-subscription-plans = <b>📦 Выберите тариф</b>
 msg-subscription-new-success = Чтобы начать пользоваться нашим сервисом, нажмите кнопку <code>`{ btn-subscription.connect }`</code> и следуйте инструкциям!
 msg-subscription-renew-success = Ваша подписка продлена на { $added_duration }.
 
 msg-subscription-plan = 
-    <b>📦 Доступный план по ссылке</b>
+    <b>📦 Доступный тариф по ссылке</b>
     
-    Вам доступен план <b>{ $name }</b> по ссылке. Нажмите кнопку ниже чтобы перейти к выбору длительности и способа оплаты.
+    Вам доступен тариф <b>{ $name }</b> по ссылке. Нажмите кнопку ниже чтобы перейти к выбору длительности и способа оплаты.
 
     { $description ->
     [0] { space }
@@ -1095,7 +1095,7 @@ msg-subscription-plan =
 
     { $purchase_type ->
     [RENEW] <i>⚠️ Текущая подписка будет <u>продлена</u> на выбранный срок.</i>
-    [CHANGE] <i>⚠️ Текущая подписка будет <u>заменена</u> данным планом без пересчета оставшегося срока.</i>
+    [CHANGE] <i>⚠️ Текущая подписка будет <u>заменена</u> данным тарифом без пересчета оставшегося срока.</i>
     *[OTHER] { empty }
     }
     
@@ -1108,7 +1108,7 @@ msg-subscription-details =
     { $description }
     }
 
-    • <b>Лимит трафика</b>: { $traffic }
+    • <b>Лимит трафика на LTE</b>: { $traffic }
     • <b>Лимит устройств</b>: { $devices }
     { $period ->
     [0] { empty }
@@ -1119,11 +1119,16 @@ msg-subscription-details =
     *[HAS] • <b>Стоимость</b>: { frg-payment-amount }
     }
     </blockquote>
+    <i>*Лимит трафика распространяется <b>только на LTE-серверы</b>. Все остальные не имеют ограничений.</i>
 
 msg-subscription-duration = 
     <b>⏳ Выберите длительность</b>
 
     { msg-subscription-details }
+
+    <blockquote>
+    <b>Покупая подписку на год, вы получаете два месяца в подарок</b>
+    </blockquote>
 
 msg-subscription-payment-method =
     <b>💳 Выберите способ оплаты</b>

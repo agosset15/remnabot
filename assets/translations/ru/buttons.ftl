@@ -204,7 +204,7 @@ btn-goto =
     .invite = 👥 Пригласить
     .subscription-renew = 🔄 Продлить подписку
     .user-profile = 👤 Перейти к пользователю
-    .referrer-profile = 🤝 Перейти к пригласителю
+    .referrer-profile = 🤝 Перейти к пригласившему
     .contact-support = 📩 Перейти в поддержку
 
 btn-promocodes =
