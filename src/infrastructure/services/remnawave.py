@@ -4,6 +4,7 @@ from uuid import UUID
 
 from loguru import logger
 from remnapy import RemnawaveSDK
+from remnapy.enums import UserStatus
 from remnapy.exceptions import AuthenticationError, ConflictError, NetworkError, NotFoundError
 from remnapy.models import (
     CreateUserRequestDto,
@@ -188,6 +189,25 @@ class RemnawaveImpl(Remnawave):
                 setattr(target, field_name, new_value)
 
         return target
+
+    async def update_user_internal_squads(self, user_uuid: UUID, squads: list[UUID]) -> None:
+        request_dto = UpdateUserRequestDto(
+            uuid=user_uuid, active_internal_squads=squads, status=UserStatus.ACTIVE
+        )
+
+        try:
+            remna_user = await self.sdk.users.update_user(request_dto)
+            logger.info(
+                f"RemnaUser '{remna_user.username}' updated successfully. "
+                f"UUID: '{remna_user.uuid}', telegram_id: '{remna_user.telegram_id}'"
+            )
+        except NotFoundError:
+            logger.warning(
+                f"RemnaUser '{request_dto.username}' with UUID '{request_dto.uuid}' not found"
+            )
+            raise
+
+        return remna_user
 
     def _build_create_request(
         self,

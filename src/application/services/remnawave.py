@@ -22,6 +22,7 @@ from src.application.events import (
 )
 from src.application.events.system import SubscriptionRevokedEvent
 from src.application.events.user import SubscriptionExpiredAgoEvent
+from src.application.use_cases.remnawave.commands.management import ToggleLteSquad
 from src.application.use_cases.remnawave.commands.synchronization import (
     SyncRemnaUser,
     SyncRemnaUserDto,
@@ -48,6 +49,7 @@ class RemnaWebhookService:
         event_bus: EventPublisher,
         #
         sync_user: SyncRemnaUser,
+        toggle_lte_squad: ToggleLteSquad,
     ) -> None:
         self.uow = uow
         self.user_dao = user_dao
@@ -55,6 +57,7 @@ class RemnaWebhookService:
         self.event_bus = event_bus
         #
         self.sync_user = sync_user
+        self.toggle_lte_squad = toggle_lte_squad
 
     async def handle_user_event(self, event: str, remna_user: RemnaUserDto) -> None:
         logger.debug(f"Received user event '{event}'")
@@ -95,6 +98,12 @@ class RemnaWebhookService:
             RemnaUserEvent.EXPIRED,
         }:
             await self._process_status(user, current_subscription, event, remna_user)
+
+        elif (
+            event == RemnaUserEvent.TRAFFIC_RESET
+            and current_subscription.current_status == SubscriptionStatus.LIMITED
+        ):
+            await self.toggle_lte_squad.system(remna_user)
 
         elif event == RemnaUserEvent.EXPIRED_24_HOURS_AGO:
             await self.event_bus.publish(
@@ -300,6 +309,7 @@ class RemnaWebhookService:
                     ),
                 )
             )
+            await self.toggle_lte_squad.system(remna_user)
         elif event == RemnaUserEvent.EXPIRED:
             if remna_user.expire_at + timedelta(days=3) < datetime_now():
                 logger.debug(

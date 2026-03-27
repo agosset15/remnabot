@@ -52,7 +52,7 @@ class SyncRemnaUser(Interactor[SyncRemnaUserDto, bool]):
 
             if not user and data.creating:
                 logger.debug(f"User '{remna_user.telegram_id}' not found in bot, creating new user")
-                user = await self.user_dao.create(self._create_user_dto(data.remna_user))
+                user = await self.user_dao.create(self._create_user_dto(remna_user))
 
             if not user:
                 logger.warning(
@@ -80,7 +80,7 @@ class SyncRemnaUser(Interactor[SyncRemnaUserDto, bool]):
 
     def _create_user_dto(self, data: RemnaUserDto) -> UserDto:
         return UserDto(
-            telegram_id=data.telegram_id,  # type: ignore[arg-type]
+            telegram_id=data.telegram_id,  # type: ignore[arg-type]  # ty:ignore[invalid-argument-type]
             referral_code=self.cryptographer.generate_short_code(data.telegram_id),
             name=str(data.telegram_id),
             role=Role.USER,

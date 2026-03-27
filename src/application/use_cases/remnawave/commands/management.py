@@ -9,6 +9,9 @@ from src.application.common.dao import SubscriptionDao
 from src.application.common.policy import Permission
 from src.application.common.remnawave import Remnawave
 from src.application.dto import UserDto
+from src.core.config import AppConfig
+from src.core.enums import SubscriptionStatus
+from src.core.types import RemnaUserDto
 
 
 @dataclass(frozen=True)
@@ -72,18 +75,18 @@ class ResetUserTraffic(Interactor[int, None]):
         self.subscription_dao = subscription_dao
         self.remnawave_sdk = remnawave_sdk
 
-    async def _execute(self, actor: UserDto, telegram_id: int) -> None:
-        subscription = await self.subscription_dao.get_current(telegram_id)
+    async def _execute(self, actor: UserDto, data: int) -> None:
+        subscription = await self.subscription_dao.get_current(data)
         if not subscription:
-            raise ValueError(f"Subscription for user '{telegram_id}' not found")
+            raise ValueError(f"Subscription for user '{data}' not found")
 
         try:
             await self.remnawave_sdk.users.reset_user_traffic(subscription.user_remna_id)
         except Exception as e:
-            logger.error(f"Failed to reset traffic in Remnawave for user '{telegram_id}': {e}")
+            logger.error(f"Failed to reset traffic in Remnawave for user '{data}': {e}")
             raise
 
-        logger.info(f"{actor.log} Reset traffic for user '{telegram_id}'")
+        logger.info(f"{actor.log} Reset traffic for user '{data}'")
 
 
 class ReissueSubscription(Interactor[None, None]):
@@ -102,3 +105,30 @@ class ReissueSubscription(Interactor[None, None]):
         await self.remnawave.revoke_subscription(current_subscription.user_remna_id)
 
         logger.info(f"{actor.log} Reissued subscription")
+
+
+class ToggleLteSquad(Interactor[RemnaUserDto, None]):
+    required_permission = Permission.USER_EDITOR
+
+    def __init__(
+        self, remnawave: Remnawave, config: AppConfig, subscription_dao: SubscriptionDao
+    ) -> None:
+        self.remnawave = remnawave
+        self.config = config
+        self.subscription_dao = subscription_dao
+
+    async def _execute(self, actor: UserDto, data: RemnaUserDto) -> None:
+        if not self.config.remnawave.lte_squad_uuid:
+            return
+
+        internal_squads = {s.uuid for s in data.active_internal_squads}
+        lte_squad_uuid = self.config.remnawave.lte_squad_uuid
+
+        if lte_squad_uuid in internal_squads:
+            internal_squads.discard(lte_squad_uuid)
+            await self.remnawave.reset_traffic(data.uuid)
+        elif data.status == SubscriptionStatus.ACTIVE:
+            internal_squads.add(lte_squad_uuid)
+
+        await self.remnawave.update_user_internal_squads(data.uuid, list(internal_squads))
+        logger.info(f"Toggled LTE squad for user '{data.uuid}'")
