@@ -10,7 +10,7 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 from src.core.config import AppConfig
-from src.infrastructure.database.models.sql import BaseSql
+from src.infrastructure.database.models import BaseSql
 
 config = context.config
 app_config = AppConfig.get()
@@ -50,6 +50,7 @@ def run_migrations_offline() -> None:
         dialect_opts={"paramstyle": "named"},
         process_revision_directives=process_revision_directives,
         crypt_key=app_config.crypt_key.get_secret_value(),
+        owner_id=app_config.bot.owner_id,
     )
 
     with context.begin_transaction():
@@ -62,6 +63,7 @@ def do_run_migrations(connection: Connection) -> None:
         target_metadata=target_metadata,
         process_revision_directives=process_revision_directives,
         crypt_key=app_config.crypt_key.get_secret_value(),
+        owner_id=app_config.bot.owner_id,
     )
 
     with context.begin_transaction():

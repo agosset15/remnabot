@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Optional, Union
 
 from pydantic import SecretStr, field_validator
 from pydantic_core.core_schema import FieldValidationInfo
@@ -13,7 +13,7 @@ from .validators import validate_not_change_me, validate_username
 class BotConfig(BaseConfig, env_prefix="BOT_"):
     token: SecretStr
     secret_token: SecretStr
-    dev_id: int
+    owner_id: int
     support_username: SecretStr
     mini_app: Union[bool, SecretStr] = False
     default_language: Locale = Locale.EN
@@ -23,6 +23,11 @@ class BotConfig(BaseConfig, env_prefix="BOT_"):
     topic_logs_thread_bot: int = 2
     topic_logs_thread_user: int = 4
     topic_logs_thread_node: int = 6
+
+    notifications_chat_id: Optional[int] = None
+    notifications_bot_thread_id: Optional[int] = None
+    notifications_user_thread_id: Optional[int] = None
+    notifications_node_thread_id: Optional[int] = None
 
     reset_webhook: bool = False
     drop_pending_updates: bool = False
@@ -90,4 +95,19 @@ class BotConfig(BaseConfig, env_prefix="BOT_"):
             if URL_PATTERN.match(value):
                 return SecretStr(value)
             raise ValueError("BOT_MINI_APP must be empty, True, False or a valid URL")
+        return field
+
+    @field_validator(
+        "notifications_bot_thread_id",
+        "notifications_user_thread_id",
+        "notifications_node_thread_id",
+    )
+    @classmethod
+    def validate_thread_requires_chat(
+        cls,
+        field: Optional[int],
+        info: FieldValidationInfo,
+    ) -> Optional[int]:
+        if field is not None and not info.data.get("notifications_chat_id"):
+            raise ValueError(f"{info.field_name} cannot be set without notifications_chat_id")
         return field
