@@ -71,11 +71,14 @@ ROLE_PERMISSIONS: Final[dict[Role, set[Permission]]] = {
     Role.DEV: set(Permission),
     Role.ADMIN: {
         Permission.VIEW_DASHBOARD,
-        Permission.VIEW_ACCESS,
+        Permission.VIEW_USERS,
     },
     Role.PREVIEW: {  # TODO: Implement demo Bot instance
         Permission.VIEW_DASHBOARD,
         Permission.VIEW_ACCESS,
+        Permission.USER_EDITOR,
+        Permission.USER_SEARCH,
+        Permission.USER_SUBSCRIPTION_EDITOR,
     },
     Role.USER: set(),
 }
