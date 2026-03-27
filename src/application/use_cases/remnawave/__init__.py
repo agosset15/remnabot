@@ -7,6 +7,7 @@ from .commands.management import (
     DeleteUserDevice,
     ReissueSubscription,
     ResetUserTraffic,
+    ToggleLteSquad,
 )
 from .commands.synchronization import SyncRemnaUser
 
@@ -16,4 +17,5 @@ REMNAWAVE_USE_CASES: Final[tuple[type[Interactor], ...]] = (
     DeleteUserAllDevices,
     ResetUserTraffic,
     ReissueSubscription,
+    ToggleLteSquad,
 )
