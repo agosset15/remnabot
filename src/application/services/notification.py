@@ -216,7 +216,7 @@ class NotificationService(Notifier):
             "disable_notification": payload.disable_notification,
             "message_effect_id": payload.message_effect,
             "reply_markup": reply_markup,
-            "thread_id": payload.thread_id,
+            "message_thread_id": payload.thread_id,
         }
 
         try:
