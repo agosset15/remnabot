@@ -1,6 +1,6 @@
 from typing import Optional
 
-from dishka.integrations.fastapi import inject, FromDishka
+from dishka.integrations.fastapi import FromDishka, inject
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
@@ -25,13 +25,13 @@ class ReferralResponse(BaseModel):
 @router.get("")
 @inject
 async def get_referral(
+    get_user_statistics: FromDishka[GetUserStatistics],
+    bot_service: FromDishka[BotService],
     current_user: UserDto = Depends(get_current_user),
-    get_user_statistics: FromDishka[GetUserStatistics] = ...,
-    bot_service: FromDishka[BotService] = ...,
 ) -> ReferralResponse:
     try:
         stats = await get_user_statistics.system(current_user.telegram_id)
-    except Exception as e:
+    except Exception:
         raise HTTPException(status_code=503, detail="Failed to load referral statistics")
 
     referral_url = await bot_service.get_referral_url(current_user.referral_code)

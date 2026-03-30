@@ -1,9 +1,8 @@
 from datetime import datetime
 from decimal import Decimal
 from typing import Optional
-from uuid import UUID
 
-from dishka.integrations.fastapi import inject, FromDishka
+from dishka.integrations.fastapi import FromDishka, inject
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
@@ -21,7 +20,7 @@ from src.application.use_cases.subscription.commands.purchase import (
     ActivateTrialSubscriptionDto,
 )
 from src.application.use_cases.user.queries.plans import GetAvailableTrial
-from src.core.enums import Currency, PaymentGatewayType, PurchaseType, TransactionStatus
+from src.core.enums import PaymentGatewayType, PurchaseType, TransactionStatus
 from src.web.dependencies.auth import get_current_user
 
 router = APIRouter()
@@ -64,8 +63,8 @@ class TransactionResponse(BaseModel):
 @router.get("/gateways")
 @inject
 async def get_gateways(
+    payment_gateway_dao: FromDishka[PaymentGatewayDao],
     current_user: UserDto = Depends(get_current_user),
-    payment_gateway_dao: FromDishka[PaymentGatewayDao] = ...,
 ) -> list[GatewayResponse]:
     gateways = await payment_gateway_dao.get_active()
     return [
@@ -81,14 +80,14 @@ async def get_gateways(
 @router.post("/create")
 @inject
 async def create_payment(
+    settings_dao: FromDishka[SettingsDao],
+    plan_dao: FromDishka[PlanDao],
+    payment_gateway_dao: FromDishka[PaymentGatewayDao],
+    pricing_service: FromDishka[PricingService],
+    create_payment_uc: FromDishka[CreatePayment],
+    process_payment_uc: FromDishka[ProcessPayment],
     body: CreatePaymentRequest,
     current_user: UserDto = Depends(get_current_user),
-    settings_dao: FromDishka[SettingsDao] = ...,
-    plan_dao: FromDishka[PlanDao] = ...,
-    payment_gateway_dao: FromDishka[PaymentGatewayDao] = ...,
-    pricing_service: FromDishka[PricingService] = ...,
-    create_payment_uc: FromDishka[CreatePayment] = ...,
-    process_payment_uc: FromDishka[ProcessPayment] = ...,
 ) -> CreatePaymentResponse:
     settings = await settings_dao.get()
     if not settings.access.payments_allowed:
@@ -151,9 +150,9 @@ async def create_payment(
 @router.post("/trial")
 @inject
 async def activate_trial(
+    get_available_trial: FromDishka[GetAvailableTrial],
+    activate_trial_subscription: FromDishka[ActivateTrialSubscription],
     current_user: UserDto = Depends(get_current_user),
-    get_available_trial: FromDishka[GetAvailableTrial] = ...,
-    activate_trial_subscription: FromDishka[ActivateTrialSubscription] = ...,
 ) -> dict:
     if not current_user.is_trial_available:
         raise HTTPException(status_code=400, detail="Trial is not available for this user")
@@ -183,8 +182,8 @@ async def activate_trial(
 @router.get("/history")
 @inject
 async def get_payment_history(
+    transaction_dao: FromDishka[TransactionDao],
     current_user: UserDto = Depends(get_current_user),
-    transaction_dao: FromDishka[TransactionDao] = ...,
 ) -> list[TransactionResponse]:
     transactions = await transaction_dao.get_by_user(current_user.telegram_id)
 

@@ -1,5 +1,5 @@
+from dishka.integrations.fastapi import FromDishka, inject
 from fastapi import Cookie, HTTPException
-from dishka.integrations.fastapi import inject, FromDishka
 from jose import jwt
 
 from src.application.common.dao import UserDao
@@ -9,9 +9,9 @@ from src.core.config import AppConfig
 
 @inject
 async def get_current_user(
+    user_dao: FromDishka[UserDao],
+    config: FromDishka[AppConfig],
     session: str | None = Cookie(default=None),
-    user_dao: FromDishka[UserDao] = ...,
-    config: FromDishka[AppConfig] = ...,
 ) -> UserDto:
     if not session:
         raise HTTPException(status_code=401, detail="Not authenticated")

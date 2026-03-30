@@ -1,7 +1,7 @@
 from decimal import Decimal
 from typing import Optional
 
-from dishka.integrations.fastapi import inject, FromDishka
+from dishka.integrations.fastapi import FromDishka, inject
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
@@ -46,9 +46,9 @@ class TrialResponse(BaseModel):
 @router.get("")
 @inject
 async def get_plans(
+    get_available_plans: FromDishka[GetAvailablePlans],
+    settings_dao: FromDishka[SettingsDao],
     current_user: UserDto = Depends(get_current_user),
-    get_available_plans: FromDishka[GetAvailablePlans] = ...,
-    settings_dao: FromDishka[SettingsDao] = ...,
 ) -> list[PlanResponse]:
     plans = await get_available_plans(actor=current_user, data=current_user)
     settings = await settings_dao.get()
@@ -58,9 +58,7 @@ async def get_plans(
     for plan in plans:
         durations = []
         for duration in plan.durations:
-            price = next(
-                (p.price for p in duration.prices if p.currency == default_currency), None
-            )
+            price = next((p.price for p in duration.prices if p.currency == default_currency), None)
             if price is not None:
                 durations.append(
                     PlanDurationResponse(
@@ -72,7 +70,7 @@ async def get_plans(
 
         result.append(
             PlanResponse(
-                id=plan.id,  # type: ignore[arg-type]
+                id=plan.id,  # ty: ignore[invalid-argument-type]
                 name=plan.name,
                 description=plan.description,
                 type=str(plan.type),
@@ -89,8 +87,8 @@ async def get_plans(
 @router.get("/trial")
 @inject
 async def get_trial_plan(
+    get_available_trial: FromDishka[GetAvailableTrial],
     current_user: UserDto = Depends(get_current_user),
-    get_available_trial: FromDishka[GetAvailableTrial] = ...,
 ) -> TrialResponse:
     if not current_user.is_trial_available:
         return TrialResponse(available=False, plan=None)
@@ -104,7 +102,7 @@ async def get_trial_plan(
     return TrialResponse(
         available=True,
         plan=TrialPlanResponse(
-            id=plan.id,  # type: ignore[arg-type]
+            id=plan.id,  # ty: ignore[invalid-argument-type]
             name=plan.name,
             duration_days=duration_days,
             traffic_limit=plan.traffic_limit,

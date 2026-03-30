@@ -30,6 +30,7 @@ dependencies = [
     "msgspec~=0.19.0",
     "cryptography>=46.0.3",
     "qrcode[pil]>=8.2",
+    "python-jose[cryptography]>=3.5.0",
 ]
 
 [tool.uv.sources]

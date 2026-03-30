@@ -3,14 +3,14 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 import httpx
-from dishka.integrations.fastapi import inject, FromDishka
-from fastapi import APIRouter, HTTPException, Response, Depends
-from jose import jwt, JWTError
+from dishka.integrations.fastapi import FromDishka, inject
+from fastapi import APIRouter, Depends, HTTPException, Response
+from jose import JWTError, jwt
 from pydantic import BaseModel
 from redis.asyncio import Redis
 
-from src.application.common.dao import UserDao
 from src.application.common.cryptography import Cryptographer
+from src.application.common.dao import UserDao
 from src.application.dto import UserDto
 from src.core.config import AppConfig
 from src.core.enums import Locale, Role
@@ -100,12 +100,12 @@ def _to_user_response(user: UserDto) -> UserResponse:
 @router.post("/telegram")
 @inject
 async def login_telegram(
+    user_dao: FromDishka[UserDao],
+    config: FromDishka[AppConfig],
+    cryptographer: FromDishka[Cryptographer],
+    redis: FromDishka[Redis],
     body: TelegramAuthRequest,
     response: Response,
-    user_dao: FromDishka[UserDao] = ...,
-    config: FromDishka[AppConfig] = ...,
-    cryptographer: FromDishka[Cryptographer] = ...,
-    redis: FromDishka[Redis] = ...,
 ) -> AuthResponse:
     try:
         claims = await _validate_telegram_id_token(body.id_token, config.tg_client_id, redis)

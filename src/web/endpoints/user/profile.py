@@ -1,21 +1,21 @@
 from datetime import datetime
 from typing import Optional
 
-from dishka.integrations.fastapi import inject, FromDishka
+from dishka.integrations.fastapi import FromDishka, inject
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from src.application.common.dao import SubscriptionDao
 from src.application.dto import UserDto
-from src.application.use_cases.user.queries.profile import (
-    GetUserProfileSubscription,
-    GetUserDevices,
-)
 from src.application.use_cases.remnawave.commands.management import (
+    DeleteUserAllDevices,
     DeleteUserDevice,
     DeleteUserDeviceDto,
-    DeleteUserAllDevices,
     ReissueSubscription,
+)
+from src.application.use_cases.user.queries.profile import (
+    GetUserDevices,
+    GetUserProfileSubscription,
 )
 from src.web.dependencies.auth import get_current_user
 
@@ -74,8 +74,8 @@ class DevicesResponse(BaseModel):
 @router.get("")
 @inject
 async def get_profile(
+    subscription_dao: FromDishka[SubscriptionDao],
     current_user: UserDto = Depends(get_current_user),
-    subscription_dao: FromDishka[SubscriptionDao] = ...,
 ) -> ProfileResponse:
     subscription = await subscription_dao.get_current(current_user.telegram_id)
 
@@ -107,8 +107,8 @@ async def get_profile(
 @router.get("/subscription")
 @inject
 async def get_subscription_detail(
+    get_user_profile_subscription: FromDishka[GetUserProfileSubscription],
     current_user: UserDto = Depends(get_current_user),
-    get_user_profile_subscription: FromDishka[GetUserProfileSubscription] = ...,
 ) -> SubscriptionDetailResponse:
     try:
         result = await get_user_profile_subscription.system(current_user.telegram_id)
@@ -137,8 +137,8 @@ async def get_subscription_detail(
 @router.get("/subscription/devices")
 @inject
 async def get_devices(
+    get_user_devices: FromDishka[GetUserDevices],
     current_user: UserDto = Depends(get_current_user),
-    get_user_devices: FromDishka[GetUserDevices] = ...,
 ) -> DevicesResponse:
     try:
         result = await get_user_devices.system(current_user.telegram_id)
@@ -169,8 +169,8 @@ async def get_devices(
 @inject
 async def delete_device(
     hwid: str,
+    delete_user_device: FromDishka[DeleteUserDevice],
     current_user: UserDto = Depends(get_current_user),
-    delete_user_device: FromDishka[DeleteUserDevice] = ...,
 ) -> dict:
     try:
         await delete_user_device(
@@ -188,8 +188,8 @@ async def delete_device(
 @router.delete("/subscription/devices")
 @inject
 async def delete_all_devices(
+    delete_user_all_devices: FromDishka[DeleteUserAllDevices],
     current_user: UserDto = Depends(get_current_user),
-    delete_user_all_devices: FromDishka[DeleteUserAllDevices] = ...,
 ) -> dict:
     try:
         await delete_user_all_devices(actor=current_user)
@@ -204,8 +204,8 @@ async def delete_all_devices(
 @router.post("/subscription/reissue")
 @inject
 async def reissue_subscription(
+    reissue: FromDishka[ReissueSubscription],
     current_user: UserDto = Depends(get_current_user),
-    reissue: FromDishka[ReissueSubscription] = ...,
 ) -> dict:
     try:
         await reissue(actor=current_user)
