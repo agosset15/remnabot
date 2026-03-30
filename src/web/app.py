@@ -7,6 +7,7 @@ from src.core.config import AppConfig
 from src.lifespan import lifespan
 
 from .endpoints import TelegramWebhookEndpoint, payments_router, remnawave_router
+from .endpoints.user.router import user_router
 
 
 def get_app(config: AppConfig, dispatcher: Dispatcher) -> FastAPI:
@@ -28,6 +29,7 @@ def get_app(config: AppConfig, dispatcher: Dispatcher) -> FastAPI:
 
     app.include_router(payments_router)
     app.include_router(remnawave_router)
+    app.include_router(user_router, prefix="/api/user")
 
     telegram_webhook_endpoint = TelegramWebhookEndpoint(
         dispatcher=dispatcher,

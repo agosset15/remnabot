@@ -31,6 +31,10 @@ class AppConfig(BaseConfig, env_prefix="APP_"):
     assets_dir: Path = ASSETS_DIR
     origins: StringList = StringList("")
 
+    tg_client_id: int = 0
+    jwt_secret: SecretStr = SecretStr("")
+    jwt_expire_hours: int = 24
+
     bot: BotConfig = Field(default_factory=BotConfig)
     remnawave: RemnawaveConfig = Field(default_factory=RemnawaveConfig)
     database: DatabaseConfig = Field(default_factory=DatabaseConfig)
