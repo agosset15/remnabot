@@ -86,8 +86,8 @@ def upgrade() -> None:
     op.drop_constraint("referrals_referrer_telegram_id_fkey", "referrals", type_="foreignkey")
     op.drop_constraint("referrals_referred_telegram_id_fkey", "referrals", type_="foreignkey")
     op.drop_index("ix_referrals_referrer_telegram_id", "referrals")
+    # ix_referrals_referred_telegram_id was created as a unique INDEX (not a constraint) in 0018
     op.drop_index("ix_referrals_referred_telegram_id", "referrals")
-    op.drop_constraint("referrals_referred_telegram_id_key", "referrals", type_="unique")
 
     op.add_column("referrals", sa.Column("referrer_user_id", sa.Integer(), nullable=True))
     op.add_column("referrals", sa.Column("referred_user_id", sa.Integer(), nullable=True))
@@ -203,8 +203,8 @@ def downgrade() -> None:
     op.alter_column("referrals", "referred_telegram_id", nullable=False)
 
     op.create_index("ix_referrals_referrer_telegram_id", "referrals", ["referrer_telegram_id"])
-    op.create_index("ix_referrals_referred_telegram_id", "referrals", ["referred_telegram_id"])
-    op.create_unique_constraint("referrals_referred_telegram_id_key", "referrals", ["referred_telegram_id"])
+    # Must match 0018: unique INDEX, not a named constraint
+    op.create_index("ix_referrals_referred_telegram_id", "referrals", ["referred_telegram_id"], unique=True)
     op.create_foreign_key(
         "referrals_referrer_telegram_id_fkey",
         "referrals",
