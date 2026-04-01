@@ -11,11 +11,10 @@ from sqlalchemy import and_, case, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.application.common.dao import TransactionDao
-from src.application.dto import GatewayStatsDto, PlanIncomeDto, TransactionDto
-from src.application.dto.statistics import UserPaymentStatsDto
+from src.application.dto import GatewayStatsDto, PlanIncomeDto, TransactionDto, UserPaymentStatsDto
 from src.core.enums import TransactionStatus
 from src.core.utils.time import datetime_now
-from src.infrastructure.database.models import Transaction
+from src.infrastructure.database.models import Transaction, User
 
 
 class TransactionDaoImpl(TransactionDao):
@@ -58,12 +57,24 @@ class TransactionDaoImpl(TransactionDao):
         logger.debug(f"Transaction '{payment_id}' not found")
         return None
 
-    async def get_by_user(self, telegram_id: int) -> list[TransactionDto]:
-        stmt = select(Transaction).where(Transaction.user_telegram_id == telegram_id)
+    async def get_by_user_telegram_id(self, telegram_id: int) -> list[TransactionDto]:
+        stmt = (
+            select(Transaction)
+            .join(User, User.id == Transaction.user_id)
+            .where(User.telegram_id == telegram_id)
+        )
         result = await self.session.scalars(stmt)
         db_transactions = cast(list, result.all())
 
         logger.debug(f"Retrieved '{len(db_transactions)}' transactions for user '{telegram_id}'")
+        return self._convert_to_dto_list(db_transactions)
+
+    async def get_by_user_id(self, user_id: int) -> list[TransactionDto]:
+        smt = select(Transaction).where(Transaction.user_id == user_id)
+        result = await self.session.scalars(smt)
+        db_transactions = cast(list, result.all())
+
+        logger.debug(f"Retrieved '{len(db_transactions)}' transactions for user '{user_id}'")
         return self._convert_to_dto_list(db_transactions)
 
     async def get_all(self, limit: int = 100, offset: int = 0) -> list[TransactionDto]:
@@ -124,7 +135,7 @@ class TransactionDaoImpl(TransactionDao):
             .values(status=TransactionStatus.CANCELED)
         )
         result = await self.session.execute(stmt)
-        count = result.rowcount  # type: ignore[attr-defined]
+        count = result.rowcount  # ty: ignore[unresolved-attribute]
 
         if count > 0:
             logger.debug(f"Cancelled '{count}' pending transactions older than '{minutes}' minutes")
@@ -141,7 +152,7 @@ class TransactionDaoImpl(TransactionDao):
         return total
 
     async def count_paying_users(self) -> int:
-        stmt = select(func.count(func.distinct(Transaction.user_telegram_id))).where(
+        stmt = select(func.count(func.distinct(Transaction.user_id))).where(
             Transaction.status == TransactionStatus.COMPLETED
         )
 
@@ -271,8 +282,9 @@ class TransactionDaoImpl(TransactionDao):
     ) -> tuple[Optional[datetime], list[UserPaymentStatsDto]]:
         last_payment_stmt = (
             select(Transaction.created_at)
+            .join(User, User.id == Transaction.user_id)
             .where(
-                Transaction.user_telegram_id == telegram_id,
+                User.telegram_id == telegram_id,
                 Transaction.status == TransactionStatus.COMPLETED,
             )
             .order_by(Transaction.created_at.desc())
@@ -284,8 +296,9 @@ class TransactionDaoImpl(TransactionDao):
                 Transaction.currency.label("currency"),
                 func.sum(Transaction.pricing["final_amount"].as_float()).label("total_amount"),
             )
+            .join(User, User.id == Transaction.user_id)
             .where(
-                Transaction.user_telegram_id == telegram_id,
+                User.telegram_id == telegram_id,
                 Transaction.status == TransactionStatus.COMPLETED,
                 Transaction.pricing["final_amount"].as_float() > 0,
             )

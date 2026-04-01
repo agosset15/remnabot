@@ -4,6 +4,7 @@ from src.application.common import (
     Cryptographer,
     EventPublisher,
     EventSubscriber,
+    Mailer,
     Notifier,
     Redirect,
     Remnawave,
@@ -22,6 +23,7 @@ from src.infrastructure.services import (
     NotificationQueue,
     RedirectImpl,
     RemnawaveImpl,
+    SmtpMailerImpl,
 )
 
 
@@ -30,6 +32,7 @@ class ServicesProvider(Provider):
 
     bot = provide(source=BotService)
     cryptographer = provide(source=CryptographerImpl, provides=Cryptographer)
+    mailer = provide(source=SmtpMailerImpl, provides=Mailer)
     redirect = provide(source=RedirectImpl, provides=Redirect)
     pricing = provide(source=PricingService)
 

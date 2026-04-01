@@ -5,7 +5,7 @@ __all__ = [
     "access",
     "broadcast",
     "importer",
-    "promocodes",
+    # "promocodes",
     "remnashop",
     "remnawave",
     "statistics",

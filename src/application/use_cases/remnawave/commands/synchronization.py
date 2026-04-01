@@ -67,7 +67,7 @@ class SyncRemnaUser(Interactor[SyncRemnaUserDto, bool]):
                 logger.info(
                     f"No subscription found for user '{user.telegram_id}', importing from panel"
                 )
-                await self._import_subscription(user.telegram_id, remna_subscription)
+                await self._import_subscription(user.id, remna_subscription)  # type: ignore[arg-type]
                 await self.uow.commit()
                 logger.info(f"Sync completed for user '{remna_user.telegram_id}'")
                 return False
@@ -89,7 +89,7 @@ class SyncRemnaUser(Interactor[SyncRemnaUserDto, bool]):
 
     async def _import_subscription(
         self,
-        telegram_id: int,
+        user_id: int,
         remna_subscription: RemnaSubscriptionDto,
     ) -> None:
         plan = PlanSnapshotDto(
@@ -127,7 +127,7 @@ class SyncRemnaUser(Interactor[SyncRemnaUserDto, bool]):
             plan_snapshot=plan,
         )
 
-        subscription = await self.subscription_dao.create(subscription, telegram_id)
+        subscription = await self.subscription_dao.create(subscription, user_id)
 
     async def _update_subscription(
         self,

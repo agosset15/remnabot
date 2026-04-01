@@ -1,6 +1,7 @@
 from .cryptography import Cryptographer
 from .event_bus import EventPublisher, EventSubscriber
 from .interactor import Interactor
+from .mailer import Mailer
 from .notifier import Notifier
 from .redirect import Redirect
 from .remnawave import Remnawave
@@ -11,6 +12,7 @@ __all__ = [
     "EventPublisher",
     "EventSubscriber",
     "Interactor",
+    "Mailer",
     "Notifier",
     "Redirect",
     "Remnawave",

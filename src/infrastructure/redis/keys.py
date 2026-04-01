@@ -41,3 +41,8 @@ class ImportRunningKey(StorageKey, prefix="import_running"): ...
 
 
 class SyncRunningKey(StorageKey, prefix="sync_running"): ...
+
+
+@dataclass(frozen=True)
+class EmailOtpKey(StorageKey, prefix="email_otp"):
+    email: str

@@ -24,7 +24,7 @@ from src.core.enums import PurchaseType, ReferralAccrualStrategy, ReferralLevel,
 
 @dataclass(frozen=True)
 class GiveReferrerRewardDto:
-    user_telegram_id: int
+    user_id: int
     reward: ReferralRewardDto
     referred_name: str
 
@@ -51,10 +51,10 @@ class GiveReferrerReward(Interactor[GiveReferrerRewardDto, None]):
     async def _execute(self, actor: UserDto, data: GiveReferrerRewardDto) -> None:
         reward = data.reward
 
-        user = await self.user_dao.get_by_telegram_id(data.user_telegram_id)
+        user = await self.user_dao.get_by_id(data.user_id)
         if not user:
             logger.warning(
-                f"{actor.log} User '{data.user_telegram_id}' not found, unable to apply reward"
+                f"{actor.log} User id='{data.user_id}' not found, unable to apply reward"
             )
             return
 
@@ -201,7 +201,7 @@ class AssignReferralRewards(Interactor[AssignReferralRewardsDto, None]):
             async with self.uow:
                 reward = await self.referral_dao.create_reward(
                     reward=ReferralRewardDto(
-                        user_telegram_id=referrer.telegram_id,
+                        user_id=referrer.id,  # type: ignore[arg-type]
                         type=reward_type,
                         amount=reward_amount,
                         is_issued=False,
@@ -213,7 +213,7 @@ class AssignReferralRewards(Interactor[AssignReferralRewardsDto, None]):
 
                 await self.give_referrer_reward.system(
                     GiveReferrerRewardDto(
-                        user_telegram_id=referrer.telegram_id,
+                        user_id=referrer.id,  # type: ignore[arg-type]
                         reward=reward,
                         referred_name=data.user.name,
                     )

@@ -1,7 +1,7 @@
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import BigInteger, ForeignKey
+from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.core.enums import Currency, PaymentGatewayType, PurchaseType, TransactionStatus
@@ -16,9 +16,8 @@ class Transaction(BaseSql, TimestampMixin):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     payment_id: Mapped[UUID] = mapped_column(index=True, unique=True)
-    user_telegram_id: Mapped[int] = mapped_column(
-        BigInteger,
-        ForeignKey("users.telegram_id"),
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id"),
         index=True,
     )
 
@@ -32,4 +31,4 @@ class Transaction(BaseSql, TimestampMixin):
     currency: Mapped[Currency]
     plan_snapshot: Mapped[dict[str, Any]]
 
-    user: Mapped["User"] = relationship(foreign_keys=[user_telegram_id])
+    user: Mapped["User"] = relationship(foreign_keys=[user_id])

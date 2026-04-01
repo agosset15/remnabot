@@ -75,9 +75,9 @@ class ActivateTrialSubscription(Interactor[ActivateTrialSubscriptionDto, None]):
             async with self.uow:
                 await self.subscription_dao.create(
                     subscription=trial_subscription,
-                    telegram_id=user.telegram_id,
+                    user_id=user.id,  # ty: ignore[invalid-argument-type]
                 )
-                await self.user_dao.set_trial_available(user.telegram_id, False)
+                await self.user_dao.set_trial_available(user.id, False)  # ty: ignore[invalid-argument-type]
                 await self.uow.commit()
 
             logger.debug(
@@ -85,7 +85,7 @@ class ActivateTrialSubscription(Interactor[ActivateTrialSubscriptionDto, None]):
             )
 
             event = TrialActivatedEvent(
-                telegram_id=user.telegram_id,
+                telegram_id=user.telegram_id,  # ty: ignore[invalid-argument-type]
                 username=user.username,
                 name=user.name,
                 plan_name=self.i18n.get(plan.name),
@@ -95,7 +95,7 @@ class ActivateTrialSubscription(Interactor[ActivateTrialSubscriptionDto, None]):
                 plan_duration=i18n_format_days(plan.duration),
             )
             await self.event_publisher.publish(event)
-            await self.redirect.to_success_trial(user.telegram_id)
+            await self.redirect.to_success_trial(user.telegram_id)  # ty: ignore[invalid-argument-type]
             logger.info(
                 f"{actor.log} Trial subscription completed "
                 f"successfully for user '{user.telegram_id}'"
@@ -103,7 +103,7 @@ class ActivateTrialSubscription(Interactor[ActivateTrialSubscriptionDto, None]):
 
         except Exception as e:
             logger.exception(f"{actor.log} Failed to give trial for user '{user.telegram_id}'")
-            await self.redirect.to_failed_payment(user.telegram_id)
+            await self.redirect.to_failed_payment(user.telegram_id)  # ty: ignore[invalid-argument-type]
             raise TrialError(e)
 
 
@@ -159,14 +159,12 @@ class PurchaseSubscription(Interactor[PurchaseSubscriptionDto, None]):
 
                     await self.subscription_dao.create(
                         subscription=new_sub,
-                        telegram_id=user.telegram_id,
+                        user_id=user.id,  # ty: ignore[invalid-argument-type]
                     )
-                    await self.user_dao.set_trial_available(user.telegram_id, False)
+                    await self.user_dao.set_trial_available(user.id, False)  # ty: ignore[invalid-argument-type]
                     await self.uow.commit()
 
-                    logger.debug(
-                        f"{actor.log} Created new subscription for user '{user.telegram_id}'"
-                    )
+                    logger.debug(f"{actor.log} Created new subscription for user '{user.id}'")
 
                 # 2. RENEW (NOT TRIAL)
                 elif purchase_type == PurchaseType.RENEW and not has_trial:
@@ -207,8 +205,8 @@ class PurchaseSubscription(Interactor[PurchaseSubscriptionDto, None]):
 
                     # Deactivate old subscription
                     await self.subscription_dao.update_status(
-                        subscription_id=subscription.id,  # type: ignore[arg-type]
-                        status=SubscriptionStatus.DISABLED,
+                        subscription_id=subscription.id,  # ty: ignore[invalid-argument-type]
+                        status=SubscriptionStatus.DELETED,
                     )
 
                     updated_user = await self.remnawave.update_user(
@@ -221,7 +219,7 @@ class PurchaseSubscription(Interactor[PurchaseSubscriptionDto, None]):
                     new_sub = self._build_subscription_dto(updated_user, plan)
                     await self.subscription_dao.create(
                         subscription=new_sub,
-                        telegram_id=user.telegram_id,
+                        user_id=user.id,  # ty: ignore[invalid-argument-type]
                     )
 
                     await self.uow.commit()
@@ -232,7 +230,7 @@ class PurchaseSubscription(Interactor[PurchaseSubscriptionDto, None]):
                         f"Unknown purchase type '{purchase_type}' for user '{user.telegram_id}'"
                     )
 
-                await self.redirect.to_success_payment(user.telegram_id, purchase_type)
+                await self.redirect.to_success_payment(user.telegram_id, purchase_type)  # ty: ignore[invalid-argument-type]
                 logger.info(
                     f"{actor.log} Purchase subscription completed for user '{user.telegram_id}'"
                 )
@@ -249,7 +247,7 @@ class PurchaseSubscription(Interactor[PurchaseSubscriptionDto, None]):
                 )
                 await self.uow.commit()
 
-                await self.redirect.to_failed_payment(user.telegram_id)
+                await self.redirect.to_failed_payment(user.telegram_id)  # ty: ignore[invalid-argument-type]
                 raise PurchaseError(e)
 
     def _build_subscription_dto(
@@ -267,6 +265,6 @@ class PurchaseSubscription(Interactor[PurchaseSubscriptionDto, None]):
             internal_squads=plan.internal_squads,
             external_squad=plan.external_squad,
             expire_at=remna_user.expire_at,
-            url=remna_user.subscription_url,  # type: ignore[arg-type]
+            url=remna_user.subscription_url,
             plan_snapshot=plan,
         )

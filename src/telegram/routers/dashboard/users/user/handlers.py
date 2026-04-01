@@ -429,7 +429,7 @@ async def on_transactions(
 ) -> None:
     user: UserDto = dialog_manager.middleware_data[USER_KEY]
     target_telegram_id = dialog_manager.dialog_data[TARGET_TELEGRAM_ID]
-    transactions = await transaction_dao.get_by_user(target_telegram_id)
+    transactions = await transaction_dao.get_by_user_telegram_id(target_telegram_id)
 
     if not transactions:
         await notifier.notify_user(user, i18n_key="ntf-user.transactions-empty")

@@ -2,8 +2,7 @@ from datetime import datetime
 from typing import Optional, Protocol, runtime_checkable
 from uuid import UUID
 
-from src.application.dto import GatewayStatsDto, PlanIncomeDto, TransactionDto
-from src.application.dto.statistics import UserPaymentStatsDto
+from src.application.dto import GatewayStatsDto, PlanIncomeDto, TransactionDto, UserPaymentStatsDto
 from src.core.enums import TransactionStatus
 
 
@@ -13,7 +12,9 @@ class TransactionDao(Protocol):
 
     async def get_by_payment_id(self, payment_id: UUID) -> Optional[TransactionDto]: ...
 
-    async def get_by_user(self, telegram_id: int) -> list[TransactionDto]: ...
+    async def get_by_user_telegram_id(self, telegram_id: int) -> list[TransactionDto]: ...
+
+    async def get_by_user_id(self, user_id: int) -> list[TransactionDto]: ...
 
     async def get_all(self, limit: int = 100, offset: int = 0) -> list[TransactionDto]: ...
 

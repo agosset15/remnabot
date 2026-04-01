@@ -9,8 +9,13 @@ from remnapy import RemnawaveSDK
 from remnapy.exceptions import NotFoundError
 
 from src.application.common import TranslatorRunner
-from src.application.common.dao import PlanDao, SubscriptionDao, TransactionDao, UserDao
-from src.application.common.dao.referral import ReferralDao
+from src.application.common.dao import (
+    PlanDao,
+    ReferralDao,
+    SubscriptionDao,
+    TransactionDao,
+    UserDao,
+)
 from src.application.dto import PlanDurationDto, RemnaSubscriptionDto, SubscriptionDto, UserDto
 from src.application.use_cases.statistics.queries.users import GetUserStatistics
 from src.application.use_cases.user.queries.plans import GetAvailablePlans
@@ -394,7 +399,7 @@ async def transactions_getter(
     **kwargs: Any,
 ) -> dict[str, Any]:
     target_telegram_id = dialog_manager.dialog_data[TARGET_TELEGRAM_ID]
-    transactions = await transaction_dao.get_by_user(target_telegram_id)
+    transactions = await transaction_dao.get_by_user_telegram_id(target_telegram_id)
 
     if not transactions:
         raise ValueError(f"Transactions not found for user '{target_telegram_id}'")

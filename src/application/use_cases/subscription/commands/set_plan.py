@@ -73,10 +73,10 @@ class SetUserSubscription(Interactor[SetUserSubscriptionDto, None]):
 
             new_subscription = await self.subscription_dao.create(
                 new_subscription,
-                data.telegram_id,
+                target_user.id,  # ty: ignore[invalid-argument-type]
             )
 
-            await self.user_dao.set_trial_available(target_user.telegram_id, False)
+            await self.user_dao.set_trial_available(target_user.id, False)  # ty: ignore[invalid-argument-type]
             await self.uow.commit()
 
         logger.info(

@@ -24,6 +24,7 @@ __pycache__/
 .mypy_cache/
 .pytest_cache/
 .coverage/
+.claude/
 
 # Build
 build/
