@@ -31,7 +31,8 @@ class TempUserDto:
 
 @dataclass(kw_only=True)
 class UserDto(BaseDto, TrackableMixin, TimestampMixin):
-    telegram_id: int
+    telegram_id: Optional[int] = None
+    email: Optional[str] = None
 
     username: Optional[str] = None
     referral_code: str = ""
@@ -66,11 +67,12 @@ class UserDto(BaseDto, TrackableMixin, TimestampMixin):
 
     @property
     def log(self) -> str:
-        return f"[{self.role}:{self.telegram_id} ({self.name})]"
+        identifier = self.telegram_id or self.email or self.id
+        return f"[{self.role}:{identifier} ({self.name})]"
 
     @property
     def remna_name(self) -> str:  # NOTE: DONT USE FOR GET USER!
-        return f"{REMNASHOP_PREFIX}{self.telegram_id}"
+        return f"{REMNASHOP_PREFIX}{self.telegram_id or self.id}"
 
     @property
     def remna_description(self) -> str:

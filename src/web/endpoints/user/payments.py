@@ -26,12 +26,6 @@ from src.web.dependencies.auth import get_current_user
 router = APIRouter()
 
 
-class GatewayResponse(BaseModel):
-    type: str
-    currency: str
-    currency_symbol: str
-
-
 class CreatePaymentRequest(BaseModel):
     plan_id: int
     duration_days: int
@@ -58,23 +52,6 @@ class TransactionResponse(BaseModel):
     plan_name: str
     plan_duration_days: int
     created_at: Optional[datetime]
-
-
-@router.get("/gateways")
-@inject
-async def get_gateways(
-    payment_gateway_dao: FromDishka[PaymentGatewayDao],
-    current_user: UserDto = Depends(get_current_user),
-) -> list[GatewayResponse]:
-    gateways = await payment_gateway_dao.get_active()
-    return [
-        GatewayResponse(
-            type=str(g.type),
-            currency=str(g.currency),
-            currency_symbol=g.currency.symbol,
-        )
-        for g in gateways
-    ]
 
 
 @router.post("/create")
@@ -185,7 +162,7 @@ async def get_payment_history(
     transaction_dao: FromDishka[TransactionDao],
     current_user: UserDto = Depends(get_current_user),
 ) -> list[TransactionResponse]:
-    transactions = await transaction_dao.get_by_user(current_user.telegram_id)
+    transactions = await transaction_dao.get_by_user_id(current_user.id)  # ty: ignore[invalid-argument-type]
 
     result = []
     for tx in transactions:

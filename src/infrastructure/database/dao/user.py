@@ -50,6 +50,28 @@ class UserDaoImpl(UserDao):
         logger.debug(f"New user '{user.telegram_id}' created in database")
         return self._convert_to_dto(db_user)
 
+    async def get_by_id(self, user_id: int) -> Optional[UserDto]:
+        stmt = select(User).where(User.id == user_id)
+        db_user = await self.session.scalar(stmt)
+
+        if db_user:
+            logger.debug(f"User id='{user_id}' found in database")
+            return self._convert_to_dto(db_user)
+
+        logger.debug(f"User id='{user_id}' not found")
+        return None
+
+    async def get_by_email(self, email: str) -> Optional[UserDto]:
+        stmt = select(User).where(User.email == email)
+        db_user = await self.session.scalar(stmt)
+
+        if db_user:
+            logger.debug(f"User email='{email}' found in database")
+            return self._convert_to_dto(db_user)
+
+        logger.debug(f"User email='{email}' not found")
+        return None
+
     # @provide_cache(ttl=TTL_1H, key_builder=UserCacheKey)
     async def get_by_telegram_id(self, telegram_id: int) -> Optional[UserDto]:
         stmt = select(User).where(User.telegram_id == telegram_id)
@@ -73,8 +95,8 @@ class UserDaoImpl(UserDao):
         logger.debug(f"Retrieved '{len(db_users)}' users by telegram ID list")
         return self._convert_to_dto_list(db_users)
 
-    async def get_by_partial_name(self, query_name: str) -> list[UserDto]:
-        search_pattern = f"%{query_name}%"
+    async def get_by_partial_name(self, query: str) -> list[UserDto]:
+        search_pattern = f"%{query}%"
         stmt = select(User).where(
             or_(
                 User.name.ilike(search_pattern),
@@ -84,7 +106,7 @@ class UserDaoImpl(UserDao):
         result = await self.session.scalars(stmt)
         db_users = cast(list, result.all())
 
-        logger.debug(f"Found '{len(db_users)}' users matching query '{query_name}'")
+        logger.debug(f"Found '{len(db_users)}' users matching query '{query}'")
         return self._convert_to_dto_list(db_users)
 
     async def get_by_referral_code(self, referral_code: str) -> Optional[UserDto]:
@@ -115,7 +137,7 @@ class UserDaoImpl(UserDao):
     async def update(self, user: UserDto) -> Optional[UserDto]:
         if not user.changed_data:
             logger.debug(f"No changes detected for user '{user.telegram_id}', skipping update")
-            return await self.get_by_telegram_id(user.telegram_id)
+            return await self.get_by_id(user.id)  # ty: ignore[invalid-argument-type]
 
         stmt = (
             update(User)
@@ -180,16 +202,10 @@ class UserDaoImpl(UserDao):
 
     # @invalidate_cache(key_builder=[USER_COUNT_PREFIX, USER_LIST_PREFIX])
     # @invalidate_cache(key_builder=UserCacheKey)
-    async def set_trial_available(self, telegram_id: int, is_trial_available: bool) -> None:
-        stmt = (
-            update(User)
-            .where(User.telegram_id == telegram_id)
-            .values(is_trial_available=is_trial_available)
-        )
+    async def set_trial_available(self, user_id: int, is_trial_available: bool) -> None:
+        stmt = update(User).where(User.id == user_id).values(is_trial_available=is_trial_available)
         await self.session.execute(stmt)
-        logger.debug(
-            f"Trial available status for user '{telegram_id}' set to '{is_trial_available}'"
-        )
+        logger.debug(f"Trial available status for user '{user_id}' set to '{is_trial_available}'")
 
     # @invalidate_cache(key_builder=[USER_COUNT_PREFIX, USER_LIST_PREFIX])
     # @invalidate_cache(key_builder=UserCacheKey)
@@ -210,6 +226,13 @@ class UserDaoImpl(UserDao):
         )
         await self.session.execute(stmt)
         logger.debug(f"Current subscription for user '{telegram_id}' set to '{subscription_id}'")
+
+    async def set_current_subscription_by_id(self, user_id: int, subscription_id: int) -> None:
+        stmt = (
+            update(User).where(User.id == user_id).values(current_subscription_id=subscription_id)
+        )
+        await self.session.execute(stmt)
+        logger.debug(f"Current subscription for user id='{user_id}' set to '{subscription_id}'")
 
     # @invalidate_cache(key_builder=[USER_COUNT_PREFIX, USER_LIST_PREFIX])
     # @invalidate_cache(key_builder=UserCacheKey)
@@ -270,7 +293,8 @@ class UserDaoImpl(UserDao):
         stmt = (
             select(func.count())
             .select_from(Subscription)
-            .where(Subscription.user_telegram_id == telegram_id)
+            .join(User, User.id == Subscription.user_id)
+            .where(User.telegram_id == telegram_id)
         )
 
         if not include_trial:
@@ -284,7 +308,8 @@ class UserDaoImpl(UserDao):
         stmt = (
             select(func.count())
             .select_from(Referral)
-            .where(Referral.referred_telegram_id == telegram_id)
+            .join(User, User.id == Referral.referred_user_id)
+            .where(User.telegram_id == telegram_id)
         )
 
         result = await self.session.execute(stmt)

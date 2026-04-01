@@ -3,6 +3,7 @@ from .event_bus import EventBusImpl
 from .notification_queue import NotificationQueue
 from .redirect import RedirectImpl
 from .remnawave import RemnawaveImpl
+from .smtp_mailer import SmtpMailerImpl
 from .translator import TranslatorHubImpl
 
 __all__ = [
@@ -11,5 +12,6 @@ __all__ = [
     "NotificationQueue",
     "RedirectImpl",
     "RemnawaveImpl",
+    "SmtpMailerImpl",
     "TranslatorHubImpl",
 ]

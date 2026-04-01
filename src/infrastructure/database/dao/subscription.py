@@ -38,14 +38,14 @@ class SubscriptionDaoImpl(SubscriptionDao, BaseDaoImpl):
             list[Subscription], list[SubscriptionDto]
         )
 
-    async def create(self, subscription: SubscriptionDto, telegram_id: int) -> SubscriptionDto:
+    async def create(self, subscription: SubscriptionDto, user_id: int) -> SubscriptionDto:
         subscription_data = self.retort.dump(subscription)
-        db_subscription = Subscription(**subscription_data, user_telegram_id=telegram_id)
+        db_subscription = Subscription(**subscription_data, user_id=user_id)
 
         self.session.add(db_subscription)
         await self.session.flush()
 
-        await self.user_dao.set_current_subscription(telegram_id, db_subscription.id)
+        await self.user_dao.set_current_subscription_by_id(user_id, db_subscription.id)
 
         logger.debug(
             f"Created new subscription '{db_subscription.id}' "
@@ -64,21 +64,22 @@ class SubscriptionDaoImpl(SubscriptionDao, BaseDaoImpl):
         logger.debug(f"Subscription '{subscription_id}' not found")
         return None
 
-    async def get_by_remna_id(self, user_remna_id: UUID) -> Optional[SubscriptionDto]:
-        stmt = select(Subscription).where(Subscription.user_remna_id == user_remna_id)
+    async def get_by_remna_id(self, remna_id: UUID) -> Optional[SubscriptionDto]:
+        stmt = select(Subscription).where(Subscription.user_remna_id == remna_id)
         db_subscription = await self.session.scalar(stmt)
 
         if db_subscription:
-            logger.debug(f"Subscription found by remna ID '{user_remna_id}'")
+            logger.debug(f"Subscription found by remna ID '{remna_id}'")
             return self._convert_to_dto(db_subscription)
 
-        logger.debug(f"Subscription with remna ID '{user_remna_id}' not found")
+        logger.debug(f"Subscription with remna ID '{remna_id}' not found")
         return None
 
     async def get_by_telegram_id(self, telegram_id: int) -> Optional[SubscriptionDto]:
         stmt = (
             select(Subscription)
-            .where(Subscription.user_telegram_id == telegram_id)
+            .join(User, User.id == Subscription.user_id)
+            .where(User.telegram_id == telegram_id)
             .order_by(Subscription.created_at.desc())
             .limit(1)
         )
@@ -91,10 +92,27 @@ class SubscriptionDaoImpl(SubscriptionDao, BaseDaoImpl):
         logger.debug(f"No subscriptions found for telegram user '{telegram_id}'")
         return None
 
+    async def get_by_user_id(self, user_id: int) -> Optional[SubscriptionDto]:
+        stmt = (
+            select(Subscription)
+            .where(Subscription.user_id == user_id)
+            .order_by(Subscription.created_at.desc())
+            .limit(1)
+        )
+        db_subscription = await self.session.scalar(stmt)
+
+        if db_subscription:
+            logger.debug(f"Last subscription for user '{user_id}' retrieved")
+            return self._convert_to_dto(db_subscription)
+
+        logger.debug(f"No subscriptions found for user '{user_id}'")
+        return None
+
     async def get_all_by_user(self, telegram_id: int) -> list[SubscriptionDto]:
         stmt = (
             select(Subscription)
-            .where(Subscription.user_telegram_id == telegram_id)
+            .join(User, User.id == Subscription.user_id)
+            .where(User.telegram_id == telegram_id)
             .order_by(Subscription.created_at.desc())
         )
         result = await self.session.scalars(stmt)
@@ -170,15 +188,11 @@ class SubscriptionDaoImpl(SubscriptionDao, BaseDaoImpl):
         logger.warning(f"Failed to update subscription '{subscription_id}': not found")
         return None
 
-    async def exists(self, user_remna_id: UUID) -> bool:
-        stmt = select(
-            select(Subscription).where(Subscription.user_remna_id == user_remna_id).exists()
-        )
+    async def exists(self, remna_id: UUID) -> bool:
+        stmt = select(select(Subscription).where(Subscription.user_remna_id == remna_id).exists())
         is_exists = await self.session.scalar(stmt) or False
 
-        logger.debug(
-            f"Subscription existence status for remna ID '{user_remna_id}' is '{is_exists}'"
-        )
+        logger.debug(f"Subscription existence status for remna ID '{remna_id}' is '{is_exists}'")
         return is_exists
 
     async def count_active_by_plan(self, plan_id: int) -> int:
@@ -227,13 +241,11 @@ class SubscriptionDaoImpl(SubscriptionDao, BaseDaoImpl):
 
     async def count_converted_from_trial(self) -> int:
         trial_users_subq = (
-            select(Subscription.user_telegram_id)
-            .where(Subscription.is_trial.is_(True))
-            .scalar_subquery()
+            select(Subscription.user_id).where(Subscription.is_trial.is_(True)).scalar_subquery()
         )
 
-        stmt = select(func.count(func.distinct(Subscription.user_telegram_id))).where(
-            Subscription.user_telegram_id.in_(trial_users_subq),
+        stmt = select(func.count(func.distinct(Subscription.user_id))).where(
+            Subscription.user_id.in_(trial_users_subq),
             Subscription.is_trial.is_(False),
             Subscription.status.in_([SubscriptionStatus.ACTIVE, SubscriptionStatus.EXPIRED]),
         )

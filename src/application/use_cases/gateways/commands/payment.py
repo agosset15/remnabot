@@ -144,7 +144,7 @@ class CreatePayment(Interactor[CreatePaymentDto, PaymentResultDto]):
 
         transaction = TransactionDto(
             payment_id=uuid.uuid4(),
-            user_telegram_id=actor.telegram_id,
+            user_id=actor.id,  # type: ignore[arg-type]
             status=TransactionStatus.PENDING,
             purchase_type=data.purchase_type,
             gateway_type=gateway_instance.data.type,
@@ -208,7 +208,7 @@ class CreateTestPayment(Interactor[PaymentGatewayType, PaymentResultDto]):
         async with self.uow:
             transaction = TransactionDto(
                 payment_id=payment.id,
-                user_telegram_id=actor.telegram_id,
+                user_id=actor.id,  # type: ignore[arg-type]
                 status=TransactionStatus.PENDING,
                 is_test=True,
                 purchase_type=PurchaseType.NEW,
@@ -268,7 +268,7 @@ class ProcessPayment(Interactor[ProcessPaymentDto, None]):
                 logger.critical(f"Transaction not found for '{payment_id}'")
                 return
 
-            user = await self.user_dao.get_by_telegram_id(transaction.user_telegram_id)
+            user = await self.user_dao.get_by_id(transaction.user_id)
 
             if not user:
                 logger.critical(f"User not found for transaction '{payment_id}'")

@@ -16,6 +16,7 @@ class Deeplink(StrEnum):
     REFERRAL = "ref"
     PLAN = "plan"
     INVITE = "invite"
+    CONNECT_WEB = "connect_web"
 
     def build_url(self, base_url: str, data: Optional[str]) -> str:
         if not data:
@@ -29,6 +30,11 @@ class Deeplink(StrEnum):
     @property
     def with_underscore(self) -> str:
         return f"{self.value}_"
+
+
+class JwtTyp(StrEnum):
+    USER_ID = "uid"
+    TELEGRAM_ID = "tg"
 
 
 class ButtonType(UpperStrEnum):

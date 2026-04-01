@@ -399,7 +399,7 @@ async def transactions_getter(
     **kwargs: Any,
 ) -> dict[str, Any]:
     target_telegram_id = dialog_manager.dialog_data[TARGET_TELEGRAM_ID]
-    transactions = await transaction_dao.get_by_user(target_telegram_id)
+    transactions = await transaction_dao.get_by_user_telegram_id(target_telegram_id)
 
     if not transactions:
         raise ValueError(f"Transactions not found for user '{target_telegram_id}'")
