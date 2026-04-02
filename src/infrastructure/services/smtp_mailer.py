@@ -71,6 +71,9 @@ class SmtpMailerImpl(Mailer):
         )
         await self._dispatch(user.email, msg)
 
+    async def send_failed_purchase(self, user: UserDto) -> None:
+        pass  # TODO: implement
+
     async def _dispatch(self, email: str, msg: MIMEMultipart) -> None:
         """Offload the blocking SMTP call to a thread executor."""
         msg["From"] = f'"KaGo VPS" <{self._config.sender or self._config.username}>'
