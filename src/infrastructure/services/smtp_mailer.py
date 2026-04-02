@@ -73,7 +73,7 @@ class SmtpMailerImpl(Mailer):
 
     async def _dispatch(self, email: str, msg: MIMEMultipart) -> None:
         """Offload the blocking SMTP call to a thread executor."""
-        msg["From"] = self._config.sender or self._config.username
+        msg["From"] = f'"KaGo VPS" <{self._config.sender or self._config.username}>'
         msg["To"] = email
         loop = asyncio.get_event_loop()
         await loop.run_in_executor(None, self._send_sync, email, msg)
