@@ -5,7 +5,7 @@ from email.mime.text import MIMEText
 
 from loguru import logger
 
-from src.application.common import TranslatorRunner
+from src.application.common import TranslatorHub
 from src.application.common.dao import SubscriptionDao, UserDao
 from src.application.common.mailer import Mailer
 from src.application.services import BotService
@@ -18,13 +18,13 @@ class SmtpMailerImpl(Mailer):
     def __init__(
         self,
         config: AppConfig,
-        i18n: TranslatorRunner,
+        i18n_hub: TranslatorHub,
         user_dao: UserDao,
         subscription_dao: SubscriptionDao,
         bot_service: BotService,
     ) -> None:
         self._config = config.smtp
-        self._i18n = i18n
+        self._i18n = i18n_hub.get_translator_by_locale(config.default_locale)
         self._user_dao = user_dao
         self._bot_service = bot_service
         self._subscription_dao = subscription_dao
