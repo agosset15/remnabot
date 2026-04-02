@@ -259,7 +259,10 @@ class PurchaseSubscription(Interactor[PurchaseSubscriptionDto, None]):
                 )
                 await self.uow.commit()
 
-                await self.redirect.to_failed_payment(user.telegram_id)  # ty: ignore[invalid-argument-type]
+                if user.has_only_email:
+                    await self.mailer.send_failed_purchase(user)
+                else:
+                    await self.redirect.to_failed_payment(user.telegram_id)  # ty: ignore[invalid-argument-type]
                 raise PurchaseError(e)
 
     def _build_subscription_dto(
