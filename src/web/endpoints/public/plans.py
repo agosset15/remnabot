@@ -6,6 +6,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 
 from src.application.common.dao import PlanDao, SettingsDao
+from src.core.enums import PlanAvailability
 
 router = APIRouter()
 
@@ -34,7 +35,7 @@ async def get_public_plans(
     plan_dao: FromDishka[PlanDao],
     settings_dao: FromDishka[SettingsDao],
 ) -> list[PublicPlanResponse]:
-    plans = await plan_dao.get_active_plans()
+    plans = await plan_dao.filter_by_availability(PlanAvailability.ALL)
     settings = await settings_dao.get()
     default_currency = settings.default_currency
 

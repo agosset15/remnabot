@@ -5,15 +5,29 @@ from email.mime.text import MIMEText
 
 from loguru import logger
 
+from src.application.common import TranslatorRunner
+from src.application.common.dao import SubscriptionDao, UserDao
 from src.application.common.mailer import Mailer
+from src.application.services import BotService
 from src.core.config import AppConfig
 
 
 class SmtpMailerImpl(Mailer):
     """SMTP-based mailer that sends transactional emails via stdlib smtplib."""
 
-    def __init__(self, config: AppConfig) -> None:
+    def __init__(
+        self,
+        config: AppConfig,
+        i18n: TranslatorRunner,
+        user_dao: UserDao,
+        subscription_dao: SubscriptionDao,
+        bot_service: BotService,
+    ) -> None:
         self._config = config.smtp
+        self._i18n = i18n
+        self._user_dao = user_dao
+        self._bot_service = bot_service
+        self._subscription_dao = subscription_dao
         logger.info(
             "SmtpMailer initialized: host={host} port={port} tls={tls} ssl={ssl}",
             host=self._config.host,
@@ -23,52 +37,76 @@ class SmtpMailerImpl(Mailer):
         )
 
     async def send_otp(self, email: str, code: str) -> None:
-        """Build and dispatch the OTP email in a thread executor to keep the event loop free."""
-        loop = asyncio.get_event_loop()
-        await loop.run_in_executor(None, self._send_otp_sync, email, code)
-
-    def _build_message(self, to: str, code: str) -> MIMEMultipart:
         msg = MIMEMultipart("alternative")
-        msg["Subject"] = "Your verification code"
+        msg["Subject"] = self._i18n.get("email-otp.title")
+        msg.attach(MIMEText(self._i18n.get("email-otp.message", code=code), "plain", "utf-8"))
+        msg.attach(MIMEText(self._i18n.get("email-otp.message-html", code=code), "html", "utf-8"))
+        await self._dispatch(email, msg)
+
+    async def send_success_purchase(self, user_id: int) -> None:
+        user = await self._user_dao.get_by_id(user_id)
+        if user is None or user.email is None:
+            return
+
+        subscription = await self._subscription_dao.get_by_user_id(user_id)
+        bot_url = await self._bot_service.get_connect_web_url(user.referral_code)
+
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = self._i18n.get("email-success-purchase.title")
+        msg.attach(
+            MIMEText(
+                self._i18n.get(
+                    "email-success-purchase.message",
+                    subscription_url=subscription.url,
+                    bot_url=bot_url,
+                ),
+                "plain",
+                "utf-8",
+            )
+        )
+        msg.attach(
+            MIMEText(
+                self._i18n.get(
+                    "email-success-purchase.message-html",
+                    subscription_url=subscription.url,
+                    bot_url=bot_url,
+                    expire_date=subscription.expire_at.strftime("%d.%m.%Y"),
+                    devices=subscription.device_limit,
+                    plan_name=subscription.plan_snapshot.name,
+                ),
+                "html",
+                "utf-8",
+            )
+        )
+        await self._dispatch(user.email, msg)
+
+    async def _dispatch(self, email: str, msg: MIMEMultipart) -> None:
+        """Offload the blocking SMTP call to a thread executor."""
         msg["From"] = self._config.sender or self._config.username
-        msg["To"] = to
+        msg["To"] = email
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(None, self._send_sync, email, msg)
 
-        plain = (
-            f"Your verification code is: {code}\n\n"
-            "The code is valid for 10 minutes. Do not share it with anyone."
-        )
-        html = (
-            "<p>Your verification code is:</p>"
-            f"<h2 style='letter-spacing:4px'>{code}</h2>"
-            "<p>The code is valid for <strong>10 minutes</strong>. "
-            "Do not share it with anyone.</p>"
-        )
-
-        msg.attach(MIMEText(plain, "plain", "utf-8"))
-        msg.attach(MIMEText(html, "html", "utf-8"))
-        return msg
-
-    def _send_otp_sync(self, email: str, code: str) -> None:
-        msg = self._build_message(email, code)
+    def _send_sync(self, email: str, msg: MIMEMultipart) -> None:
         sender = msg["From"]
-        cfg = self._config
-
         try:
-            if cfg.use_ssl:
-                with smtplib.SMTP_SSL(cfg.host, cfg.port, timeout=cfg.timeout) as smtp:
-                    if cfg.username:
-                        smtp.login(cfg.username, cfg.password.get_secret_value())
-                    smtp.sendmail(sender, email, msg.as_string())
-            else:
-                with smtplib.SMTP(cfg.host, cfg.port, timeout=cfg.timeout) as smtp:
-                    if cfg.use_tls:
-                        smtp.starttls()
-                    if cfg.username:
-                        smtp.login(cfg.username, cfg.password.get_secret_value())
-                    smtp.sendmail(sender, email, msg.as_string())
-
-            logger.info("OTP email sent to {email}", email=email)
-
+            with self._open_smtp_connection() as smtp:
+                smtp.sendmail(sender, email, msg.as_string())
+            logger.info("Email sent to {email}", email=email)
         except smtplib.SMTPException as exc:
-            logger.error("Failed to send OTP email to {email}: {exc}", email=email, exc=exc)
+            logger.error("Failed to send email to {email}: {exc}", email=email, exc=exc)
             raise
+
+    def _open_smtp_connection(self) -> smtplib.SMTP:
+        cfg = self._config
+        if cfg.use_ssl:
+            smtp = smtplib.SMTP_SSL(cfg.host, cfg.port, timeout=cfg.timeout)
+        else:
+            smtp = smtplib.SMTP(cfg.host, cfg.port, timeout=cfg.timeout)
+            if cfg.use_tls:
+                smtp.starttls()
+
+        if cfg.username:
+            smtp.login(cfg.username, cfg.password.get_secret_value())
+
+        return smtp

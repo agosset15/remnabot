@@ -4,7 +4,14 @@ from typing import Optional
 
 from loguru import logger
 
-from src.application.common import EventPublisher, Interactor, Redirect, Remnawave, TranslatorRunner
+from src.application.common import (
+    EventPublisher,
+    Interactor,
+    Mailer,
+    Redirect,
+    Remnawave,
+    TranslatorRunner,
+)
 from src.application.common.dao import SubscriptionDao, TransactionDao, UserDao
 from src.application.common.uow import UnitOfWork
 from src.application.dto import PlanSnapshotDto, SubscriptionDto, TransactionDto, UserDto
@@ -125,6 +132,7 @@ class PurchaseSubscription(Interactor[PurchaseSubscriptionDto, None]):
         transaction_dao: TransactionDao,
         remnawave: Remnawave,
         redirect: Redirect,
+        mailer: Mailer,
     ) -> None:
         self.uow = uow
         self.user_dao = user_dao
@@ -132,6 +140,7 @@ class PurchaseSubscription(Interactor[PurchaseSubscriptionDto, None]):
         self.transaction_dao = transaction_dao
         self.remnawave = remnawave
         self.redirect = redirect
+        self.mailer = mailer
 
     async def _execute(self, actor: UserDto, data: PurchaseSubscriptionDto) -> None:
         user = data.user
@@ -230,7 +239,10 @@ class PurchaseSubscription(Interactor[PurchaseSubscriptionDto, None]):
                         f"Unknown purchase type '{purchase_type}' for user '{user.telegram_id}'"
                     )
 
-                await self.redirect.to_success_payment(user.telegram_id, purchase_type)  # ty: ignore[invalid-argument-type]
+                if user.has_only_email:
+                    await self.mailer.send_success_purchase(user.id)
+                else:
+                    await self.redirect.to_success_payment(user.telegram_id, purchase_type)  # ty: ignore[invalid-argument-type]
                 logger.info(
                     f"{actor.log} Purchase subscription completed for user '{user.telegram_id}'"
                 )
