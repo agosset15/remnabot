@@ -1,6 +1,6 @@
 from typing import Protocol, runtime_checkable
 
-from src.application.dto import SubscriptionDto
+from src.application.dto import SubscriptionDto, UserDto
 
 
 @runtime_checkable
@@ -9,4 +9,4 @@ class Mailer(Protocol):
 
     async def send_otp(self, email: str, code: str) -> None: ...
 
-    async def send_success_purchase(self, user_id: int) -> None: ...
+    async def send_success_purchase(self, user: UserDto, subscription: SubscriptionDto) -> None: ...

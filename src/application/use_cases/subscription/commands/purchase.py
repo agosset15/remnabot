@@ -240,7 +240,7 @@ class PurchaseSubscription(Interactor[PurchaseSubscriptionDto, None]):
                     )
 
                 if user.has_only_email:
-                    await self.mailer.send_success_purchase(user.id)
+                    await self.mailer.send_success_purchase(user, new_sub or subscription)
                 else:
                     await self.redirect.to_success_payment(user.telegram_id, purchase_type)  # ty: ignore[invalid-argument-type]
                 logger.info(
