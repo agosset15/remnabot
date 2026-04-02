@@ -82,3 +82,7 @@ class UserDto(BaseDto, TrackableMixin, TimestampMixin):
             description += f"\nusername: {self.username}"
 
         return description
+
+    @property
+    def has_only_email(self) -> bool:
+        return self.email is not None and self.telegram_id is None

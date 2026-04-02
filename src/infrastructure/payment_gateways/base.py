@@ -38,7 +38,9 @@ class BasePaymentGateway(ABC):
         logger.debug(f"{self.__class__.__name__} Initialized")
 
     @abstractmethod
-    async def handle_create_payment(self, amount: Decimal, details: str) -> PaymentResultDto: ...
+    async def handle_create_payment(
+        self, amount: Decimal, details: str, return_url: Optional[str] = None
+    ) -> PaymentResultDto: ...
 
     @abstractmethod
     async def handle_webhook(self, request: Request) -> tuple[UUID, TransactionStatus]: ...

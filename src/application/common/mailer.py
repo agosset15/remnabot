@@ -1,10 +1,12 @@
 from typing import Protocol, runtime_checkable
 
+from src.application.dto import SubscriptionDto
+
 
 @runtime_checkable
 class Mailer(Protocol):
     """Protocol for sending transactional emails."""
 
-    async def send_otp(self, email: str, code: str) -> None:
-        """Send a one-time password code to the given email address."""
-        ...
+    async def send_otp(self, email: str, code: str) -> None: ...
+
+    async def send_success_purchase(self, user_id: int) -> None: ...

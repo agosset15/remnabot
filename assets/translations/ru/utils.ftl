@@ -207,10 +207,10 @@ unit-unlimited = { $value ->
     *[other] { $value }
 }
 
-unit-device = { $value -> 
+unit-device = { $devices ->
     [0] { unlimited }
-    *[other] { $value } 
-} { $value ->
+    *[other] { $devices }
+} { $devices ->
     [0] { space }
     [one] устройство
     [few] устройства

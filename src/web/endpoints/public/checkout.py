@@ -150,6 +150,7 @@ async def checkout(
     payment = await gateway_instance.handle_create_payment(
         amount=pricing.final_amount,
         details=f"{plan.name} - {body.duration_days} days",
+        return_url=body.return_url,
     )
 
     transaction = TransactionDto(
