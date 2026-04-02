@@ -6,8 +6,8 @@ from email.mime.text import MIMEText
 from loguru import logger
 
 from src.application.common import TranslatorHub
-from src.application.common.dao import SubscriptionDao, UserDao
 from src.application.common.mailer import Mailer
+from src.application.dto import SubscriptionDto, UserDto
 from src.application.services import BotService
 from src.core.config import AppConfig
 
@@ -19,15 +19,11 @@ class SmtpMailerImpl(Mailer):
         self,
         config: AppConfig,
         i18n_hub: TranslatorHub,
-        user_dao: UserDao,
-        subscription_dao: SubscriptionDao,
         bot_service: BotService,
     ) -> None:
         self._config = config.smtp
         self._i18n = i18n_hub.get_translator_by_locale(config.default_locale)
-        self._user_dao = user_dao
         self._bot_service = bot_service
-        self._subscription_dao = subscription_dao
         logger.info(
             "SmtpMailer initialized: host={host} port={port} tls={tls} ssl={ssl}",
             host=self._config.host,
@@ -43,12 +39,7 @@ class SmtpMailerImpl(Mailer):
         msg.attach(MIMEText(self._i18n.get("email-otp.message-html", code=code), "html", "utf-8"))
         await self._dispatch(email, msg)
 
-    async def send_success_purchase(self, user_id: int) -> None:
-        user = await self._user_dao.get_by_id(user_id)
-        if user is None or user.email is None:
-            return
-
-        subscription = await self._subscription_dao.get_by_user_id(user_id)
+    async def send_success_purchase(self, user: UserDto, subscription: SubscriptionDto) -> None:
         bot_url = await self._bot_service.get_connect_web_url(user.referral_code)
 
         msg = MIMEMultipart("alternative")
