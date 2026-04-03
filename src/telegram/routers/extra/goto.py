@@ -7,11 +7,13 @@ from dishka.integrations.aiogram_dialog import inject
 from loguru import logger
 
 from src.application.common import Notifier
-from src.application.dto import UserDto
+from src.application.dto import MessagePayloadDto, UserDto
+from src.application.use_cases.access import CheckRules
 from src.application.use_cases.user.commands.connect import ConnectWebUser, ConnectWebUserDto
 from src.application.use_cases.user.queries.plans import GetAvailablePlanByCode
 from src.core.constants import GOTO_PREFIX, PAYMENT_PREFIX, TARGET_TELEGRAM_ID
 from src.core.enums import Deeplink
+from src.telegram.keyboards import get_rules_keyboard
 from src.telegram.states import DashboardUser, MainMenu, Subscription, state_from_string
 
 router = Router(name=__name__)
@@ -122,6 +124,7 @@ async def on_connect_web(
     command: CommandObject,
     user: UserDto,
     connect_web_user: FromDishka[ConnectWebUser],
+    check_rules: FromDishka[CheckRules],
     notifier: FromDishka[Notifier],
 ) -> None:
     args = command.args or ""
@@ -145,7 +148,18 @@ async def on_connect_web(
     if connected_user.telegram_id == user.telegram_id:
         logger.info(f"{user.log} Connect web: successfully connected to web account")
         await notifier.notify_user(user=connected_user, i18n_key="ntf-connect-web.success")
-        return
+        rules = await check_rules(connected_user)
+        if not rules.is_accepted:
+            await notifier.notify_user(
+                user=connected_user,
+                payload=MessagePayloadDto(
+                    i18n_key="ntf-requirement.rules-accept-required",
+                    i18n_kwargs={"url": rules.rules_url},
+                    reply_markup=get_rules_keyboard(),
+                    delete_after=None,
+                ),
+            )
+            return
 
     logger.debug(f"{user.log} Connect web: already connected to another account")
     await notifier.notify_user(user=user, i18n_key="ntf-connect-web.already-connected")

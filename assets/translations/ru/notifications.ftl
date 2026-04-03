@@ -160,6 +160,11 @@ ntf-devices =
     .all-deleted = ✅ <i>Все устройства удалены.</i>
     .reissued = ✅ <i>Подписка успешно перевыпущена.</i>
 
+ntf-connect-web =
+    .not-found = Ссылка неверная, или истекла.
+    .already-connected = Акаунты уже связаны.
+    .success = Акаунты успешно связаны.
+
 email-otp =
     .title = Код подтверждения
     .message =
