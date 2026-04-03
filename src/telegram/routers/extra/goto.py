@@ -8,6 +8,7 @@ from loguru import logger
 
 from src.application.common import Notifier
 from src.application.dto import UserDto
+from src.application.use_cases.user.commands.connect import ConnectWebUser, ConnectWebUserDto
 from src.application.use_cases.user.queries.plans import GetAvailablePlanByCode
 from src.core.constants import GOTO_PREFIX, PAYMENT_PREFIX, TARGET_TELEGRAM_ID
 from src.core.enums import Deeplink
@@ -49,6 +50,8 @@ async def on_goto(callback: CallbackQuery, dialog_manager: DialogManager, user: 
             target_telegram_id = int(parts[2])
         except ValueError:
             logger.warning(f"{user.log} Invalid target_telegram_id in callback: {parts[2]}")
+            await callback.answer()
+            return
 
         await dialog_manager.bg(
             user_id=user.telegram_id,
@@ -107,6 +110,45 @@ async def on_goto_plan(
         mode=StartMode.RESET_STACK,
         show_mode=ShowMode.DELETE_AND_SEND,
     )
+
+
+@inject
+@router.message(
+    CommandStart(deep_link=True, ignore_case=True),
+    F.text.contains(Deeplink.CONNECT_WEB),
+)
+async def on_connect_web(
+    message: Message,
+    command: CommandObject,
+    user: UserDto,
+    connect_web_user: FromDishka[ConnectWebUser],
+    notifier: FromDishka[Notifier],
+) -> None:
+    args = command.args or ""
+    referral_code = args.removeprefix(Deeplink.CONNECT_WEB.with_underscore)
+
+    connected_user = await connect_web_user(
+        user,
+        ConnectWebUserDto(
+            telegram_user=user,
+            referral_code=referral_code,
+        ),
+    )
+
+    if not connected_user:
+        logger.warning(
+            f"{user.log} Connect web deeplink: referral_code='{referral_code}' not found"
+        )
+        await notifier.notify_user(user=user, i18n_key="ntf-connect-web.not-found")
+        return
+
+    if connected_user.telegram_id == user.telegram_id:
+        logger.info(f"{user.log} Connect web: successfully connected to web account")
+        await notifier.notify_user(user=connected_user, i18n_key="ntf-connect-web.success")
+        return
+
+    logger.debug(f"{user.log} Connect web: already connected to another account")
+    await notifier.notify_user(user=user, i18n_key="ntf-connect-web.already-connected")
 
 
 @router.message(CommandStart(deep_link=True, ignore_case=True), F.text.contains(Deeplink.INVITE))

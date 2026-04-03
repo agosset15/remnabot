@@ -14,6 +14,10 @@ from src.application.common.cryptography import Cryptographer
 from src.application.common.dao import UserDao
 from src.application.common.mailer import Mailer
 from src.application.dto import UserDto
+from src.application.use_cases.user.commands.registration import (
+    GetOrCreateTelegramUser,
+    GetOrCreateTelegramUserDto,
+)
 from src.core.config import AppConfig
 from src.core.enums import JwtTyp, Locale, Role
 from src.infrastructure.redis.key_builder import serialize_storage_key
@@ -132,7 +136,7 @@ def _to_user_response(user: UserDto) -> UserResponse:
 async def login_telegram(
     body: TelegramAuthRequest,
     response: Response,
-    user_dao: FromDishka[UserDao],
+    get_or_create_user: FromDishka[GetOrCreateTelegramUser],
     config: FromDishka[AppConfig],
     cryptographer: FromDishka[Cryptographer],
     redis: FromDishka[Redis],
@@ -146,28 +150,14 @@ async def login_telegram(
     name: str = claims.get("name", "")
     username: Optional[str] = claims.get("preferred_username")
 
-    user = await user_dao.get_by_telegram_id(telegram_id)
-
-    if user is None:
-        referral_code = cryptographer.generate_short_code(telegram_id)
-        user = await user_dao.create(
-            UserDto(
-                telegram_id=telegram_id,
-                name=name,
-                username=username,
-                role=Role.USER,
-                language=Locale(config.default_locale),
-                referral_code=referral_code,
-            )
+    user = await get_or_create_user.system(
+        GetOrCreateTelegramUserDto(
+            telegram_id=telegram_id, full_name=name, username=username, language_code=None
         )
+    )
 
     if user.is_blocked:
         raise HTTPException(status_code=403, detail="User is blocked")
-
-    if user.name != name or user.username != username:
-        user.name = name
-        user.username = username
-        await user_dao.update(user)
 
     _set_session_cookie(
         response,

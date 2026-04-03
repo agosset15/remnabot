@@ -276,6 +276,19 @@ class TransactionDaoImpl(TransactionDao):
             for row in result.mappings()
         ]
 
+    async def reassign_to_user(self, from_user_id: int, to_user_id: int) -> None:
+        stmt = (
+            update(Transaction)
+            .where(Transaction.user_id == from_user_id)
+            .values(user_id=to_user_id)
+        )
+        result = await self.session.execute(stmt)
+        count = result.rowcount  # ty: ignore[unresolved-attribute]
+        logger.debug(
+            f"Reassigned '{count}' transactions "
+            f"from user id='{from_user_id}' to user id='{to_user_id}'"
+        )
+
     async def get_user_payment_stats(
         self,
         telegram_id: int,

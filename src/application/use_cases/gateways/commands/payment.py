@@ -307,6 +307,7 @@ class ProcessPayment(Interactor[ProcessPaymentDto, None]):
         old_plan = subscription.plan_snapshot if subscription else None
 
         event = UserPurchaseEvent(
+            user_id=user.id,
             telegram_id=user.telegram_id,
             name=user.name,
             username=user.username,

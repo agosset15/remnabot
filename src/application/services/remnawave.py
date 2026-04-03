@@ -135,6 +135,7 @@ class RemnaWebhookService:
         elif event == RemnaUserEvent.FIRST_CONNECTED:
             await self.event_bus.publish(
                 UserFirstConnectionEvent(
+                    user_id=user.id,
                     telegram_id=user.telegram_id,
                     username=user.username,
                     name=user.name,
@@ -168,6 +169,7 @@ class RemnaWebhookService:
         if event == RemnaUserHwidDevicesEvent.ADDED:
             await self.event_bus.publish(
                 UserDeviceAddedEvent(
+                    user_id=user.id,
                     telegram_id=user.telegram_id,
                     username=user.username,
                     name=user.name,
@@ -181,6 +183,7 @@ class RemnaWebhookService:
         elif event == RemnaUserHwidDevicesEvent.DELETED:
             await self.event_bus.publish(
                 UserDeviceDeletedEvent(
+                    user_id=user.id,
                     telegram_id=user.telegram_id,
                     username=user.username,
                     name=user.name,
@@ -324,6 +327,7 @@ class RemnaWebhookService:
         if event == RemnaUserEvent.REVOKED:
             await self.event_bus.publish(
                 SubscriptionRevokedEvent(
+                    user_id=user.id,
                     telegram_id=user.telegram_id,
                     username=user.username,
                     name=user.name,
