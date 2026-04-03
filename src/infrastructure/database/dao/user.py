@@ -139,12 +139,7 @@ class UserDaoImpl(UserDao):
             logger.debug(f"No changes detected for user '{user.telegram_id}', skipping update")
             return await self.get_by_id(user.id)  # ty: ignore[invalid-argument-type]
 
-        stmt = (
-            update(User)
-            .where(User.telegram_id == user.telegram_id)
-            .values(**user.changed_data)
-            .returning(User)
-        )
+        stmt = update(User).where(User.id == user.id).values(**user.changed_data).returning(User)
         db_user = await self.session.scalar(stmt)
 
         if db_user:

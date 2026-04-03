@@ -317,6 +317,43 @@ class ReferralDaoImpl(ReferralDao):
             "reward_days": int(rewards_row["reward_days"] or 0),
         }
 
+    async def reassign_referrer(self, from_user_id: int, to_user_id: int) -> None:
+        stmt = (
+            update(Referral)
+            .where(Referral.referrer_user_id == from_user_id)
+            .values(referrer_user_id=to_user_id)
+        )
+        result = await self.session.execute(stmt)
+        count = result.rowcount  # ty: ignore[unresolved-attribute]
+        logger.debug(
+            f"Reassigned '{count}' referrals (as referrer) "
+            f"from user id='{from_user_id}' to user id='{to_user_id}'"
+        )
+
+    async def reassign_referred(self, from_user_id: int, to_user_id: int) -> None:
+        # Skip if the target already has a referral record as referred (unique constraint)
+        existing = await self.session.scalar(
+            select(Referral).where(Referral.referred_user_id == to_user_id)
+        )
+        if existing:
+            logger.debug(
+                f"User id='{to_user_id}' already has a referral record as referred, "
+                f"skipping reassignment from user id='{from_user_id}'"
+            )
+            return
+
+        stmt = (
+            update(Referral)
+            .where(Referral.referred_user_id == from_user_id)
+            .values(referred_user_id=to_user_id)
+        )
+        result = await self.session.execute(stmt)
+        count = result.rowcount  # ty: ignore[unresolved-attribute]
+        logger.debug(
+            f"Reassigned '{count}' referrals (as referred) "
+            f"from user id='{from_user_id}' to user id='{to_user_id}'"
+        )
+
     async def get_referrals_with_payment_count(self, telegram_id: int) -> int:
         stmt = (
             select(func.count())

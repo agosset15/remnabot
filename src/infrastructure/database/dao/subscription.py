@@ -305,6 +305,19 @@ class SubscriptionDaoImpl(SubscriptionDao, BaseDaoImpl):
             total_devices=int(row["total_devices"] or 0),
         )
 
+    async def reassign_to_user(self, from_user_id: int, to_user_id: int) -> None:
+        stmt = (
+            update(Subscription)
+            .where(Subscription.user_id == from_user_id)
+            .values(user_id=to_user_id)
+        )
+        result = await self.session.execute(stmt)
+        count = result.rowcount  # ty: ignore[unresolved-attribute]
+        logger.debug(
+            f"Reassigned '{count}' subscriptions "
+            f"from user id='{from_user_id}' to user id='{to_user_id}'"
+        )
+
     async def get_plan_sub_stats(self) -> list[PlanSubStatsDto]:
         now = datetime_now()
         week_later = now + timedelta(days=7)
