@@ -3,7 +3,7 @@ from typing import Optional
 
 from loguru import logger
 
-from src.application.common import Interactor
+from src.application.common import Interactor, Remnawave
 from src.application.common.dao import ReferralDao, SubscriptionDao, TransactionDao, UserDao
 from src.application.common.policy import Permission
 from src.application.common.uow import UnitOfWork
@@ -22,12 +22,14 @@ class ConnectWebUser(Interactor[ConnectWebUserDto, Optional[UserDto]]):
     def __init__(
         self,
         uow: UnitOfWork,
+        remnawave: Remnawave,
         user_dao: UserDao,
         subscription_dao: SubscriptionDao,
         transaction_dao: TransactionDao,
         referral_dao: ReferralDao,
     ) -> None:
         self.uow = uow
+        self.remnawave = remnawave
         self.user_dao = user_dao
         self.subscription_dao = subscription_dao
         self.transaction_dao = transaction_dao
@@ -45,6 +47,7 @@ class ConnectWebUser(Interactor[ConnectWebUserDto, Optional[UserDto]]):
             return web_user
 
         telegram_user = data.telegram_user
+        current_subscription = await self.subscription_dao.get_by_user_id(web_user.id)
 
         async with self.uow:
             if self._has_substantial_data(telegram_user):
@@ -54,7 +57,9 @@ class ConnectWebUser(Interactor[ConnectWebUserDto, Optional[UserDto]]):
             await self.uow.commit()
 
         logger.info(f"Connect web: {telegram_user.log} -> merged into web user id='{web_user.id}'")
-        return await self.user_dao.get_by_id(web_user.id)  # ty: ignore[invalid-argument-type]
+        user = await self.user_dao.get_by_id(web_user.id)  # ty: ignore[invalid-argument-type]
+        await self.remnawave.update_user_metadata(user, current_subscription.user_remna_id)
+        return user
 
     # ──────────────────────────────────────────────────────────────────────────
     # Decision helpers

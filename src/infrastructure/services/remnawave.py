@@ -94,6 +94,27 @@ class RemnawaveImpl(Remnawave):
 
         return remna_user
 
+    async def update_user_metadata(self, user: UserDto, uuid: UUID) -> UserResponseDto:
+        try:
+            remna_user = await self.sdk.users.update_user(
+                UpdateUserRequestDto(
+                    uuid=uuid,
+                    username=user.remna_name,
+                    telegram_id=user.telegram_id,
+                    email=user.email,
+                    description=user.remna_description,
+                )
+            )
+            logger.info(
+                f"RemnaUser '{remna_user.username}' metadata updated successfully. "
+                f"UUID: '{remna_user.uuid}', telegram_id: '{remna_user.telegram_id}'"
+            )
+        except NotFoundError:
+            logger.warning(f"RemnaUser '{user.username}' with UUID '{uuid}' not found")
+            raise
+
+        return remna_user
+
     async def delete_user(self, uuid: UUID) -> bool:
         try:
             response = await self.sdk.users.delete_user(uuid)
@@ -220,6 +241,7 @@ class RemnawaveImpl(Remnawave):
                 uuid=subscription.user_remna_id,
                 username=user.remna_name,
                 telegram_id=user.telegram_id,
+                email=user.email,
                 expire_at=subscription.expire_at,
                 traffic_limit_strategy=subscription.traffic_limit_strategy,
                 traffic_limit_bytes=gb_to_bytes(subscription.traffic_limit),
@@ -234,6 +256,7 @@ class RemnawaveImpl(Remnawave):
             return CreateUserRequestDto(
                 username=user.remna_name,
                 telegram_id=user.telegram_id,
+                email=user.email,
                 expire_at=days_to_datetime(plan.duration),
                 traffic_limit_strategy=plan.traffic_limit_strategy,
                 traffic_limit_bytes=gb_to_bytes(plan.traffic_limit),
@@ -257,6 +280,7 @@ class RemnawaveImpl(Remnawave):
             return UpdateUserRequestDto(
                 uuid=uuid,
                 telegram_id=user.telegram_id,
+                email=user.email,
                 expire_at=subscription.expire_at,
                 status=(
                     SubscriptionStatus.DISABLED
@@ -276,6 +300,7 @@ class RemnawaveImpl(Remnawave):
             return UpdateUserRequestDto(
                 uuid=uuid,
                 telegram_id=user.telegram_id,
+                email=user.email,
                 expire_at=days_to_datetime(plan.duration),
                 status=SubscriptionStatus.ACTIVE,
                 traffic_limit_strategy=plan.traffic_limit_strategy,
