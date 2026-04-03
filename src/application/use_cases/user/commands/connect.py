@@ -78,15 +78,14 @@ class ConnectWebUser(Interactor[ConnectWebUserDto, Optional[UserDto]]):
     # ──────────────────────────────────────────────────────────────────────────
 
     async def _simple_connect(self, web_user: UserDto, telegram_user: UserDto) -> None:
-        """Attach telegram_id to the web account and remove the empty stub record."""
+        """Attach telegram_id to the web account and remove the Telegram-only stub."""
         web_user.telegram_id = telegram_user.telegram_id
         web_user.username = telegram_user.username
 
         if web_user.name == web_user.email:
             web_user.name = telegram_user.name
 
-        # Delete first to release the unique constraint on telegram_id,
-        # then update web_user to claim it.
+        await self._transfer_relations(web_user, telegram_user)
         await self.user_dao.delete(telegram_user.telegram_id)  # ty: ignore[invalid-argument-type]
         await self.user_dao.update(web_user)
 
@@ -99,13 +98,29 @@ class ConnectWebUser(Interactor[ConnectWebUserDto, Optional[UserDto]]):
         """
         Merge all data from the Telegram user into the web account.
 
-        FK relations are re-pointed to web_user first, then the telegram_user
-        record is deleted to release the unique telegram_id constraint, and
-        finally web_user is updated to claim that telegram_id.
+        All FK relations are re-pointed first, then the telegram_user record is
+        deleted to release the unique telegram_id constraint, and finally
+        web_user is updated to claim that telegram_id.
         """
         self._apply_merged_fields(web_user, telegram_user)
 
-        # Detach current_subscription_id so the FK to subscriptions can be re-pointed.
+        await self._transfer_relations(web_user, telegram_user)
+        await self.user_dao.delete(telegram_user.telegram_id)  # ty: ignore[invalid-argument-type]
+        await self.user_dao.update(web_user)
+
+        logger.debug(
+            f"Full merge: telegram user id='{telegram_user.id}' "
+            f"consolidated into web user id='{web_user.id}'"
+        )
+
+    async def _transfer_relations(self, web_user: UserDto, telegram_user: UserDto) -> None:
+        """
+        Re-point all FK relations from telegram_user to web_user.
+
+        Must be called before deleting telegram_user to avoid FK violations.
+        """
+        # Clear current_subscription_id on telegram_user so its FK to
+        # subscriptions can be safely re-pointed to web_user.
         await self.user_dao.clear_current_subscription(
             telegram_user.telegram_id  # ty: ignore[invalid-argument-type]
         )
@@ -125,16 +140,6 @@ class ConnectWebUser(Interactor[ConnectWebUserDto, Optional[UserDto]]):
         await self.referral_dao.reassign_referred(
             from_user_id=telegram_user.id,  # ty: ignore[invalid-argument-type]
             to_user_id=web_user.id,  # ty: ignore[invalid-argument-type]
-        )
-
-        # Delete first to release the unique constraint on telegram_id,
-        # then update web_user to claim it.
-        await self.user_dao.delete(telegram_user.telegram_id)  # ty: ignore[invalid-argument-type]
-        await self.user_dao.update(web_user)
-
-        logger.debug(
-            f"Full merge: telegram user id='{telegram_user.id}' "
-            f"consolidated into web user id='{web_user.id}'"
         )
 
     @staticmethod
