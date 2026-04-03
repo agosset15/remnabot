@@ -1,5 +1,7 @@
 space = {" "}
 empty = { "!empty!" }
+sc-open = { "{" }
+sc-close = { "}" }
 btn-test = Кнопка
 msg-test = Сообщение
 development = В разработке!
