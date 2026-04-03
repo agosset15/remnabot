@@ -10,6 +10,7 @@ from src.application.common.mailer import Mailer
 from src.application.dto import SubscriptionDto, UserDto
 from src.application.services import BotService
 from src.core.config import AppConfig
+from src.core.utils.i18n_helpers import i18n_format_device_limit
 
 
 class SmtpMailerImpl(Mailer):
@@ -62,7 +63,7 @@ class SmtpMailerImpl(Mailer):
                     subscription_url=subscription.url,
                     bot_url=bot_url,
                     expire_date=subscription.expire_at.strftime("%d.%m.%Y"),
-                    devices=subscription.device_limit,
+                    devices=i18n_format_device_limit(subscription.device_limit),
                     plan_name=subscription.plan_snapshot.name,
                 ),
                 "html",
