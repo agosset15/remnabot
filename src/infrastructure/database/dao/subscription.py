@@ -45,7 +45,7 @@ class SubscriptionDaoImpl(SubscriptionDao, BaseDaoImpl):
         self.session.add(db_subscription)
         await self.session.flush()
 
-        await self.user_dao.set_current_subscription_by_id(user_id, db_subscription.id)
+        await self.user_dao.set_current_subscription(user_id, db_subscription.id)
 
         logger.debug(
             f"Created new subscription '{db_subscription.id}' "
