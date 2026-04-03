@@ -309,6 +309,7 @@ class ProcessPayment(Interactor[ProcessPaymentDto, None]):
         event = UserPurchaseEvent(
             user_id=user.id,
             telegram_id=user.telegram_id,
+            email=user.email,
             name=user.name,
             username=user.username,
             #

@@ -362,7 +362,7 @@ class UserPurchaseEvent(UserEvent):
         return MessagePayloadDto(
             i18n_key=self.event_key,
             i18n_kwargs={**asdict(self)},
-            reply_markup=get_user_keyboard(self.telegram_id),
+            reply_markup=get_user_keyboard(self.telegram_id) if self.telegram_id else None,
             disable_default_markup=False,
             delete_after=None,
         )

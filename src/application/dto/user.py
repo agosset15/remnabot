@@ -81,6 +81,8 @@ class UserDto(BaseDto, TrackableMixin, TimestampMixin):
         if self.username:
             description += f"\nusername: {self.username}"
 
+        description += f"\ncode: {self.referral_code}"
+
         return description
 
     @property
