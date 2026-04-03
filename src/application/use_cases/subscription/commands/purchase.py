@@ -92,6 +92,7 @@ class ActivateTrialSubscription(Interactor[ActivateTrialSubscriptionDto, None]):
             )
 
             event = TrialActivatedEvent(
+                user_id=user.id,
                 telegram_id=user.telegram_id,  # ty: ignore[invalid-argument-type]
                 username=user.username,
                 name=user.name,
@@ -250,7 +251,7 @@ class PurchaseSubscription(Interactor[PurchaseSubscriptionDto, None]):
             except Exception as e:
                 logger.exception(
                     f"{actor.log} Failed to process purchase type '{purchase_type}' "
-                    f"for user '{user.telegram_id}'"
+                    f"for user '{user.id}'"
                 )
 
                 await self.transaction_dao.update_status(

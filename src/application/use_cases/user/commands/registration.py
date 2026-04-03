@@ -18,12 +18,12 @@ from src.core.utils.converters import user_name_clean
 
 
 @dataclass
-class GetOrCreateUserDto:
+class GetOrCreateTelegramUserDto:
     telegram_id: int
     username: Optional[str]
     full_name: str
     language_code: Optional[str]
-    event: TelegramObject
+    event: TelegramObject = TelegramObject()
     role: Role = Role.USER
 
     @classmethod
@@ -37,7 +37,7 @@ class GetOrCreateUserDto:
         )
 
 
-class GetOrCreateUser(Interactor[GetOrCreateUserDto, Optional[UserDto]]):
+class GetOrCreateTelegramUser(Interactor[GetOrCreateTelegramUserDto, Optional[UserDto]]):
     required_permission = None
 
     def __init__(
@@ -58,7 +58,7 @@ class GetOrCreateUser(Interactor[GetOrCreateUserDto, Optional[UserDto]]):
         self.get_referral_code_from_event = get_referral_code_from_event
         self.attach_referral = attach_referral
 
-    async def _execute(self, actor: UserDto, data: GetOrCreateUserDto) -> Optional[UserDto]:
+    async def _execute(self, actor: UserDto, data: GetOrCreateTelegramUserDto) -> Optional[UserDto]:
         async with self.uow:
             user = await self.user_dao.get_by_telegram_id(data.telegram_id)
             if user:
@@ -93,6 +93,7 @@ class GetOrCreateUser(Interactor[GetOrCreateUserDto, Optional[UserDto]]):
 
         await self.event_publisher.publish(
             UserRegisteredEvent(
+                user_id=user.id,
                 telegram_id=user.telegram_id,
                 username=user.username,
                 name=user.name,
@@ -105,7 +106,7 @@ class GetOrCreateUser(Interactor[GetOrCreateUserDto, Optional[UserDto]]):
         logger.info(f"New user '{user.telegram_id}' created")
         return user
 
-    def _create_user_dto(self, data: GetOrCreateUserDto) -> UserDto:
+    def _create_user_dto(self, data: GetOrCreateTelegramUserDto) -> UserDto:
         if data.language_code in self.config.locales:
             locale = Locale(data.language_code)
         else:
@@ -119,6 +120,61 @@ class GetOrCreateUser(Interactor[GetOrCreateUserDto, Optional[UserDto]]):
             role=data.role,
             language=locale,
         )
+
+
+@dataclass
+class GetOrCreateWebUserDto:
+    email: str
+
+
+class GetOrCreateWebUser(Interactor[GetOrCreateWebUserDto, UserDto]):
+    required_permission = None
+
+    def __init__(
+        self,
+        uow: UnitOfWork,
+        user_dao: UserDao,
+        config: AppConfig,
+        cryptographer: Cryptographer,
+        event_publisher: EventPublisher,
+    ) -> None:
+        self.uow = uow
+        self.user_dao = user_dao
+        self.config = config
+        self.cryptographer = cryptographer
+        self.event_publisher = event_publisher
+
+    async def _execute(self, actor: UserDto, data: GetOrCreateWebUserDto) -> UserDto:
+        email = data.email.lower()
+
+        async with self.uow:
+            user = await self.user_dao.get_by_email(email)
+            if user:
+                return user
+
+            referral_code = self.cryptographer.generate_short_code(email)
+            user_dto = UserDto(
+                email=email,
+                name=email,
+                role=Role.USER,
+                language=self.config.default_locale,
+                referral_code=referral_code,
+            )
+
+            user = await self.user_dao.create(user_dto)
+            await self.uow.commit()
+
+        await self.event_publisher.publish(
+            UserRegisteredEvent(
+                user_id=user.id,
+                email=user.email,
+                username=user.username,
+                name=user.name,
+            )
+        )
+
+        logger.info(f"New web user '{email}' created")
+        return user
 
 
 @dataclass(frozen=True)

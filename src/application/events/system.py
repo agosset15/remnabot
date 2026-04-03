@@ -184,7 +184,9 @@ class BotUpdateEvent(SystemEvent):
 
 @dataclass(frozen=True, kw_only=True)
 class UserEvent(SystemEvent):
-    telegram_id: int
+    user_id: int
+    telegram_id: Optional[int] = field(default=None)
+    email: Optional[str] = field(default=None)
     username: Optional[str] = field(default=None)
     name: str
 
@@ -206,7 +208,9 @@ class UserRegisteredEvent(UserEvent):
         return MessagePayloadDto(
             i18n_key=self.event_key,
             i18n_kwargs={**asdict(self)},
-            reply_markup=get_user_keyboard(self.telegram_id, self.referrer_telegram_id),
+            reply_markup=get_user_keyboard(self.telegram_id, self.referrer_telegram_id)
+            if self.telegram_id
+            else None,
             disable_default_markup=False,
             delete_after=None,
         )

@@ -61,7 +61,10 @@ frg-user =
 
 frg-user-info =
     <blockquote>
-    • <b>ID</b>: <code>{ NUMBER($telegram_id, useGrouping: 0) }</code> 
+    { $telegram_id ->
+        [0] • <b>Email</b>: <code>{ $email }</code>
+        *[HAS] • <b>ID</b>: <code>{ NUMBER($telegram_id, useGrouping: 0) }</code>
+    }
     • <b>Имя</b>: { $name } { $username -> 
         [0] { empty }
         *[HAS] (<a href="tg://user?id={ $telegram_id }">@{ $username }</a>)
@@ -207,10 +210,10 @@ unit-unlimited = { $value ->
     *[other] { $value }
 }
 
-unit-device = { $devices ->
+unit-device = { $value ->
     [0] { unlimited }
-    *[other] { $devices }
-} { $devices ->
+    *[other] { $value }
+} { $value ->
     [0] { space }
     [one] устройство
     [few] устройства

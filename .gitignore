@@ -15,6 +15,7 @@ logs/*
 .env
 venv/
 .tests
+openapi.json
 
 # Cache
 __pycache__/
@@ -25,6 +26,7 @@ __pycache__/
 .pytest_cache/
 .coverage/
 .claude/
+memory/
 
 # Build
 build/

@@ -7,8 +7,8 @@ from dishka import AsyncContainer
 from loguru import logger
 
 from src.application.use_cases.user.commands.registration import (
-    GetOrCreateUser,
-    GetOrCreateUserDto,
+    GetOrCreateTelegramUser,
+    GetOrCreateTelegramUserDto,
     UpdateUserFromTelegram,
     UpdateUserFromTelegramDto,
 )
@@ -41,9 +41,9 @@ class UserMiddleware(EventTypedMiddleware):
             return
 
         container: AsyncContainer = data[CONTAINER_KEY]
-        get_or_create_user = await container.get(GetOrCreateUser)
+        get_or_create_user = await container.get(GetOrCreateTelegramUser)
         update_user_from_telegram = await container.get(UpdateUserFromTelegram)
-        user = await get_or_create_user.system(GetOrCreateUserDto.from_aiogram(aiogram_user, event))
+        user = await get_or_create_user.system(GetOrCreateTelegramUserDto.from_aiogram(aiogram_user, event))
 
         if user and not isinstance(aiogram_user, FakeUser):
             user = await update_user_from_telegram.system(

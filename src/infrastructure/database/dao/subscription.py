@@ -27,8 +27,7 @@ class SubscriptionDaoImpl(SubscriptionDao, BaseDaoImpl):
         redis: Redis,
         user_dao: UserDao,
     ) -> None:
-        self.session = session
-        self.retort = retort
+        super().__init__(session, retort)
         self.conversion_retort = conversion_retort
         self.redis = redis
         self.user_dao = user_dao
