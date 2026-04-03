@@ -93,6 +93,7 @@ class ActivateTrialSubscription(Interactor[ActivateTrialSubscriptionDto, None]):
 
             event = TrialActivatedEvent(
                 user_id=user.id,
+                email=user.email,
                 telegram_id=user.telegram_id,  # ty: ignore[invalid-argument-type]
                 username=user.username,
                 name=user.name,
