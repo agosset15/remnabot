@@ -53,7 +53,7 @@ class ConnectWebUser(Interactor[ConnectWebUserDto, Optional[UserDto]]):
                 await self._simple_connect(web_user, telegram_user)
             await self.uow.commit()
 
-        logger.info(f"Connect web: {telegram_user.log} → merged into web user id='{web_user.id}'")
+        logger.info(f"Connect web: {telegram_user.log} -> merged into web user id='{web_user.id}'")
         return await self.user_dao.get_by_id(web_user.id)  # ty: ignore[invalid-argument-type]
 
     # ──────────────────────────────────────────────────────────────────────────
@@ -71,7 +71,7 @@ class ConnectWebUser(Interactor[ConnectWebUserDto, Optional[UserDto]]):
     @staticmethod
     def _has_substantial_data(user: UserDto) -> bool:
         """True when the Telegram user carries data worth merging."""
-        return user.is_trial_available
+        return not user.is_trial_available
 
     # ──────────────────────────────────────────────────────────────────────────
     # Connect strategies
@@ -85,8 +85,10 @@ class ConnectWebUser(Interactor[ConnectWebUserDto, Optional[UserDto]]):
         if web_user.name == web_user.email:
             web_user.name = telegram_user.name
 
-        await self.user_dao.update(web_user)
+        # Delete first to release the unique constraint on telegram_id,
+        # then update web_user to claim it.
         await self.user_dao.delete(telegram_user.telegram_id)  # ty: ignore[invalid-argument-type]
+        await self.user_dao.update(web_user)
 
         logger.debug(
             f"Simple connect: telegram_id='{telegram_user.telegram_id}' "
@@ -97,12 +99,13 @@ class ConnectWebUser(Interactor[ConnectWebUserDto, Optional[UserDto]]):
         """
         Merge all data from the Telegram user into the web account.
 
-        Order of operations matters: FKs referencing telegram_user must be
-        re-pointed before the record can be deleted.
+        FK relations are re-pointed to web_user first, then the telegram_user
+        record is deleted to release the unique telegram_id constraint, and
+        finally web_user is updated to claim that telegram_id.
         """
         self._apply_merged_fields(web_user, telegram_user)
 
-        # Detach current_subscription_id so the FK to subscriptions can be re-pointed
+        # Detach current_subscription_id so the FK to subscriptions can be re-pointed.
         await self.user_dao.clear_current_subscription(
             telegram_user.telegram_id  # ty: ignore[invalid-argument-type]
         )
@@ -124,8 +127,10 @@ class ConnectWebUser(Interactor[ConnectWebUserDto, Optional[UserDto]]):
             to_user_id=web_user.id,  # ty: ignore[invalid-argument-type]
         )
 
-        await self.user_dao.update(web_user)
+        # Delete first to release the unique constraint on telegram_id,
+        # then update web_user to claim it.
         await self.user_dao.delete(telegram_user.telegram_id)  # ty: ignore[invalid-argument-type]
+        await self.user_dao.update(web_user)
 
         logger.debug(
             f"Full merge: telegram user id='{telegram_user.id}' "
