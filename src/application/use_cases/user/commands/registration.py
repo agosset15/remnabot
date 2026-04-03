@@ -152,7 +152,7 @@ class GetOrCreateWebUser(Interactor[GetOrCreateWebUserDto, UserDto]):
             if user:
                 return user
 
-            referral_code = self.cryptographer.generate_short_code(email)
+            referral_code = self.cryptographer.generate_short_code(email, 10)
             user_dto = UserDto(
                 email=email,
                 name=email,
