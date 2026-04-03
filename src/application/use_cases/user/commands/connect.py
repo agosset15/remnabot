@@ -5,6 +5,7 @@ from loguru import logger
 
 from src.application.common import Interactor
 from src.application.common.dao import ReferralDao, SubscriptionDao, TransactionDao, UserDao
+from src.application.common.policy import Permission
 from src.application.common.uow import UnitOfWork
 from src.application.dto import UserDto
 
@@ -16,19 +17,7 @@ class ConnectWebUserDto:
 
 
 class ConnectWebUser(Interactor[ConnectWebUserDto, Optional[UserDto]]):
-    """
-    Connects a Telegram user to an existing web (email-only) account.
-
-    If the web user has no meaningful data beyond the basic profile,
-    a simple connect is performed: telegram_id is attached to the web account
-    and the ephemeral Telegram-only user record is removed.
-
-    If the Telegram user has accumulated points, discounts, referrals, or
-    subscriptions, a full merge is performed: all data is consolidated under
-    the web user record, and the Telegram-only record is deleted.
-    """
-
-    required_permission = None
+    required_permission = Permission.PUBLIC
 
     def __init__(
         self,
