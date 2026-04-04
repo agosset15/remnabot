@@ -125,7 +125,7 @@ async def devices_getter(
     remnawave: FromDishka[Remnawave],
     **kwargs: Any,
 ) -> dict[str, Any]:
-    current_subscription = await subscription_dao.get_current(user.telegram_id)
+    current_subscription = await subscription_dao.get_current(user.id)
 
     if not current_subscription:
         raise ValueError(f"Current subscription for user '{user.telegram_id}' not found")

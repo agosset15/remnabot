@@ -84,6 +84,17 @@ class UserDaoImpl(UserDao):
         logger.debug(f"User '{telegram_id}' not found")
         return None
 
+    async def get_by_telegram_id_or_email(self, telegram_id: int, email: str) -> Optional[UserDto]:
+        stmt = select(User).where(or_(User.telegram_id == telegram_id, User.email == email))
+        db_user = await self.session.scalar(stmt)
+
+        if db_user:
+            logger.debug(f"User '{telegram_id}' or '{email}' found in database")
+            return self._convert_to_dto(db_user)
+
+        logger.debug(f"User '{telegram_id}' or '{email}' not found")
+        return None
+
     async def get_by_telegram_ids(self, telegram_ids: list[int]) -> list[UserDto]:
         if not telegram_ids:
             return []
@@ -222,12 +233,10 @@ class UserDaoImpl(UserDao):
 
     # @invalidate_cache(key_builder=[USER_COUNT_PREFIX, USER_LIST_PREFIX])
     # @invalidate_cache(key_builder=UserCacheKey)
-    async def clear_current_subscription(self, telegram_id: int) -> None:
-        stmt = (
-            update(User).where(User.telegram_id == telegram_id).values(current_subscription_id=None)
-        )
+    async def clear_current_subscription(self, user_id: int) -> None:
+        stmt = update(User).where(User.id == user_id).values(current_subscription_id=None)
         await self.session.execute(stmt)
-        logger.debug(f"Current subscription cleared for user '{telegram_id}'")
+        logger.debug(f"Current subscription cleared for user '{user_id}'")
 
     async def get_blocked_users(self) -> list[UserDto]:
         stmt = select(User).where(User.is_blocked.is_(True)).order_by(User.id.desc())
@@ -305,10 +314,10 @@ class UserDaoImpl(UserDao):
         logger.debug(f"Checked invite status for user '{telegram_id}', result '{is_invited}'")
         return is_invited
 
-    async def toggle_blocked_status(self, telegram_id: int) -> None:
+    async def toggle_blocked_status(self, user_id: int) -> None:
         stmt = (
             update(User)
-            .where(User.telegram_id == telegram_id)
+            .where(User.id == user_id)
             .values(is_blocked=~User.is_blocked)
             .returning(User.is_blocked)
         )
@@ -316,9 +325,7 @@ class UserDaoImpl(UserDao):
         result = await self.session.execute(stmt)
         new_status = result.scalar()
 
-        logger.debug(
-            f"Toggled blocked status for user '{telegram_id}', new status is '{new_status}'"
-        )
+        logger.debug(f"Toggled blocked status for user '{user_id}', new status is '{new_status}'")
 
     async def count_active_non_blocked(self) -> int:
         stmt = (

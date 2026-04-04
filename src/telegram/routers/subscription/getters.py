@@ -30,7 +30,7 @@ async def subscription_getter(
     subscription_dao: FromDishka[SubscriptionDao],
     **kwargs: Any,
 ) -> dict[str, Any]:
-    current_subscription = await subscription_dao.get_current(user.telegram_id)
+    current_subscription = await subscription_dao.get_current(user.id)
     has_active = bool(current_subscription and not current_subscription.is_trial)
     is_unlimited = current_subscription.is_unlimited if current_subscription else False
     return {
@@ -55,7 +55,7 @@ async def plan_getter(
     if not plan:
         raise ValueError(f"Plan with id '{plan_id}' not found")
 
-    current_subscription = await subscription_dao.get_current(user.telegram_id)
+    current_subscription = await subscription_dao.get_current(user.id)
 
     if current_subscription:
         matched_plan = await match_plan.system(
@@ -267,7 +267,7 @@ async def getter_connect(
     subscription_dao: FromDishka[SubscriptionDao],
     **kwargs: Any,
 ) -> dict[str, Any]:
-    current_subscription = await subscription_dao.get_current(user.telegram_id)
+    current_subscription = await subscription_dao.get_current(user.id)
 
     if not current_subscription:
         raise ValueError(f"User '{user.telegram_id}' has no active subscription after purchase")
@@ -289,7 +289,7 @@ async def success_payment_getter(
 ) -> dict[str, Any]:
     start_data = cast(dict[str, Any], dialog_manager.start_data)
     purchase_type: PurchaseType = start_data["purchase_type"]
-    subscription = await subscription_dao.get_current(user.telegram_id)
+    subscription = await subscription_dao.get_current(user.id)
 
     if not subscription:
         raise ValueError(f"User '{user.telegram_id}' has no active subscription after purchase")

@@ -87,9 +87,7 @@ class GetOrCreateTelegramUser(Interactor[GetOrCreateTelegramUserDto, Optional[Us
         referrer = None
         referral_code = await self.get_referral_code_from_event.system(data.event)
         if referral_code:
-            referrer = await self.attach_referral.system(
-                AttachReferralDto(user.telegram_id, referral_code)
-            )
+            referrer = await self.attach_referral.system(AttachReferralDto(user.id, referral_code))
 
         await self.event_publisher.publish(
             UserRegisteredEvent(

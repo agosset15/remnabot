@@ -76,12 +76,12 @@ class GetUserStatistics(Interactor[int, UserStatisticsDto]):
         self.transaction_dao = transaction_dao
         self.referral_dao = referral_dao
 
-    async def _execute(self, actor: UserDto, telegram_id: int) -> UserStatisticsDto:
+    async def _execute(self, actor: UserDto, user_id: int) -> UserStatisticsDto:
         last_payment_at, payment_amounts = await self.transaction_dao.get_user_payment_stats(
-            telegram_id
+            user_id
         )
-        user = await self.user_dao.get_by_telegram_id(telegram_id)
-        referral_stats = await self.referral_dao.get_user_referral_stats(telegram_id)
+        user = await self.user_dao.get_by_id(user_id)
+        referral_stats = await self.referral_dao.get_user_referral_stats(user_id)
 
         return UserStatisticsDto(
             last_payment_at=last_payment_at,

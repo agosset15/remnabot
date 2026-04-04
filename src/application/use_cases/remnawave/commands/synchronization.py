@@ -43,46 +43,49 @@ class SyncRemnaUser(Interactor[SyncRemnaUserDto, bool]):
     async def _execute(self, actor: UserDto, data: SyncRemnaUserDto) -> bool:
         remna_user = data.remna_user
 
-        if not remna_user.telegram_id:
-            logger.warning(f"Skipping sync for '{remna_user.username}': missing 'telegram_id'")
+        if not remna_user.telegram_id and not remna_user.email:
+            logger.warning(
+                f"Skipping sync for '{remna_user.username}': missing 'telegram_id' or 'email'"
+            )
             return False
 
         async with self.uow:
-            user = await self.user_dao.get_by_telegram_id(int(remna_user.telegram_id))
+            user = await self.user_dao.get_by_telegram_id_or_email(
+                int(remna_user.telegram_id), remna_user.email
+            )
 
             if not user and data.creating:
-                logger.debug(f"User '{remna_user.telegram_id}' not found in bot, creating new user")
+                logger.debug(f"User '{remna_user.username}' not found in bot, creating new user")
                 user = await self.user_dao.create(self._create_user_dto(remna_user))
 
             if not user:
                 logger.warning(
-                    f"Sync failed: user '{remna_user.telegram_id}' could not be found or created"
+                    f"Sync failed: user '{remna_user.username}' could not be found or created"
                 )
                 return False
 
-            subscription = await self.subscription_dao.get_current(user.telegram_id)
+            subscription = await self.subscription_dao.get_current(user.id)
             remna_subscription = RemnaSubscriptionDto.from_remna_user(remna_user)
 
             if not subscription:
-                logger.info(
-                    f"No subscription found for user '{user.telegram_id}', importing from panel"
-                )
+                logger.info(f"No subscription found for user '{user.id}', importing from panel")
                 await self._import_subscription(user.id, remna_subscription)  # type: ignore[arg-type]
                 await self.uow.commit()
-                logger.info(f"Sync completed for user '{remna_user.telegram_id}'")
+                logger.info(f"Sync completed for user '{remna_user.id}'")
                 return False
             else:
-                logger.info(f"Synchronizing existing subscription for user '{user.telegram_id}'")
+                logger.info(f"Synchronizing existing subscription for user '{user.id}'")
                 changed = await self._update_subscription(subscription, remna_subscription)
                 await self.uow.commit()
-                logger.info(f"Sync completed for user '{remna_user.telegram_id}'")
+                logger.info(f"Sync completed for user '{remna_user.id}'")
                 return changed
 
     def _create_user_dto(self, data: RemnaUserDto) -> UserDto:
         return UserDto(
             telegram_id=data.telegram_id,  # type: ignore[arg-type]  # ty:ignore[invalid-argument-type]
-            referral_code=self.cryptographer.generate_short_code(data.telegram_id),
-            name=str(data.telegram_id),
+            email=data.email,
+            referral_code=self.cryptographer.generate_short_code(data.email or data.telegram_id),
+            name=data.email or str(data.telegram_id),
             role=Role.USER,
             language=self.config.default_locale,
         )

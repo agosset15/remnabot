@@ -303,7 +303,7 @@ class ProcessPayment(Interactor[ProcessPaymentDto, None]):
             await self.notifier.notify_user(user, i18n_key="ntf-gateway.test-payment-confirmed")
             return
 
-        subscription = await self.subscription_dao.get_current(user.telegram_id)
+        subscription = await self.subscription_dao.get_current(user.id)
         old_plan = subscription.plan_snapshot if subscription else None
 
         event = UserPurchaseEvent(

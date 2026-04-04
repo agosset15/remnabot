@@ -38,16 +38,16 @@ class GetUserProfile(Interactor[int, GetUserProfileResultDto]):
         self.subscription_dao = subscription_dao
         self.config = config
 
-    async def _execute(self, actor: UserDto, telegram_id: int) -> GetUserProfileResultDto:
-        target_user = await self.user_dao.get_by_telegram_id(telegram_id)
+    async def _execute(self, actor: UserDto, user_id: int) -> GetUserProfileResultDto:
+        target_user = await self.user_dao.get_by_id(user_id)
 
         if not target_user:
-            raise ValueError(f"User '{telegram_id}' not found")
+            raise ValueError(f"User '{user_id}' not found")
 
         settings = await self.settings_dao.get()
-        subscription = await self.subscription_dao.get_current(telegram_id)
+        subscription = await self.subscription_dao.get_current(user_id)
 
-        logger.info(f"{actor.log} Viewed details for user '{telegram_id}'")
+        logger.info(f"{actor.log} Viewed details for user '{user_id}'")
 
         return GetUserProfileResultDto(
             target_user=target_user,
@@ -98,15 +98,15 @@ class GetUserProfileSubscription(Interactor[int, GetUserProfileSubscriptionResul
     async def _execute(
         self,
         actor: UserDto,
-        telegram_id: int,
+        user_id: int,
     ) -> GetUserProfileSubscriptionResultDto:
-        subscription = await self.subscription_dao.get_current(telegram_id)
+        subscription = await self.subscription_dao.get_current(user_id)
         if not subscription:
-            raise ValueError(f"Current subscription for user '{telegram_id}' not found")
+            raise ValueError(f"Current subscription for user '{user_id}' not found")
 
         remna_user = await self.remnawave.get_user_by_uuid(subscription.user_remna_id)
         if not remna_user:
-            raise ValueError(f"User Remnawave for '{telegram_id}' not found")
+            raise ValueError(f"User Remnawave for '{user_id}' not found")
 
         last_node = None
         if remna_user.last_connected_node_uuid:
@@ -117,7 +117,7 @@ class GetUserProfileSubscription(Interactor[int, GetUserProfileSubscriptionResul
             except Exception as e:
                 logger.error(f"Failed to fetch node info: {e}")
 
-        logger.info(f"{actor.log} Viewed subscription details for '{telegram_id}'")
+        logger.info(f"{actor.log} Viewed subscription details for '{user_id}'")
 
         external_squad = None
         if remna_user.external_squad_uuid:
@@ -154,18 +154,18 @@ class GetUserDevices(Interactor[int, GetUserDevicesResultDto]):
         self.subscription_dao = subscription_dao
         self.remnawave = remnawave
 
-    async def _execute(self, actor: UserDto, telegram_id: int) -> GetUserDevicesResultDto:
-        target_user = await self.user_dao.get_by_telegram_id(telegram_id)
+    async def _execute(self, actor: UserDto, user_id: int) -> GetUserDevicesResultDto:
+        target_user = await self.user_dao.get_by_id(user_id)
         if not target_user:
-            raise ValueError(f"User '{telegram_id}' not found")
+            raise ValueError(f"User '{user_id}' not found")
 
-        subscription = await self.subscription_dao.get_current(telegram_id)
+        subscription = await self.subscription_dao.get_current(user_id)
         if not subscription:
-            raise ValueError(f"Subscription for '{telegram_id}' not found")
+            raise ValueError(f"Subscription for '{user_id}' not found")
 
         devices = await self.remnawave.get_devices(subscription.user_remna_id)
 
-        logger.info(f"{actor.log} Retrieved '{len(devices)}' devices for user '{telegram_id}'")
+        logger.info(f"{actor.log} Retrieved '{len(devices)}' devices for user '{user_id}'")
 
         return GetUserDevicesResultDto(
             devices=devices,

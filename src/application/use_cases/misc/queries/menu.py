@@ -39,7 +39,7 @@ class GetMenuData(Interactor[None, GetMenuDataResultDto]):
         self.get_available_trial = get_available_trial
 
     async def _execute(self, actor: UserDto, data: None) -> GetMenuDataResultDto:
-        current_subscription = await self.subscription_dao.get_current(actor.telegram_id)
+        current_subscription = await self.subscription_dao.get_current(actor.id)
 
         plan = None
         if actor.is_trial_available:

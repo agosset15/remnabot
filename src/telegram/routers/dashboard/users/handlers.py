@@ -49,7 +49,7 @@ async def on_user_search(
     elif len(found_users) == 1:
         target_user = found_users[0]
         logger.info(f"{user.log} Searched user -> {target_user.log}")
-        await start_user_window(manager=dialog_manager, target_telegram_id=target_user.telegram_id)
+        await start_user_window(manager=dialog_manager, target_user_id=target_user.id)
 
     else:
         await dialog_manager.start(
@@ -66,7 +66,7 @@ async def on_user_select(
 ) -> None:
     user: UserDto = dialog_manager.middleware_data[USER_KEY]
     logger.info(f"{user.log} User id '{selected_user}' selected")
-    await start_user_window(manager=dialog_manager, target_telegram_id=selected_user)
+    await start_user_window(manager=dialog_manager, target_user_id=selected_user)
 
 
 @inject

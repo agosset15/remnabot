@@ -77,7 +77,7 @@ async def get_profile(
     subscription_dao: FromDishka[SubscriptionDao],
     current_user: UserDto = Depends(get_current_user),
 ) -> ProfileResponse:
-    subscription = await subscription_dao.get_current(current_user.telegram_id)
+    subscription = await subscription_dao.get_current(current_user.id)
 
     sub_response: Optional[SubscriptionResponse] = None
     if subscription is not None:

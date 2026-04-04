@@ -71,12 +71,12 @@ class GiveReferrerReward(Interactor[GiveReferrerRewardDto, None]):
             )
 
         elif reward.type == ReferralRewardType.EXTRA_DAYS:
-            subscription = await self.subscription_dao.get_current(user.telegram_id)  # only active
+            subscription = await self.subscription_dao.get_current(user.id)  # only active
 
             if not subscription or subscription.is_trial:
                 logger.warning(
                     f"{actor.log} Current subscription not found "
-                    f"for user '{user.telegram_id}', unable to add days"
+                    f"for user '{user.id}', unable to add days"
                 )
 
                 event_failed = ReferralRewardFailedEvent(
@@ -96,7 +96,7 @@ class GiveReferrerReward(Interactor[GiveReferrerRewardDto, None]):
 
             await self.add_subscription_duration.system(
                 AddSubscriptionDurationDto(
-                    telegram_id=user.telegram_id,
+                    user_id=user.id,
                     days=reward.amount,
                 ),
             )

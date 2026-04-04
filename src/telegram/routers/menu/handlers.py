@@ -166,7 +166,7 @@ async def show_reason(
     subscription_dao: FromDishka[SubscriptionDao],
 ) -> None:
     user: UserDto = dialog_manager.middleware_data[USER_KEY]
-    subscription = await subscription_dao.get_current(user.telegram_id)
+    subscription = await subscription_dao.get_current(user.id)
 
     if subscription:
         kwargs = {

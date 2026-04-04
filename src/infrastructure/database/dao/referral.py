@@ -62,8 +62,7 @@ class ReferralDaoImpl(ReferralDao):
     async def get_by_referred_id(self, referred_id: int) -> Optional[ReferralDto]:
         stmt = (
             select(Referral)
-            .join(User, User.id == Referral.referred_user_id)
-            .where(User.telegram_id == referred_id)
+            .where(Referral.referred_user_id == referred_id)
             .options(selectinload(Referral.referrer), selectinload(Referral.referred))
         )
         db_referral = await self.session.scalar(stmt)
@@ -95,8 +94,7 @@ class ReferralDaoImpl(ReferralDao):
     ) -> list[ReferralDto]:
         stmt = (
             select(Referral)
-            .join(User, User.id == Referral.referrer_user_id)
-            .where(User.telegram_id == referrer_id)
+            .where(Referral.referrer_user_id == referrer_id)
             .options(selectinload(Referral.referred))
             .limit(limit)
             .offset(offset)
@@ -140,22 +138,18 @@ class ReferralDaoImpl(ReferralDao):
 
     async def get_total_rewards_amount(
         self,
-        telegram_id: int,
+        user_id: int,
         reward_type: ReferralRewardType,
     ) -> int:
-        stmt = (
-            select(func.sum(ReferralReward.amount))
-            .join(User, User.id == ReferralReward.user_id)
-            .where(
-                User.telegram_id == telegram_id,
-                ReferralReward.type == reward_type,
-                ReferralReward.is_issued.is_(True),
-            )
+        stmt = select(func.sum(ReferralReward.amount)).where(
+            ReferralReward.user_id == user_id,
+            ReferralReward.type == reward_type,
+            ReferralReward.is_issued.is_(True),
         )
         total = await self.session.scalar(stmt) or 0
 
         logger.debug(
-            f"Total rewards amount for user '{telegram_id}' with type '{reward_type}' is '{total}'"
+            f"Total rewards amount for user '{user_id}' with type '{reward_type}' is '{total}'"
         )
         return int(total)
 
@@ -167,7 +161,7 @@ class ReferralDaoImpl(ReferralDao):
         if not first_level:
             return None, None
 
-        second_level = await self.get_by_referred_id(first_level.referrer.telegram_id)
+        second_level = await self.get_by_referred_id(first_level.referrer.id)
 
         logger.debug(
             f"Referral chain for user '{referred_id}': "
@@ -251,58 +245,48 @@ class ReferralDaoImpl(ReferralDao):
             else None,
         )
 
-    async def get_user_referral_stats(self, telegram_id: int) -> dict:
-        from sqlalchemy.orm import aliased
+    async def get_user_referral_stats(self, user_id: int) -> dict:
+        from sqlalchemy.orm import aliased  # noqa: PLC0415
 
-        ReferrerUser = aliased(User)
-        ReferredUser = aliased(User)
+        ReferrerUser = aliased(User)  # noqa: N806
 
         referrer_stmt = (
             select(ReferrerUser.telegram_id, ReferrerUser.username)
             .join(Referral, Referral.referrer_user_id == ReferrerUser.id)
-            .join(ReferredUser, ReferredUser.id == Referral.referred_user_id)
-            .where(ReferredUser.telegram_id == telegram_id)
+            .where(Referral.referred_user_id == user_id)
         )
 
-        invited_stmt = (
-            select(
-                func.sum(case((Referral.level == ReferralLevel.FIRST, 1), else_=0)).label("level_1"),
-                func.sum(case((Referral.level == ReferralLevel.SECOND, 1), else_=0)).label("level_2"),
-            )
-            .join(ReferrerUser, ReferrerUser.id == Referral.referrer_user_id)
-            .where(ReferrerUser.telegram_id == telegram_id)
-        )
+        invited_stmt = select(
+            func.sum(case((Referral.level == ReferralLevel.FIRST, 1), else_=0)).label("level_1"),
+            func.sum(case((Referral.level == ReferralLevel.SECOND, 1), else_=0)).label("level_2"),
+        ).where(Referral.referrer_user_id == user_id)
 
-        rewards_stmt = (
-            select(
-                func.sum(
-                    case(
-                        (
-                            and_(
-                                ReferralReward.is_issued.is_(True),
-                                ReferralReward.type == ReferralRewardType.POINTS,
-                            ),
-                            ReferralReward.amount,
+        rewards_stmt = select(
+            func.sum(
+                case(
+                    (
+                        and_(
+                            ReferralReward.is_issued.is_(True),
+                            ReferralReward.type == ReferralRewardType.POINTS,
                         ),
-                        else_=0,
-                    )
-                ).label("reward_points"),
-                func.sum(
-                    case(
-                        (
-                            and_(
-                                ReferralReward.is_issued.is_(True),
-                                ReferralReward.type == ReferralRewardType.EXTRA_DAYS,
-                            ),
-                            ReferralReward.amount,
+                        ReferralReward.amount,
+                    ),
+                    else_=0,
+                )
+            ).label("reward_points"),
+            func.sum(
+                case(
+                    (
+                        and_(
+                            ReferralReward.is_issued.is_(True),
+                            ReferralReward.type == ReferralRewardType.EXTRA_DAYS,
                         ),
-                        else_=0,
-                    )
-                ).label("reward_days"),
-            )
-            .join(ReferrerUser, ReferrerUser.id == ReferralReward.user_id)
-            .where(ReferrerUser.telegram_id == telegram_id)
-        )
+                        ReferralReward.amount,
+                    ),
+                    else_=0,
+                )
+            ).label("reward_days"),
+        ).where(ReferralReward.user_id == user_id)
 
         referrer_row = (await self.session.execute(referrer_stmt)).mappings().first()
         invited_row = (await self.session.execute(invited_stmt)).mappings().one()
@@ -354,17 +338,16 @@ class ReferralDaoImpl(ReferralDao):
             f"from user id='{from_user_id}' to user id='{to_user_id}'"
         )
 
-    async def get_referrals_with_payment_count(self, telegram_id: int) -> int:
+    async def get_referrals_with_payment_count(self, user_id: int) -> int:
         stmt = (
             select(func.count())
             .select_from(ReferralReward)
-            .join(User, User.id == ReferralReward.user_id)
             .where(
-                User.telegram_id == telegram_id,
+                ReferralReward.user_id == user_id,
                 ReferralReward.is_issued.is_(True),
             )
         )
         count = await self.session.scalar(stmt) or 0
 
-        logger.debug(f"User '{telegram_id}' has '{count}' payments from referrals")
+        logger.debug(f"User '{user_id}' has '{count}' payments from referrals")
         return int(count)

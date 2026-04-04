@@ -16,7 +16,7 @@ from src.core.types import RemnaUserDto
 
 @dataclass(frozen=True)
 class DeleteUserDeviceDto:
-    telegram_id: int
+    user_id: int
     hwid: str
 
 
@@ -28,17 +28,17 @@ class DeleteUserDevice(Interactor[DeleteUserDeviceDto, bool]):
         self.remnawave = remnawave
 
     async def _execute(self, actor: UserDto, data: DeleteUserDeviceDto) -> bool:
-        current_subscription = await self.subscription_dao.get_current(data.telegram_id)
+        current_subscription = await self.subscription_dao.get_current(data.user_id)
 
         if not current_subscription:
-            raise ValueError(f"Subscription for user '{data.telegram_id}' not found")
+            raise ValueError(f"Subscription for user '{data.user_id}' not found")
 
         remaining_devices = await self.remnawave.delete_device(
             current_subscription.user_remna_id,
             data.hwid,
         )
 
-        logger.info(f"{actor.log} Deleted device '{data.hwid}' for user '{data.telegram_id}'")
+        logger.info(f"{actor.log} Deleted device '{data.hwid}' for user '{data.user_id}'")
         return bool(remaining_devices)
 
 
@@ -50,11 +50,11 @@ class DeleteUserAllDevices(Interactor[None, None]):
         self.remnawave_sdk = remnawave_sdk
 
     async def _execute(self, actor: UserDto, data: None) -> None:
-        current_subscription = await self.subscription_dao.get_current(actor.telegram_id)
+        current_subscription = await self.subscription_dao.get_current(actor.id)
 
         if not current_subscription:
             raise ValueError(
-                f"User '{actor.telegram_id}' has no active subscription or device limit unlimited"
+                f"User '{actor.id}' has no active subscription or device limit unlimited"
             )
 
         result = await self.remnawave_sdk.hwid.delete_all_hwid_user(
@@ -75,18 +75,18 @@ class ResetUserTraffic(Interactor[int, None]):
         self.subscription_dao = subscription_dao
         self.remnawave_sdk = remnawave_sdk
 
-    async def _execute(self, actor: UserDto, data: int) -> None:
-        subscription = await self.subscription_dao.get_current(data)
+    async def _execute(self, actor: UserDto, user_id: int) -> None:
+        subscription = await self.subscription_dao.get_current(user_id)
         if not subscription:
-            raise ValueError(f"Subscription for user '{data}' not found")
+            raise ValueError(f"Subscription for user '{user_id}' not found")
 
         try:
             await self.remnawave_sdk.users.reset_user_traffic(subscription.user_remna_id)
         except Exception as e:
-            logger.error(f"Failed to reset traffic in Remnawave for user '{data}': {e}")
+            logger.error(f"Failed to reset traffic in Remnawave for user '{user_id}': {e}")
             raise
 
-        logger.info(f"{actor.log} Reset traffic for user '{data}'")
+        logger.info(f"{actor.log} Reset traffic for user '{user_id}'")
 
 
 class ReissueSubscription(Interactor[None, None]):
@@ -97,10 +97,10 @@ class ReissueSubscription(Interactor[None, None]):
         self.remnawave = remnawave
 
     async def _execute(self, actor: UserDto, data: None) -> None:
-        current_subscription = await self.subscription_dao.get_current(actor.telegram_id)
+        current_subscription = await self.subscription_dao.get_current(actor.id)
 
         if not current_subscription:
-            raise ValueError(f"No active subscription for user '{actor.telegram_id}'")
+            raise ValueError(f"No active subscription for user '{actor.id}'")
 
         await self.remnawave.revoke_subscription(current_subscription.user_remna_id)
 

@@ -37,12 +37,12 @@ class ToggleUserBlockedStatus(Interactor[int, None]):
         self.uow = uow
         self.user_dao = user_dao
 
-    async def _execute(self, actor: UserDto, telegram_id: int) -> None:
+    async def _execute(self, actor: UserDto, user_id: int) -> None:
         async with self.uow:
-            await self.user_dao.toggle_blocked_status(telegram_id)
+            await self.user_dao.toggle_blocked_status(user_id)
             await self.uow.commit()
 
-        logger.info(f"{actor.log} Toggled user '{telegram_id}' blocked status")
+        logger.info(f"{actor.log} Toggled user '{user_id}' blocked status")
 
 
 class UnblockAllUsers(Interactor[None, int]):

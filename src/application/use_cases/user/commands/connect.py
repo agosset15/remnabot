@@ -127,7 +127,7 @@ class ConnectWebUser(Interactor[ConnectWebUserDto, Optional[UserDto]]):
         # Clear current_subscription_id on telegram_user so its FK to
         # subscriptions can be safely re-pointed to web_user.
         await self.user_dao.clear_current_subscription(
-            telegram_user.telegram_id  # ty: ignore[invalid-argument-type]
+            telegram_user.id  # ty: ignore[invalid-argument-type]
         )
 
         await self.subscription_dao.reassign_to_user(

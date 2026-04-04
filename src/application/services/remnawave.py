@@ -63,7 +63,7 @@ class RemnaWebhookService:
         logger.debug(f"Received user event '{event}'")
         # TODO: Not connected event
 
-        if not remna_user.telegram_id:
+        if not remna_user.telegram_id and not remna_user.email:
             logger.debug(
                 f"Skipping event for RemnaUser '{remna_user.username}': telegram_id is empty"
             )
@@ -73,21 +73,26 @@ class RemnaWebhookService:
             await self._process_sync(event, remna_user)
             return
 
-        user = await self.user_dao.get_by_telegram_id(remna_user.telegram_id)
+        user = await self.user_dao.get_by_telegram_id_or_email(
+            remna_user.telegram_id, remna_user.email
+        )
         if not user:
-            logger.warning(f"Local user not found with telegram_id '{remna_user.telegram_id}'")
+            logger.warning(
+                f"Local user not found with telegram_id '{remna_user.telegram_id}' "
+                f"or email '{remna_user.email}'"
+            )
             return
 
-        current_subscription = await self.subscription_dao.get_current(remna_user.telegram_id)
+        current_subscription = await self.subscription_dao.get_current(user.id)
         if not current_subscription:
             logger.warning(
-                f"Current subscription not found for telegram_id '{remna_user.telegram_id}', "
+                f"Current subscription not found for '{user.id}', "
                 f"status event '{event}' processing aborted"
             )
             return
 
         if event == RemnaUserEvent.DELETED:
-            logger.debug(f"Executing deletion for RemnaUser '{remna_user.telegram_id}'")
+            logger.debug(f"Executing deletion for RemnaUser '{user.id}'")
             await self._process_delete_subscription(remna_user)
 
         elif event in {
@@ -151,7 +156,7 @@ class RemnaWebhookService:
                 )
             )
         else:
-            logger.warning(f"Unhandled user event '{event}' for '{remna_user.telegram_id}'")
+            logger.warning(f"Unhandled user event '{event}' for '{user.id}'")
 
     async def handle_device_event(
         self, event: str, remna_user: RemnaUserDto, device: HwidUserDeviceDto
@@ -263,9 +268,10 @@ class RemnaWebhookService:
         dto = SyncRemnaUserDto(remna_user=remna_user, creating=(event == RemnaUserEvent.CREATED))
         await self.sync_user.system(dto)
 
-    async def _process_delete_subscription(self, remna_user: RemnaUserDto) -> None:
+    async def _process_delete_subscription(
+        self, target_user: UserDto, remna_user: RemnaUserDto
+    ) -> None:
         async with self.uow:
-            user_telegram_id = cast(int, remna_user.telegram_id)
             subscription = await self.subscription_dao.get_by_remna_id(remna_user.uuid)
 
             if not subscription:
@@ -277,17 +283,17 @@ class RemnaWebhookService:
             subscription.status = SubscriptionStatus.DELETED
             await self.subscription_dao.update(subscription)
 
-            current_subscription = await self.subscription_dao.get_current(user_telegram_id)
+            current_subscription = await self.subscription_dao.get_current(target_user.id)
 
             if current_subscription:
                 if current_subscription.user_remna_id != subscription.user_remna_id:
                     logger.debug(
                         f"Subscription '{subscription.user_remna_id}' "
-                        f"is not current for '{user_telegram_id}', skipping unlinking"
+                        f"is not current for '{target_user.id}', skipping unlinking"
                     )
                 else:
-                    logger.debug(f"Unlinked current subscription for user '{user_telegram_id}'")
-                    await self.user_dao.clear_current_subscription(user_telegram_id)
+                    logger.debug(f"Unlinked current subscription for user '{target_user.id}'")
+                    await self.user_dao.clear_current_subscription(target_user.id)
 
             await self.uow.commit()
             logger.info(f"Successfully processed deletion for subscription '{remna_user.uuid}'")

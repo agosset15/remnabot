@@ -110,7 +110,7 @@ async def sync_all_users_from_panel_task(  # noqa: C901
                     await sync_remna_user.system(SyncRemnaUserDto(remna_user, True))
                     added_users += 1
                 else:
-                    current_subscription = await subscription_dao.get_current(user.telegram_id)
+                    current_subscription = await subscription_dao.get_current(user.id)
                     if not current_subscription:
                         await sync_remna_user.system(SyncRemnaUserDto(remna_user, True))
                         added_subscription += 1
