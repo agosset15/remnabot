@@ -124,7 +124,10 @@ class ToggleLteSquad(Interactor[RemnaUserDto, None]):
         internal_squads = {s.uuid for s in data.active_internal_squads}
         lte_squad_uuid = self.config.remnawave.lte_squad_uuid
 
-        if lte_squad_uuid in internal_squads:
+        if (
+            lte_squad_uuid in internal_squads
+            and data.used_traffic_bytes >= data.traffic_limit_bytes
+        ):
             internal_squads.discard(lte_squad_uuid)
             await self.remnawave.reset_traffic(data.uuid)
         elif data.status == SubscriptionStatus.ACTIVE:
