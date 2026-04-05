@@ -42,11 +42,7 @@ class GetAdmins(Interactor[None, list[GetAdminsResultDto]]):
         ]
 
     def _is_deletable(self, actor: UserDto, target: UserDto) -> bool:
-        return (
-            target.telegram_id != actor.telegram_id
-            and target.role != Role.OWNER
-            and target.role > actor.role
-        )
+        return target.id != actor.id and target.role != Role.OWNER and target.role > actor.role
 
 
 class RevokeRole(Interactor[int, None]):
@@ -60,41 +56,39 @@ class RevokeRole(Interactor[int, None]):
         self.uow = uow
         self.user_dao = user_dao
 
-    async def _execute(self, actor: UserDto, telegram_id: int) -> None:
+    async def _execute(self, actor: UserDto, user_id: int) -> None:
         async with self.uow:
-            target_user = await self.user_dao.get_by_telegram_id(telegram_id)
+            target_user = await self.user_dao.get_by_id(user_id)
 
             if not target_user:
-                logger.warning(f"User '{telegram_id}' not found for role revocation")
-                raise UserNotFoundError(telegram_id)
+                logger.warning(f"User '{user_id}' not found for role revocation")
+                raise UserNotFoundError(user_id)
 
-            if actor.telegram_id == target_user.telegram_id:
+            if actor.id == target_user.id:
                 logger.warning(f"User '{actor.telegram_id}' tried to revoke their own role")
                 raise PermissionDeniedError()
 
             if not actor.role > target_user.role:
                 logger.warning(
-                    f"User '{actor.telegram_id}' ({actor.role}) tried to revoke role "
-                    f"from '{target_user.telegram_id}' ({target_user.role})"
+                    f"User '{actor.id}' ({actor.role}) tried to revoke role "
+                    f"from '{target_user.id}' ({target_user.role})"
                 )
                 raise PermissionDeniedError()
 
             if target_user.role == Role.OWNER:
-                logger.warning(f"Attempt to revoke role from OWNER '{telegram_id}' blocked")
+                logger.warning(f"Attempt to revoke role from OWNER '{user_id}' blocked")
                 raise PermissionDeniedError()
 
             target_user.role = Role.USER
             await self.user_dao.update(target_user)
             await self.uow.commit()
 
-            logger.info(
-                f"Role for user '{telegram_id}' revoked to '{Role.USER}' by '{actor.telegram_id}'"
-            )
+            logger.info(f"Role for user '{user_id}' revoked to '{Role.USER}' by '{actor.id}'")
 
 
 @dataclass(frozen=True)
 class SetUserRoleDto:
-    telegram_id: int
+    user_id: int
     role: Role
 
 
@@ -106,19 +100,17 @@ class SetUserRole(Interactor[SetUserRoleDto, None]):
         self.user_dao = user_dao
 
     async def _execute(self, actor: UserDto, data: SetUserRoleDto) -> None:
-        target_user = await self.user_dao.get_by_telegram_id(data.telegram_id)
+        target_user = await self.user_dao.get_by_id(data.user_id)
 
         if not target_user:
             logger.warning(
-                f"{actor.log} Attempted to change role for non-existent user '{data.telegram_id}'"
+                f"{actor.log} Attempted to change role for non-existent user '{data.user_id}'"
             )
-            raise ValueError(f"User '{data.telegram_id}' not found")
+            raise ValueError(f"User '{data.user_id}' not found")
 
         async with self.uow:
             target_user.role = data.role
             await self.user_dao.update(target_user)
             await self.uow.commit()
 
-        logger.info(
-            f"{actor.log} Changed role for user '{data.telegram_id}' to '{data.role.value}'"
-        )
+        logger.info(f"{actor.log} Changed role for user '{data.user_id}' to '{data.role.value}'")

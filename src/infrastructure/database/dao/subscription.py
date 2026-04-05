@@ -75,23 +75,6 @@ class SubscriptionDaoImpl(SubscriptionDao, BaseDaoImpl):
         logger.debug(f"Subscription with remna ID '{remna_id}' not found")
         return None
 
-    async def get_by_telegram_id(self, telegram_id: int) -> Optional[SubscriptionDto]:
-        stmt = (
-            select(Subscription)
-            .join(User, User.id == Subscription.user_id)
-            .where(User.telegram_id == telegram_id)
-            .order_by(Subscription.created_at.desc())
-            .limit(1)
-        )
-        db_subscription = await self.session.scalar(stmt)
-
-        if db_subscription:
-            logger.debug(f"Last subscription for telegram user '{telegram_id}' retrieved")
-            return self._convert_to_dto(db_subscription)
-
-        logger.debug(f"No subscriptions found for telegram user '{telegram_id}'")
-        return None
-
     async def get_by_user_id(self, user_id: int) -> Optional[SubscriptionDto]:
         stmt = (
             select(Subscription)
@@ -108,33 +91,32 @@ class SubscriptionDaoImpl(SubscriptionDao, BaseDaoImpl):
         logger.debug(f"No subscriptions found for user '{user_id}'")
         return None
 
-    async def get_all_by_user(self, telegram_id: int) -> list[SubscriptionDto]:
+    async def get_all_by_user(self, user_id: int) -> list[SubscriptionDto]:
         stmt = (
             select(Subscription)
-            .join(User, User.id == Subscription.user_id)
-            .where(User.telegram_id == telegram_id)
+            .where(Subscription.user_id == user_id)
             .order_by(Subscription.created_at.desc())
         )
         result = await self.session.scalars(stmt)
         db_subscriptions = cast(list, result.all())
 
-        logger.debug(f"Retrieved '{len(db_subscriptions)}' subscriptions for user '{telegram_id}'")
+        logger.debug(f"Retrieved '{len(db_subscriptions)}' subscriptions for user '{user_id}'")
         return self._convert_to_dto_list(db_subscriptions)
 
-    async def get_current(self, telegram_id: int) -> Optional[SubscriptionDto]:
+    async def get_current(self, user_id: int) -> Optional[SubscriptionDto]:
         stmt = (
             select(Subscription)
             .join(User, User.current_subscription_id == Subscription.id)
-            .where(User.telegram_id == telegram_id)
+            .where(User.id == user_id)
             .limit(1)
         )
         db_subscription = await self.session.scalar(stmt)
 
         if db_subscription:
-            logger.debug(f"Current active subscription found for user '{telegram_id}'")
+            logger.debug(f"Current active subscription found for user '{user_id}'")
             return self._convert_to_dto(db_subscription)
 
-        logger.debug(f"Active subscription not found for user '{telegram_id}'")
+        logger.debug(f"Active subscription not found for user '{user_id}'")
         return None
 
     async def update(self, subscription: SubscriptionDto) -> Optional[SubscriptionDto]:

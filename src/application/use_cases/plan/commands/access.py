@@ -41,7 +41,7 @@ class AddAllowedUserToPlan(Interactor[AddAllowedUserToPlanDto, PlanDto]):
 @dataclass(frozen=True)
 class ToggleUserPlanAccessDto:
     plan_id: int
-    telegram_id: int
+    user_id: int
 
 
 class ToggleUserPlanAccess(Interactor[ToggleUserPlanAccessDto, None]):
@@ -58,11 +58,11 @@ class ToggleUserPlanAccess(Interactor[ToggleUserPlanAccessDto, None]):
                 raise ValueError(f"Plan '{data.plan_id}' not found")
 
             allowed_ids = list(plan.allowed_user_ids)
-            if data.telegram_id not in allowed_ids:
-                allowed_ids.append(data.telegram_id)
+            if data.user_id not in allowed_ids:
+                allowed_ids.append(data.user_id)
                 action = "Granted"
             else:
-                allowed_ids.remove(data.telegram_id)
+                allowed_ids.remove(data.user_id)
                 action = "Revoked"
 
             plan.allowed_user_ids = allowed_ids
@@ -70,5 +70,5 @@ class ToggleUserPlanAccess(Interactor[ToggleUserPlanAccessDto, None]):
             await self.uow.commit()
 
         logger.info(
-            f"{actor.log} {action} access to plan '{data.plan_id}' for user '{data.telegram_id}'"
+            f"{actor.log} {action} access to plan '{data.plan_id}' for user '{data.user_id}'"
         )

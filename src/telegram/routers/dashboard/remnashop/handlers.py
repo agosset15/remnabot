@@ -59,8 +59,8 @@ async def on_user_select(
     widget: Button,
     dialog_manager: DialogManager,
 ) -> None:
-    target_telegram_id = int(dialog_manager.item_id)  # type: ignore[attr-defined]
-    await start_user_window(manager=dialog_manager, target_telegram_id=target_telegram_id)
+    target_user_id = int(dialog_manager.item_id)  # type: ignore[attr-defined]
+    await start_user_window(manager=dialog_manager, target_user_id=target_user_id)
 
 
 @inject
@@ -73,18 +73,18 @@ async def on_role_revoke(
     revoke_role: FromDishka[RevokeRole],
 ) -> None:
     user: UserDto = dialog_manager.middleware_data[USER_KEY]
-    target_telegram_id = int(dialog_manager.item_id)  # type: ignore[attr-defined]
+    target_user_id = int(dialog_manager.item_id)  # type: ignore[attr-defined]
 
     if not is_double_click(
         dialog_manager,
-        key=f"role_confirm_{target_telegram_id}",
+        key=f"role_confirm_{target_user_id}",
         cooldown=10,
     ):
         await notifier.notify_user(user, i18n_key="ntf-common.double-click-confirm")
         logger.debug(
-            f"Waiting for double click confirmation to revoke role for '{target_telegram_id}'"
+            f"Waiting for double click confirmation to revoke role for '{target_user_id}'"
         )
         return
 
-    await revoke_role(user, target_telegram_id)
-    await redirect.to_main_menu(target_telegram_id)
+    await revoke_role(user, target_user_id)
+    await redirect.to_main_menu(target_user_id)

@@ -62,7 +62,12 @@ ntf-user =
     .devices-empty = ❌ <i>Список устройств пуст.</i>
     .allowed-plans-empty = ❌ <i>Нет доступных планов для предоставления доступа.</i>
     .message-success = ✅ <i>Сообщение успешно отправлено.</i>
-    .message-failed = ❌ <i>Не удалось отправить сообщение.</i>
+    .message-failed =
+        ❌ <i>Не удалось отправить сообщение.</i>
+        { $error ->
+            [0] { empty }
+            *[HAS] <blockquote>{ $error }</blockquote>
+        }
 
     .sync-already = ✅ <i>Данные подписки идентичны.</i>
     .sync-missing-data = ⚠️ <i>Синхронизация невозможна. Данные подписки отсутствуют в панели и в боте.</i>

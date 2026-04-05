@@ -24,57 +24,81 @@ class SearchUsers(Interactor[SearchUsersDto, list[UserDto]]):
     def __init__(self, user_dao: UserDao):
         self.user_dao = user_dao
 
-    async def _execute(self, actor: UserDto, data: SearchUsersDto) -> list[UserDto]:  # noqa: C901
-        found_users = []
-
-        if (data.forward_from_id or data.forward_sender_name) and not data.is_forwarded_from_bot:
-            if data.forward_from_id:
-                user = await self.user_dao.get_by_telegram_id(data.forward_from_id)
-                if user:
-                    found_users.append(user)
-                    logger.info(f"Search by forwarded message, found user '{data.forward_from_id}'")
-                    return found_users
-
-                logger.warning(
-                    f"Search by forwarded message, user '{data.forward_from_id}' not found"
-                )
-
-            if data.forward_sender_name:
-                sender_name = data.forward_sender_name.strip()
-                users = await self.user_dao.get_by_partial_name(sender_name)
-                found_users.extend(users)
-                logger.info(f"Search by forwarded name '{sender_name}', found '{len(users)}' users")
-
-            return found_users
+    async def _execute(self, actor: UserDto, data: SearchUsersDto) -> list[UserDto]:
+        if self._is_forwarded_from_real_user(data):
+            return await self._search_by_forward(data)
 
         if data.query:
-            query = data.query.strip().removeprefix("@")
+            return await self._search_by_query(data.query.strip().removeprefix("@"))
 
-            if query.isdigit():
-                telegram_id = int(query)
-                user = await self.user_dao.get_by_telegram_id(telegram_id)
-                if user:
-                    found_users.append(user)
-                    logger.info(f"Searched by Telegram ID '{telegram_id}', user found")
-                else:
-                    logger.warning(f"Searched by Telegram ID '{telegram_id}', user not found")
+        return []
 
-            elif query.startswith(REMNASHOP_PREFIX):
-                try:
-                    telegram_id = int(query.split("_", maxsplit=1)[1])
-                    user = await self.user_dao.get_by_telegram_id(telegram_id)
-                    if user:
-                        found_users.append(user)
-                        logger.info(f"Searched by Remnashop ID '{telegram_id}', user found")
-                    else:
-                        logger.warning(f"Searched by Remnashop ID '{telegram_id}', user not found")
-                except (IndexError, ValueError):
-                    logger.warning(f"Failed to parse Remnashop ID from query '{query}'")
+    def _is_forwarded_from_real_user(self, data: SearchUsersDto) -> bool:
+        return (
+            bool(data.forward_from_id or data.forward_sender_name)
+            and not data.is_forwarded_from_bot
+        )
 
-            else:
-                found_users = await self.user_dao.get_by_partial_name(query)
-                logger.info(
-                    f"Searched users by partial name '{query}', found '{len(found_users)}' users"
-                )
+    async def _search_by_forward(self, data: SearchUsersDto) -> list[UserDto]:
+        if data.forward_from_id:
+            user = await self.user_dao.get_by_telegram_id(data.forward_from_id)
+            if user:
+                logger.info(f"Search by forwarded message, found user '{data.forward_from_id}'")
+                return [user]
+            logger.warning(f"Search by forwarded message, user '{data.forward_from_id}' not found")
 
-        return found_users
+        if data.forward_sender_name:
+            sender_name = data.forward_sender_name.strip()
+            users = await self.user_dao.get_by_partial_name(sender_name)
+            logger.info(f"Search by forwarded name '{sender_name}', found '{len(users)}' users")
+            return users
+
+        return []
+
+    async def _search_by_query(self, query: str) -> list[UserDto]:
+        if query.isdigit():
+            return await self._search_by_numeric_id(int(query))
+
+        if query.startswith(REMNASHOP_PREFIX):
+            return await self._search_by_remnashop_id(query)
+
+        return await self._search_by_name(query)
+
+    async def _search_by_numeric_id(self, numeric_id: int) -> list[UserDto]:
+        results = []
+        results.extend(await self._find_by_telegram_id(numeric_id))
+        results.extend(await self._find_by_user_id(numeric_id))
+        return results
+
+    async def _search_by_remnashop_id(self, query: str) -> list[UserDto]:
+        try:
+            numeric_id = int(query.split("_", maxsplit=1)[1])
+        except (IndexError, ValueError):
+            logger.warning(f"Failed to parse Remnashop ID from query '{query}'")
+            return []
+
+        results = []
+        results.extend(await self._find_by_telegram_id(numeric_id, label="Remnashop"))
+        results.extend(await self._find_by_user_id(numeric_id, label="Remnashop"))
+        return results
+
+    async def _search_by_name(self, name: str) -> list[UserDto]:
+        users = await self.user_dao.get_by_partial_name(name)
+        logger.info(f"Searched users by partial name '{name}', found '{len(users)}' users")
+        return users
+
+    async def _find_by_telegram_id(self, numeric_id: int, label: str = "Telegram") -> list[UserDto]:
+        user = await self.user_dao.get_by_telegram_id(numeric_id)
+        if user:
+            logger.info(f"Searched by {label} ID '{numeric_id}', user found")
+            return [user]
+        logger.warning(f"Searched by {label} ID '{numeric_id}', user not found")
+        return []
+
+    async def _find_by_user_id(self, numeric_id: int, label: str = "user") -> list[UserDto]:
+        user = await self.user_dao.get_by_id(numeric_id)
+        if user:
+            logger.info(f"Searched by {label} ID '{numeric_id}', user found")
+            return [user]
+        logger.warning(f"Searched by {label} ID '{numeric_id}', user not found")
+        return []

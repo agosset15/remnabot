@@ -3,7 +3,7 @@ from typing import Optional
 from uuid import UUID
 
 from remnapy.enums.users import TrafficLimitStrategy
-from sqlalchemy import ARRAY, BigInteger, ForeignKey, Numeric
+from sqlalchemy import ARRAY, ForeignKey, Integer, Numeric
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.core.enums import Currency, PlanAvailability, PlanType
@@ -29,7 +29,7 @@ class Plan(BaseSql, TimestampMixin):
     traffic_limit: Mapped[int]
     device_limit: Mapped[int]
 
-    allowed_user_ids: Mapped[list[int]] = mapped_column(ARRAY(BigInteger))
+    allowed_user_ids: Mapped[list[int]] = mapped_column(ARRAY(Integer))
     internal_squads: Mapped[list[UUID]]
     external_squad: Mapped[Optional[UUID]]
 

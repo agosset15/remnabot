@@ -125,7 +125,7 @@ async def on_purchase_type_select(
         await notifier.notify_user(user, i18n_key="ntf-subscription.gateways-unavailable")
         return
 
-    current_subscription = await subscription_dao.get_current(user.telegram_id)
+    current_subscription = await subscription_dao.get_current(user.id)
 
     if purchase_type == PurchaseType.RENEW:
         if current_subscription:
@@ -191,7 +191,7 @@ async def on_subscription_plans(  # noqa: C901
         await notifier.notify_user(user, i18n_key="ntf-subscription.gateways-unavailable")
         return
 
-    current_subscription = await subscription_dao.get_current(user.telegram_id)
+    current_subscription = await subscription_dao.get_current(user.id)
 
     if purchase_type == PurchaseType.RENEW:
         if current_subscription:

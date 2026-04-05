@@ -31,7 +31,7 @@ class ReferralDao(Protocol):
 
     async def get_total_rewards_amount(
         self,
-        telegram_id: int,
+        user_id: int,
         reward_type: ReferralRewardType,
     ) -> int: ...
 
@@ -42,7 +42,7 @@ class ReferralDao(Protocol):
 
     async def get_stats(self) -> ReferralStatisticsDto: ...
 
-    async def get_user_referral_stats(self, telegram_id: int) -> dict: ...
+    async def get_user_referral_stats(self, user_id: int) -> dict: ...
 
     async def get_referrals_with_payment_count(self, referrer_id: int) -> int: ...
 

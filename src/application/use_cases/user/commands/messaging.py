@@ -12,7 +12,7 @@ from src.telegram.keyboards import get_contact_support_keyboard
 
 @dataclass(frozen=True)
 class SendMessageToUserDto:
-    telegram_id: int
+    user_id: int
     payload: MessagePayloadDto
 
 
@@ -32,9 +32,9 @@ class SendMessageToUser(Interactor[SendMessageToUserDto, bool]):
         self.i18n = i18n
 
     async def _execute(self, actor: UserDto, data: SendMessageToUserDto) -> bool:
-        target_user = await self.user_dao.get_by_telegram_id(data.telegram_id)
-        if not target_user:
-            raise ValueError(f"User '{data.telegram_id}' not found")
+        target_user = await self.user_dao.get_by_id(data.user_id)
+        if not target_user or not target_user.telegram_id:
+            raise ValueError(f"User '{data.user_id}' not found or has no telegram id")
 
         support_url = self.bot_service.get_support_url(text=self.i18n.get("message.help"))
         data.payload.reply_markup = get_contact_support_keyboard(support_url)

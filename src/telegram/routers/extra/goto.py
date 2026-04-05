@@ -11,7 +11,7 @@ from src.application.dto import MessagePayloadDto, UserDto
 from src.application.use_cases.access import CheckRules
 from src.application.use_cases.user.commands.connect import ConnectWebUser, ConnectWebUserDto
 from src.application.use_cases.user.queries.plans import GetAvailablePlanByCode
-from src.core.constants import GOTO_PREFIX, PAYMENT_PREFIX, TARGET_TELEGRAM_ID
+from src.core.constants import GOTO_PREFIX, PAYMENT_PREFIX, TARGET_USER_ID
 from src.core.enums import Deeplink
 from src.telegram.keyboards import get_rules_keyboard
 from src.telegram.states import DashboardUser, MainMenu, Subscription, state_from_string
@@ -49,9 +49,9 @@ async def on_goto(callback: CallbackQuery, dialog_manager: DialogManager, user: 
         parts = data.split(":")
 
         try:
-            target_telegram_id = int(parts[2])
+            target_user_id = int(parts[2])
         except ValueError:
-            logger.warning(f"{user.log} Invalid target_telegram_id in callback: {parts[2]}")
+            logger.warning(f"{user.log} Invalid target_user_id in callback: {parts[2]}")
             await callback.answer()
             return
 
@@ -60,11 +60,11 @@ async def on_goto(callback: CallbackQuery, dialog_manager: DialogManager, user: 
             chat_id=user.telegram_id,
         ).start(
             state=DashboardUser.MAIN,
-            data={TARGET_TELEGRAM_ID: target_telegram_id},
+            data={TARGET_USER_ID: target_user_id},
             mode=StartMode.RESET_STACK,
             show_mode=ShowMode.DELETE_AND_SEND,
         )
-        logger.debug(f"{user.log} Redirected to user '{target_telegram_id}'")
+        logger.debug(f"{user.log} Redirected to user '{target_user_id}'")
         await callback.answer()
         return
 
