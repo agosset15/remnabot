@@ -51,6 +51,9 @@ class UserDaoImpl(UserDao):
         return self._convert_to_dto(db_user)
 
     async def get_by_id(self, user_id: int) -> Optional[UserDto]:
+        if user_id > 2_147_483_647:
+            return None
+
         stmt = select(User).where(User.id == user_id)
         db_user = await self.session.scalar(stmt)
 
