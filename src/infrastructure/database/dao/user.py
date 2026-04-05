@@ -87,8 +87,21 @@ class UserDaoImpl(UserDao):
         logger.debug(f"User '{telegram_id}' not found")
         return None
 
-    async def get_by_telegram_id_or_email(self, telegram_id: int, email: str) -> Optional[UserDto]:
-        stmt = select(User).where(or_(User.telegram_id == telegram_id, User.email == email))
+    async def get_by_telegram_id_or_email(
+        self, telegram_id: Optional[int], email: Optional[str]
+    ) -> Optional[UserDto]:
+        conditions = []
+
+        if telegram_id is not None:
+            conditions.append(User.telegram_id == telegram_id)
+        if email is not None:
+            conditions.append(User.email == email)
+
+        if not conditions:
+            logger.debug("No search criteria provided (both telegram_id and email are None)")
+            return None
+
+        stmt = select(User).where(or_(*conditions))
         db_user = await self.session.scalar(stmt)
 
         if db_user:
