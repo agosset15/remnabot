@@ -123,6 +123,7 @@ class GetOrCreateTelegramUser(Interactor[GetOrCreateTelegramUserDto, Optional[Us
 @dataclass
 class GetOrCreateWebUserDto:
     email: str
+    referral_code: Optional[str]
 
 
 class GetOrCreateWebUser(Interactor[GetOrCreateWebUserDto, UserDto]):
@@ -135,12 +136,14 @@ class GetOrCreateWebUser(Interactor[GetOrCreateWebUserDto, UserDto]):
         config: AppConfig,
         cryptographer: Cryptographer,
         event_publisher: EventPublisher,
+        attach_referral: AttachReferral,
     ) -> None:
         self.uow = uow
         self.user_dao = user_dao
         self.config = config
         self.cryptographer = cryptographer
         self.event_publisher = event_publisher
+        self.attach_referral = attach_referral
 
     async def _execute(self, actor: UserDto, data: GetOrCreateWebUserDto) -> UserDto:
         email = data.email.lower()
@@ -150,17 +153,22 @@ class GetOrCreateWebUser(Interactor[GetOrCreateWebUserDto, UserDto]):
             if user:
                 return user
 
-            referral_code = self.cryptographer.generate_short_code(email, 10)
             user_dto = UserDto(
                 email=email,
-                name=email,
+                name=email.split("@")[0],
                 role=Role.USER,
                 language=self.config.default_locale,
-                referral_code=referral_code,
+                referral_code=self.cryptographer.generate_short_code(email, 10),
             )
 
             user = await self.user_dao.create(user_dto)
             await self.uow.commit()
+
+        referrer = None
+        if data.referral_code:
+            referrer = await self.attach_referral.system(
+                AttachReferralDto(user.id, data.referral_code)
+            )
 
         await self.event_publisher.publish(
             UserRegisteredEvent(
@@ -168,6 +176,9 @@ class GetOrCreateWebUser(Interactor[GetOrCreateWebUserDto, UserDto]):
                 email=user.email,
                 username=user.username,
                 name=user.name,
+                referrer_id=referrer.id if referrer else None,
+                referrer_username=referrer.username if referrer else None,
+                referrer_name=referrer.name if referrer else None,
             )
         )
 

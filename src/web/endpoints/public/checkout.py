@@ -35,6 +35,7 @@ class CheckoutRequest(BaseModel):
     gateway_type: str
     email: EmailStr
     return_url: str
+    referral_code: Optional[str] = None
 
 
 class CheckoutResponse(BaseModel):
@@ -71,7 +72,7 @@ async def checkout(
     gateway_dao: FromDishka[PaymentGatewayDao],
     transaction_dao: FromDishka[TransactionDao],
     uow: FromDishka[UnitOfWork],
-    get_or_create_web_user: FromDishka[GetOrCreateWebUser],
+    get_or_create_user: FromDishka[GetOrCreateWebUser],
     get_payment_gateway_instance: FromDishka[GetPaymentGatewayInstance],
     config: FromDishka[AppConfig],
 ) -> CheckoutResponse:
@@ -106,7 +107,9 @@ async def checkout(
             detail=f"No price in currency '{gateway.currency}' for this plan/duration",
         )
 
-    user = await get_or_create_web_user.system(GetOrCreateWebUserDto(email=str(body.email)))
+    user = await get_or_create_user.system(
+        GetOrCreateWebUserDto(email=str(body.email), referral_code=body.referral_code)
+    )
 
     plan_snapshot = PlanSnapshotDto.from_plan(plan, body.duration_days)
     pricing = PriceDetailsDto(
