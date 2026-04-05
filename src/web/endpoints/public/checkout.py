@@ -75,7 +75,7 @@ async def checkout(
     get_payment_gateway_instance: FromDishka[GetPaymentGatewayInstance],
     config: FromDishka[AppConfig],
 ) -> CheckoutResponse:
-    _validate_return_url(body.return_url, list(config.origins))
+    _validate_return_url(body.return_url, config.origins)
 
     try:
         gateway_type = PaymentGatewayType(body.gateway_type.upper())
