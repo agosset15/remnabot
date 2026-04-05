@@ -95,7 +95,7 @@ class GetOrCreateTelegramUser(Interactor[GetOrCreateTelegramUserDto, Optional[Us
                 telegram_id=user.telegram_id,
                 username=user.username,
                 name=user.name,
-                referrer_telegram_id=referrer.telegram_id if referrer else None,
+                referrer_id=referrer.id if referrer else None,
                 referrer_username=referrer.username if referrer else None,
                 referrer_name=referrer.name if referrer else None,
             )

@@ -198,7 +198,7 @@ class UserRegisteredEvent(UserEvent):
         init=False,
     )
 
-    referrer_telegram_id: Optional[int] = field(default=None)
+    referrer_id: Optional[int] = field(default=None)
     referrer_username: Optional[str] = field(default=None)
     referrer_name: Optional[str] = field(default=None)
 
@@ -208,9 +208,7 @@ class UserRegisteredEvent(UserEvent):
         return MessagePayloadDto(
             i18n_key=self.event_key,
             i18n_kwargs={**asdict(self)},
-            reply_markup=get_user_keyboard(self.telegram_id, self.referrer_telegram_id)
-            if self.telegram_id
-            else None,
+            reply_markup=get_user_keyboard(self.user_id, self.referrer_id),
             disable_default_markup=False,
             delete_after=None,
         )
