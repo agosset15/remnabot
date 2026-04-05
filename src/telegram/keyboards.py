@@ -213,23 +213,23 @@ def get_remnashop_update_keyboard() -> InlineKeyboardMarkup:
 
 
 def get_user_keyboard(
-    telegram_id: int,
-    referrer_telegram_id: Optional[int] = None,
+    user_id: int,
+    referrer_id: Optional[int] = None,
 ) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
 
     builder.row(
         InlineKeyboardButton(
             text="btn-goto.user-profile",
-            callback_data=f"{GOTO_PREFIX}{DashboardUser.MAIN.state}:{telegram_id}",
+            callback_data=f"{GOTO_PREFIX}{DashboardUser.MAIN.state}:{user_id}",
         ),
     )
 
-    if referrer_telegram_id:
+    if referrer_id:
         builder.row(
             InlineKeyboardButton(
                 text="btn-goto.referrer-profile",
-                callback_data=f"{GOTO_PREFIX}{DashboardUser.MAIN.state}:{referrer_telegram_id}",
+                callback_data=f"{GOTO_PREFIX}{DashboardUser.MAIN.state}:{referrer_id}",
             ),
         )
 

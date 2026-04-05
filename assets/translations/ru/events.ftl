@@ -98,15 +98,15 @@ event-user =
     { hdr-user }
     { frg-user-info }
 
-    { $referrer_telegram_id ->
+    { $referrer_id ->
     [0] { empty }
     *[HAS]
     <b>🤝 Пригласитель:</b>
     <blockquote>
-    • <b>ID</b>: <code>{ NUMBER($referrer_telegram_id, useGrouping: 0) }</code>
+    • <b>ID</b>: <code>{ NUMBER($referrer_id, useGrouping: 0) }</code>
     • <b>Имя</b>: { $referrer_name } { $referrer_username -> 
         [0] { empty }
-        *[HAS] (<a href="tg://user?id={ $referrer_telegram_id }">@{ $referrer_username }</a>)
+        *[HAS] (<a href="tg://resolve?domain={ $referrer_username }">@{ $referrer_username }</a>)
     }
     </blockquote>
     }
