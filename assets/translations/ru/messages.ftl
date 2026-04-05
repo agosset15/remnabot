@@ -527,6 +527,7 @@ msg-user-sync-subscription =
     [DAY] Каждый день
     [WEEK] Каждую неделю
     [MONTH] Каждый месяц
+    [MONTH] Каждый месяц (по дате создания)
     *[OTHER] { $traffic_limit_strategy }
     }
     • Тег: { $tag -> 

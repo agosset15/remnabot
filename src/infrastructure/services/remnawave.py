@@ -139,7 +139,7 @@ class RemnawaveImpl(Remnawave):
             logger.debug(f"RemnaUser '{user_uuid}' not found in panel")
             return None
 
-        return response.total
+        return int(response.total)
 
     async def reset_traffic(self, uuid: UUID) -> Optional[UserResponseDto]:
         try:

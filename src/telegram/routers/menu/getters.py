@@ -81,7 +81,10 @@ async def menu_getter(
                 "device_limit": i18n_format_device_limit(subscription.device_limit),
                 "expire_time": i18n_format_expire_time(subscription.expire_at),
                 "reset_time": i18n_format_expire_time(
-                    get_traffic_reset_delta(subscription.traffic_limit_strategy)
+                    get_traffic_reset_delta(
+                        subscription.traffic_limit_strategy,
+                        subscription.created_at,
+                    )
                 ),
                 "connectable": subscription.is_active,
                 "has_device_limit": (

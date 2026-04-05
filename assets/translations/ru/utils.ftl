@@ -361,6 +361,7 @@ traffic-strategy = { $strategy_type ->
     [DAY] Каждый день
     [WEEK] Каждую неделю
     [MONTH] Каждый месяц
+    [MONTH_ROLLING] Каждый месяц (по дате создания)
     *[OTHER] { $strategy_type }
     }
 
