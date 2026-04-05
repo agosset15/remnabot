@@ -15,6 +15,7 @@ from src.application.services import (
     NotificationService,
     PricingService,
     RemnaWebhookService,
+    WebService,
     WebhookService,
 )
 from src.infrastructure.services import (
@@ -31,6 +32,7 @@ class ServicesProvider(Provider):
     scope = Scope.APP
 
     bot = provide(source=BotService)
+    web = provide(source=WebService)
     cryptographer = provide(source=CryptographerImpl, provides=Cryptographer)
     mailer = provide(source=SmtpMailerImpl, provides=Mailer)
     redirect = provide(source=RedirectImpl, provides=Redirect)

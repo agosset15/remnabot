@@ -1,5 +1,6 @@
 from enum import Enum, IntEnum, StrEnum, auto
 from typing import Optional, Self, Union
+from urllib.parse import urlencode
 
 from aiogram.types import BotCommand, ContentType
 
@@ -30,6 +31,48 @@ class Deeplink(StrEnum):
     @property
     def with_underscore(self) -> str:
         return f"{self.value}_"
+
+
+class WebPage(StrEnum):
+    HOME = "/"
+    PLANS = "/plans"
+    DOWNLOAD = "/download"
+    FAQ = "/faq"
+    HELP = "/help"
+    PURCHASE = "/purchase"
+    SUCCESS = "/success"
+    REFERRAL = "/ref"
+    #
+    TERMS = "/terms"
+    PRIVACY = "/privacy"
+
+    def build_url(self, base_url: str, *path_params: str, **query_params: str) -> str:
+        url = f"{base_url}{self.value}"
+        if path_params:
+            url = f"{url}/{'/'.join(path_params)}"
+        if query_params:
+            url = f"{url}?{urlencode(query_params)}"
+        return url
+
+
+class FaqSection(StrEnum):
+    # FAQ items
+    RUSSIA = "russia"
+    DEVICES = "devices"
+    AFTER_PAYMENT = "after-payment"
+    NOTHING_HAPPENED = "nothing-happened"
+    TRAFFIC = "traffic"
+    APPS = "apps"
+    TRIAL = "trial"
+    YEAR_GIFT = "year-gift"
+    CANCEL = "cancel"
+    NOT_WORKING = "not-working"
+    PRIVACY = "privacy"
+    # Guides
+    GUIDES = "guides"
+    CONNECT_DEVICE = "connect-device"
+    XRAY_ERROR = "xray-error"
+    NO_CONFIG = "no-config"
 
 
 class JwtTyp(StrEnum):

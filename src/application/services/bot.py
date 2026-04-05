@@ -48,9 +48,9 @@ class BotService:
             "inline_mode": status_map[bot_info.supports_inline_queries],
         }
 
-    async def get_my_name(self) -> str:
-        result = await self.bot.get_my_name()
-        return result.name
+    async def get_my_username(self) -> str:
+        await self._update_bot_info()
+        return self._bot_username
 
     async def get_referral_url(self, referral_code: str) -> str:
         base_url = await self._get_bot_redirect_url()

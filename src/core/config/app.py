@@ -18,6 +18,7 @@ from .redis import RedisConfig
 from .remnawave import RemnawaveConfig
 from .smtp import SmtpConfig
 from .validators import validate_not_change_me
+from .web import WebConfig
 
 
 class AppConfig(BaseConfig, env_prefix="APP_"):
@@ -37,6 +38,7 @@ class AppConfig(BaseConfig, env_prefix="APP_"):
     jwt_expire_hours: int = 24
 
     bot: BotConfig = Field(default_factory=BotConfig)
+    web: WebConfig = Field(default_factory=WebConfig)
     remnawave: RemnawaveConfig = Field(default_factory=RemnawaveConfig)
     database: DatabaseConfig = Field(default_factory=DatabaseConfig)
     redis: RedisConfig = Field(default_factory=RedisConfig)

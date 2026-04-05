@@ -16,7 +16,7 @@ from loguru import logger
 
 from src.application.common import TranslatorRunner
 from src.application.common.dao import UserDao
-from src.application.services import BotService
+from src.application.services import BotService, WebService
 from src.core.constants import INLINE_QUERY_INVITE
 
 router = Router(name=__name__)
@@ -28,6 +28,7 @@ async def handle_inline_query(
     inline_query: InlineQuery,
     user_dao: FromDishka[UserDao],
     bot_service: FromDishka[BotService],
+    web_service: FromDishka[WebService],
     i18n: FromDishka[TranslatorRunner],
 ) -> None:
     user = await user_dao.get_by_telegram_id(inline_query.from_user.id)
@@ -41,8 +42,8 @@ async def handle_inline_query(
     logger.info(f"{user.log} Sent inline query {INLINE_QUERY_INVITE}")
 
     result_id = hashlib.md5(inline_query.query.strip().encode()).hexdigest()
-    referral_url = await bot_service.get_referral_url(user.referral_code)
-    bot_name = await bot_service.get_my_name()
+    referral_url = await web_service.get_referral_url(user.referral_code)
+    bot_username = await bot_service.get_my_username()
 
     builder = InlineKeyboardBuilder()
     builder.row(
@@ -60,7 +61,7 @@ async def handle_inline_query(
             title=i18n.get("inline-invite.title"),
             description=i18n.get("inline-invite.description"),
             input_message_content=InputTextMessageContent(
-                message_text=i18n.get("inline-invite.message", bot_name=bot_name)
+                message_text=i18n.get("inline-invite.message", bot_username=bot_username)
             ),
             reply_markup=builder.as_markup(),
         )
