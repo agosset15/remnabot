@@ -143,6 +143,17 @@ event-user =
 
     { hdr-hwid }
     { frg-user-hwid }
+
+    .connected-web =
+    #UserConnectedWebEvent
+
+    <b>🔅 Событие: Пользователь привязал web-акаунт!</b>
+
+    { hdr-user }
+    { frg-user-info }
+
+    { hdr-subscription }
+    { frg-subscription-details }
     
 
 event-subscription =

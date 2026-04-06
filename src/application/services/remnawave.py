@@ -310,6 +310,7 @@ class RemnaWebhookService:
             UserFirstConnectionEvent(
                 user_id=user.id,
                 telegram_id=user.telegram_id,
+                email=user.email,
                 username=user.username,
                 name=user.name,
                 is_trial=current_subscription.is_trial,

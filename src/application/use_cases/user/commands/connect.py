@@ -3,11 +3,19 @@ from typing import Optional
 
 from loguru import logger
 
-from src.application.common import Interactor, Remnawave
+from src.application.common import EventPublisher, Interactor, Remnawave
 from src.application.common.dao import ReferralDao, SubscriptionDao, TransactionDao, UserDao
 from src.application.common.policy import Permission
 from src.application.common.uow import UnitOfWork
 from src.application.dto import UserDto
+from src.application.events.system import UserConnectedWebEvent
+from src.core.enums import SubscriptionStatus
+from src.core.utils.i18n_helpers import (
+    i18n_format_bytes_to_unit,
+    i18n_format_device_limit,
+    i18n_format_expire_time,
+)
+from src.core.utils.i18n_keys import ByteUnitKey
 
 
 @dataclass
@@ -27,6 +35,7 @@ class ConnectWebUser(Interactor[ConnectWebUserDto, Optional[UserDto]]):
         subscription_dao: SubscriptionDao,
         transaction_dao: TransactionDao,
         referral_dao: ReferralDao,
+        event_publisher: EventPublisher,
     ) -> None:
         self.uow = uow
         self.remnawave = remnawave
@@ -34,6 +43,7 @@ class ConnectWebUser(Interactor[ConnectWebUserDto, Optional[UserDto]]):
         self.subscription_dao = subscription_dao
         self.transaction_dao = transaction_dao
         self.referral_dao = referral_dao
+        self.event_publisher = event_publisher
 
     async def _execute(self, actor: UserDto, data: ConnectWebUserDto) -> Optional[UserDto]:
         web_user = await self.user_dao.get_by_referral_code(data.referral_code)
@@ -58,7 +68,27 @@ class ConnectWebUser(Interactor[ConnectWebUserDto, Optional[UserDto]]):
 
         logger.info(f"Connect web: {telegram_user.log} -> merged into web user id='{web_user.id}'")
         user = await self.user_dao.get_by_id(web_user.id)  # ty: ignore[invalid-argument-type]
-        await self.remnawave.update_user_metadata(user, current_subscription.user_remna_id)
+        remna_user = await self.remnawave.update_user_metadata(
+            user, current_subscription.user_remna_id
+        )
+        await self.event_publisher.publish(
+            UserConnectedWebEvent(
+                user_id=user.id,
+                telegram_id=telegram_user.telegram_id,
+                username=user.username,
+                email=user.email,
+                name=user.name,
+                is_trial=current_subscription.is_trial,
+                subscription_id=remna_user.uuid,
+                subscription_status=SubscriptionStatus(remna_user.status),
+                traffic_used=i18n_format_bytes_to_unit(
+                    remna_user.used_traffic_bytes, min_unit=ByteUnitKey.MEGABYTE
+                ),
+                traffic_limit=i18n_format_bytes_to_unit(remna_user.traffic_limit_bytes),
+                device_limit=i18n_format_device_limit(remna_user.hwid_device_limit),
+                expire_time=i18n_format_expire_time(remna_user.expire_at),
+            )
+        )
         return user
 
     # ──────────────────────────────────────────────────────────────────────────
