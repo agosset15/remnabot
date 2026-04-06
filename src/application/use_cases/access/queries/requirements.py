@@ -116,6 +116,7 @@ class CheckChannelSubscription(Interactor[None, CheckChannelSubscriptionResultDt
                 **self.config.build.data,
                 #
                 telegram_id=actor.telegram_id,
+                email=actor.email,
                 username=actor.username,
                 name=actor.name,
                 #
