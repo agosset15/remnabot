@@ -50,7 +50,8 @@ async def user_getter(
     profile = await get_user_profile(user, target_user_id)
 
     data: dict[str, Any] = {
-        "telegram_id": profile.target_user.telegram_id,
+        "telegram_id": profile.target_user.telegram_id or False,
+        "email": profile.target_user.email or False,
         "username": profile.target_user.username or False,
         "name": profile.target_user.name,
         "role": profile.target_user.role,

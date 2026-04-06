@@ -56,6 +56,7 @@ class ErrorEvent(BaseEvent, BuildInfoDto):
     )
 
     telegram_id: Optional[int] = field(default=None)
+    email: Optional[str] = field(default=None)
     username: Optional[str] = field(default=None)
     name: Optional[str] = field(default=None)
 
