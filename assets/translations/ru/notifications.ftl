@@ -190,11 +190,7 @@ email-success-purchase =
         Спасибо за то что вы выбераете нас!
 
     .message-html =
-        <!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>KAGO VPN</title>
-        <style>
-        @media(max-width:600px){ sc-open }.wrap { sc-open } padding:16px 8px!important{ sc-close }.card{ sc-open }border-radius:12px!important;border-left:none!important;border-right:none!important;width:100%!important{ sc-close }.hd{ sc-open }padding:28px 20px 24px!important;border-radius:12px 12px 0 0!important{ sc-close }.hd h1{ sc-open }font-size:22px!important{ sc-close }.body,.btns,.stats,.foot{ sc-open }padding-left:20px!important;padding-right:20px!important{ sc-close }.btn{ sc-open }padding:14px!important;font-size:14px!important{ sc-close }.stat td{ sc-open }padding:12px 4px!important;font-size:12px!important{ sc-close }{ sc-close }
-        </style>
-        </head><body style="margin:0;padding:0;background:#EEF3FB;font-family:Arial,sans-serif;">
+        { hdr-email-html }
         <div style="display:none;">Ваша подписка KAGO VPN активирована. Подключитесь за 2 шага.</div>
         <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" class="wrap" style="padding:36px 16px;">
         <table class="card" width="560" style="max-width:560px;width:100%;background:#fff;border:1px solid #DDE6F4;border-radius:16px;">
@@ -219,9 +215,40 @@ email-success-purchase =
           <td align="center" style="background:#F8FAFF;padding:16px 8px;width:34%;border-left:1px solid #E2E8F0;border-right:1px solid #E2E8F0;"><b style="font-size:14px;color:#1e2a4a;display:block;">{ $devices }</b><span style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:#94A3B8;">Лимит</span></td>
           <td align="center" style="background:#F8FAFF;padding:16px 8px;width:33%;"><b style="font-size:14px;color:#1e2a4a;display:block;">{ $plan_name }</b><span style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:#94A3B8;">Тариф</span></td>
         </tr></table></td></tr>
-        <tr><td class="foot" align="center" style="background:#F8FAFF;border-top:1px solid #EEF2FF;padding:20px 32px;border-radius:0 0 16px 16px;">
-          <p style="margin:0 0 10px;font-size:12px;"><a href="https://usekago.net/help" style="color:#94A3B8;text-decoration:none;margin:0 8px;">Поддержка</a><a href="https://usekago.net/faq" style="color:#94A3B8;text-decoration:none;margin:0 8px;">FAQ</a><a href="https://usekago.net/terms" style="color:#94A3B8;text-decoration:none;margin:0 8px;">Условия</a></p>
-          <p style="margin:0;font-size:11px;color:#CBD5E1;line-height:1.7;">© 2026 KAGO VPN · Письмо отправлено автоматически. Не отвечайте на него.</p>
+        { ftr-email-html }
+
+email-connect-telegram =
+    .title = Подключите Telegram для управления подпиской
+    .message =
+        Здравствуйте!
+
+        Вы зарегистрировались в нашем сервисе, но ещё не подключили Telegram-аккаунт.
+        Подключите Telegram-бота, чтобы удобно управлять подпиской, получать уведомления и обращаться в поддержку.
+
+        Подключиться: { $bot_url }
+
+        Если у вас есть вопросы — мы всегда рады помочь.
+
+    .message-html =
+        { hdr-email-html }
+        <div style="display:none;">Подключите Telegram-бота — управляйте подпиской в пару кликов.</div>
+        <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" class="wrap" style="padding:36px 16px;">
+        <table class="card" width="560" style="max-width:560px;width:100%;background:#fff;border:1px solid #DDE6F4;border-radius:16px;">
+        <tr><td class="hd" align="center" style="background:#EFF6FF;border-bottom:1px solid #DBEAFE;padding:40px 32px 32px;border-radius:16px 16px 0 0;">
+        <p style="margin:0 0 16px;"><span style="background:#FFF7ED;border:1px solid #FED7AA;border-radius:100px;padding:4px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#EA580C;">&#128274; Telegram не подключён</span></p>
+        <h1 style="margin:0 0 12px;font-size:26px;font-weight:800;color:#1e2a4a;line-height:1.25;">Подключите Telegram<br><span style="color:#3B6FD4;">и управляйте подпиской</span></h1>
+        <p style="margin:0;font-size:14px;color:#64748B;line-height:1.6;">Через бота удобно продлевать подписку, следить за трафиком и обращаться в поддержку.</p>
         </td></tr>
-        </table></td></tr></table></body></html>
+        <tr><td class="body" style="padding:28px 32px;">
+        <p style="margin:0 0 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#94A3B8;">Что вы получите</p>
+        <table width="100%" cellpadding="0" cellspacing="0">
+        <tr><td width="30" valign="top"><div style="width:30px;height:30px;background:#3B6FD4;border-radius:50%;text-align:center;line-height:30px;font-size:16px;">&#128276;</div></td><td style="padding-left:12px;padding-bottom:12px;"><b style="font-size:14px;color:#1e2a4a;">Мгновенные уведомления</b><br><span style="font-size:13px;color:#64748B;">Узнавайте об истечении подписки заранее</span></td></tr>
+        <tr><td width="30" valign="top"><div style="width:30px;height:30px;background:#3B6FD4;border-radius:50%;text-align:center;line-height:30px;font-size:16px;">&#9889;</div></td><td style="padding-left:12px;padding-bottom:12px;"><b style="font-size:14px;color:#1e2a4a;">Быстрое продление</b><br><span style="font-size:13px;color:#64748B;">Продлевайте подписку в пару нажатий</span></td></tr>
+        <tr><td width="30" valign="top"><div style="width:30px;height:30px;background:#3B6FD4;border-radius:50%;text-align:center;line-height:30px;font-size:16px;">&#128241;</div></td><td style="padding-left:12px;"><b style="font-size:14px;color:#1e2a4a;">Всё в одном месте</b><br><span style="font-size:13px;color:#64748B;">Трафик, устройства и поддержка — прямо в Telegram</span></td></tr>
+        </table>
+        </td></tr>
+        <tr><td class="btns" style="padding:0 32px 28px;">
+          <a href="{ $bot_url }" class="btn" style="display:block;padding:15px;background:#3B6FD4;border-radius:10px;text-align:center;text-decoration:none;font-size:15px;font-weight:700;color:#fff;">&#9992;&#65039; Подключить Telegram</a>
+        </td></tr>
+        { ftr-email-html }
 

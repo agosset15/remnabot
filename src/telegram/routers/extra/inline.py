@@ -44,6 +44,7 @@ async def handle_inline_query(
     result_id = hashlib.md5(inline_query.query.strip().encode()).hexdigest()
     referral_url = await web_service.get_referral_url(user.referral_code)
     bot_username = await bot_service.get_my_username()
+    bot_url = await bot_service.get_referral_url(user.referral_code)
 
     builder = InlineKeyboardBuilder()
     builder.row(
@@ -61,7 +62,9 @@ async def handle_inline_query(
             title=i18n.get("inline-invite.title"),
             description=i18n.get("inline-invite.description"),
             input_message_content=InputTextMessageContent(
-                message_text=i18n.get("inline-invite.message", bot_username=bot_username)
+                message_text=i18n.get(
+                    "inline-invite.message", bot_username=bot_username, bot_url=bot_url
+                )
             ),
             reply_markup=builder.as_markup(),
         )

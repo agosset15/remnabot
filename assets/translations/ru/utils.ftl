@@ -18,7 +18,7 @@ inline-invite =
     .message =
         🚀 Привет! Рекомендую быстрый и недорогой VPN.
         
-        @{ $bot_username } - стабильный доступ в интернет!
+        <a href="{ $bot_url }">@{ $bot_username }</a> - стабильный доступ в интернет!
 
         ↘️ ЖМИ КНОПКУ И ПОПРОБУЙ БЕСПЛАТНО!
     .start = 🚀 Присоединиться
@@ -429,3 +429,17 @@ language = { $language ->
     [vi] Вьетнамский
     *[OTHER] { $language }
 }
+
+hdr-email-html =
+    <!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>KAGO VPN</title>
+    <style>
+    @media(max-width:600px){ sc-open }.wrap{ sc-open }padding:16px 8px!important{ sc-close }.card{ sc-open }border-radius:12px!important;border-left:none!important;border-right:none!important;width:100%!important{ sc-close }.hd{ sc-open }padding:28px 20px 24px!important;border-radius:12px 12px 0 0!important{ sc-close }.hd h1{ sc-open }font-size:22px!important{ sc-close }.body,.btns,.foot{ sc-open }padding-left:20px!important;padding-right:20px!important{ sc-close }.btn{ sc-open }padding:14px!important;font-size:14px!important{ sc-close }{ sc-close }
+    </style>
+    </head><body style="margin:0;padding:0;background:#EEF3FB;font-family:Arial,sans-serif;">
+
+ftr-email-html =
+    <tr><td class="foot" align="center" style="background:#F8FAFF;border-top:1px solid #EEF2FF;padding:20px 32px;border-radius:0 0 16px 16px;">
+      <p style="margin:0 0 10px;font-size:12px;"><a href="https://usekago.net/help" style="color:#94A3B8;text-decoration:none;margin:0 8px;">Поддержка</a><a href="https://usekago.net/faq" style="color:#94A3B8;text-decoration:none;margin:0 8px;">FAQ</a><a href="https://usekago.net/terms" style="color:#94A3B8;text-decoration:none;margin:0 8px;">Условия</a></p>
+      <p style="margin:0;font-size:11px;color:#CBD5E1;line-height:1.7;">© 2026 KAGO VPN · Письмо отправлено автоматически. Не отвечайте на него.</p>
+    </td></tr>
+    </table></td></tr></table></body></html>
