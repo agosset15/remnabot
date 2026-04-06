@@ -494,3 +494,16 @@ class UserDaoImpl(UserDao):
         count = await self.session.scalar(stmt) or 0
         logger.debug(f"Total bot-blocked users count is '{count}'")
         return count
+
+    async def get_new_web_only_users(self, days: int = 7) -> list[UserDto]:
+        since = datetime.now(timezone.utc) - timedelta(days=days)
+        stmt = select(User).where(
+            User.telegram_id.is_(None),
+            User.email.isnot(None),
+            User.is_blocked.is_(False),
+            User.created_at >= since,
+        )
+        result = await self.session.execute(stmt)
+        db_users = list(result.scalars().all())
+        logger.debug(f"Retrieved '{len(db_users)}' new web-only users for last {days} day(s)")
+        return self._convert_to_dto_list(db_users)

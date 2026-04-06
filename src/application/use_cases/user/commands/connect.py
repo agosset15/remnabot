@@ -5,10 +5,12 @@ from loguru import logger
 
 from src.application.common import EventPublisher, Interactor, Remnawave
 from src.application.common.dao import ReferralDao, SubscriptionDao, TransactionDao, UserDao
+from src.application.common.mailer import Mailer
 from src.application.common.policy import Permission
 from src.application.common.uow import UnitOfWork
 from src.application.dto import UserDto
 from src.application.events.system import UserConnectedWebEvent
+from src.application.services import BotService
 from src.core.enums import SubscriptionStatus
 from src.core.utils.i18n_helpers import (
     i18n_format_bytes_to_unit,
@@ -196,3 +198,48 @@ class ConnectWebUser(Interactor[ConnectWebUserDto, Optional[UserDto]]):
 
         if web_user.name == web_user.email:
             web_user.name = telegram_user.name
+
+
+class NotifyNotConnectedWebUsers(Interactor[None, None]):
+    """
+    Weekly task: finds all web-only users registered in the last 7 days
+    (has_only_email=True) and emails encouraging them to
+    connect their Telegram account for subscription management.
+    """
+
+    required_permission = None
+
+    def __init__(
+        self,
+        user_dao: UserDao,
+        mailer: Mailer,
+        bot_service: BotService,
+    ) -> None:
+        self.user_dao = user_dao
+        self.mailer = mailer
+        self.bot_service = bot_service
+
+    async def _execute(self, actor: UserDto, data: None) -> None:
+        users = await self.user_dao.get_new_web_only_users(days=7)
+
+        logger.info(f"NotifyNotConnectedWebUsers: found {len(users)} candidate(s)")
+
+        sent = 0
+        for user in users:
+            if not user.has_only_email:
+                continue
+            try:
+                bot_url = await self.bot_service.get_connect_web_url(user.referral_code)
+                await self.mailer.send_connect_telegram(user, bot_url)
+                sent += 1
+                logger.info(
+                    f"NotifyNotConnectedWebUsers: sent email to user id='{user.id}' "
+                    f"email='{user.email}'"
+                )
+            except Exception as exc:
+                logger.error(
+                    f"NotifyNotConnectedWebUsers: failed to send email to user "
+                    f"id='{user.id}' email='{user.email}': {exc}"
+                )
+
+        logger.info(f"NotifyNotConnectedWebUsers: finished, sent {sent}/{len(users)} email(s)")

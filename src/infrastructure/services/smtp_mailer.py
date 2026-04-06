@@ -75,9 +75,28 @@ class SmtpMailerImpl(Mailer):
     async def send_failed_purchase(self, user: UserDto) -> None:
         pass  # TODO: implement
 
+    async def send_connect_telegram(self, user: UserDto, bot_url: str) -> None:
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = self._i18n.get("email-connect-telegram.title")
+        msg.attach(
+            MIMEText(
+                self._i18n.get("email-connect-telegram.message", bot_url=bot_url),
+                "plain",
+                "utf-8",
+            )
+        )
+        msg.attach(
+            MIMEText(
+                self._i18n.get("email-connect-telegram.message-html", bot_url=bot_url),
+                "html",
+                "utf-8",
+            )
+        )
+        await self._dispatch(user.email, msg)
+
     async def _dispatch(self, email: str, msg: MIMEMultipart) -> None:
         """Offload the blocking SMTP call to a thread executor."""
-        msg["From"] = f'"KaGo VPS" <{self._config.sender or self._config.username}>'
+        msg["From"] = f'"{self._config.sender_name}" <{self._config.sender_email}>'
         msg["To"] = email
         loop = asyncio.get_event_loop()
         await loop.run_in_executor(None, self._send_sync, email, msg)

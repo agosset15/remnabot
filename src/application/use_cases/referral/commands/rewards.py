@@ -162,7 +162,7 @@ class AssignReferralRewards(Interactor[AssignReferralRewardsDto, None]):
             )
             return
 
-        referral, parent = await self.referral_dao.get_referral_chain(data.user.telegram_id)
+        referral, parent = await self.referral_dao.get_referral_chain(data.user.id)
 
         if not referral:
             logger.info(f"User '{data.user.telegram_id}' not referred; reward assignment skipped")
