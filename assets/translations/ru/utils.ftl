@@ -64,8 +64,13 @@ frg-user =
 frg-user-info =
     <blockquote>
     { $telegram_id ->
-        [0] • <b>Email</b>: <code>{ $email }</code>
+        [0] { empty }
         *[HAS] • <b>ID</b>: <code>{ NUMBER($telegram_id, useGrouping: 0) }</code>
+    }
+    { $email ->
+        [0] { empty }
+        *[HAS] • <b>Email</b>: <code>{ $email }</code>
+
     }
     • <b>Имя</b>: { $name } { $username -> 
         [0] { empty }

@@ -243,7 +243,7 @@ class UserFirstConnectionEvent(UserEvent):
         return MessagePayloadDto(
             i18n_key=self.event_key,
             i18n_kwargs={**asdict(self)},
-            reply_markup=get_user_keyboard(self.telegram_id),
+            reply_markup=get_user_keyboard(self.user_id),
             disable_default_markup=False,
             delete_after=None,
         )
@@ -360,7 +360,7 @@ class UserPurchaseEvent(UserEvent):
         return MessagePayloadDto(
             i18n_key=self.event_key,
             i18n_kwargs={**asdict(self)},
-            reply_markup=get_user_keyboard(self.telegram_id) if self.telegram_id else None,
+            reply_markup=get_user_keyboard(self.user_id),
             disable_default_markup=False,
             delete_after=None,
         )
@@ -396,7 +396,7 @@ class TrialActivatedEvent(UserEvent):
         return MessagePayloadDto(
             i18n_key=self.event_key,
             i18n_kwargs={**asdict(self)},
-            reply_markup=get_user_keyboard(self.telegram_id),
+            reply_markup=get_user_keyboard(self.user_id),
             disable_default_markup=False,
             delete_after=None,
         )
@@ -424,3 +424,34 @@ class SubscriptionRevokedEvent(UserEvent):
     @property
     def event_key(self) -> str:
         return "event-subscription.revoked"
+
+
+@dataclass(frozen=True, kw_only=True)
+class UserConnectedWebEvent(UserEvent):
+    notification_type: NotificationType = field(
+        default=SystemNotificationType.USER_CONNECTED_WEB,
+        init=False,
+    )
+
+    is_trial: bool
+    subscription_id: UUID
+    subscription_status: SubscriptionStatus
+    traffic_used: Any
+    traffic_limit: Any
+    device_limit: Any
+    expire_time: Any
+
+    @property
+    def event_key(self) -> str:
+        return "event-user.connected-web"
+
+    def as_payload(self) -> "MessagePayloadDto":
+        from src.telegram.keyboards import get_user_keyboard  # noqa: PLC0415
+
+        return MessagePayloadDto(
+            i18n_key=self.event_key,
+            i18n_kwargs={**asdict(self)},
+            reply_markup=get_user_keyboard(self.user_id),
+            disable_default_markup=False,
+            delete_after=None,
+        )

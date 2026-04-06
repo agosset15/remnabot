@@ -270,6 +270,8 @@ class SystemNotificationType(UpperStrEnum):
     USER_FIRST_CONNECTION = auto()
     USER_DEVICES_UPDATED = auto()
     USER_REVOKED_SUBSCRIPTION = auto()
+    #
+    USER_CONNECTED_WEB = auto()
 
     def get_logs_topic(self, topic_id_list: list[int]) -> int:
         match self:
