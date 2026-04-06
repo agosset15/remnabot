@@ -70,17 +70,23 @@ frg-user-info =
     { $email ->
         [0] { empty }
         *[HAS] • <b>Email</b>: <code>{ $email }</code>
-
     }
     • <b>Имя</b>: { $name } { $username -> 
-        [0] { empty }
+        [0] { space }
         *[HAS] (<a href="tg://user?id={ $telegram_id }">@{ $username }</a>)
     }
     </blockquote>
 
 frg-user-details =
     <blockquote>
-    • <b>ID</b>: <code>{ NUMBER($telegram_id, useGrouping: 0) }</code>
+    { $telegram_id ->
+        [0] { empty }
+        *[HAS] • <b>ID</b>: <code>{ NUMBER($telegram_id, useGrouping: 0) }</code>
+    }
+    { $email ->
+        [0] { empty }
+        *[HAS] • <b>Email</b>: <code>{ $email }</code>
+    }
     • <b>Имя</b>: { $name } { $username -> 
         [0] { space }
         *[HAS] (<a href="tg://user?id={ $telegram_id }">@{ $username }</a>)
