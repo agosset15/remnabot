@@ -9,6 +9,7 @@ traefik
 logs/*
 !logs/.gitkeep
 .history
+scripts
 
 # Environment
 .venv/
@@ -27,6 +28,7 @@ __pycache__/
 .coverage/
 .claude/
 memory/
+CLAUDE.md
 
 # Build
 build/
