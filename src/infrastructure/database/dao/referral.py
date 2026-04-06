@@ -218,8 +218,9 @@ class ReferralDaoImpl(ReferralDao):
                 User.telegram_id.label("referrer_telegram_id"),
                 func.count().label("referrals_count"),
             )
+            .select_from(Referral)
             .join(User, User.id == Referral.referrer_user_id)
-            .group_by(User.telegram_id)
+            .group_by(User.id)
             .order_by(func.count().desc())
             .limit(1)
         )
