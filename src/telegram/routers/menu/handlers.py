@@ -122,9 +122,7 @@ async def on_device_delete_confirm(
     if not full_hwid:
         raise ValueError(f"Full HWID not found for '{selected_short_hwid}'")
 
-    await delete_user_device(
-        user, DeleteUserDeviceDto(telegram_id=user.telegram_id, hwid=full_hwid)
-    )
+    await delete_user_device(user, DeleteUserDeviceDto(user_id=user.id, hwid=full_hwid))
     await notifier.notify_user(user=user, i18n_key="ntf-devices.deleted")
     await dialog_manager.switch_to(state=MainMenu.DEVICES)
 

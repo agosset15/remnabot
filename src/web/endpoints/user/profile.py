@@ -175,7 +175,7 @@ async def delete_device(
     try:
         await delete_user_device(
             actor=current_user,
-            data=DeleteUserDeviceDto(telegram_id=current_user.telegram_id, hwid=hwid),
+            data=DeleteUserDeviceDto(user_id=current_user.id, hwid=hwid),
         )
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
