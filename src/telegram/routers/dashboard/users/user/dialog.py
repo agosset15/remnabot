@@ -69,6 +69,8 @@ from .handlers import (
     on_reset_traffic,
     on_role_select,
     on_send,
+    on_send_email_connect,
+    on_send_email_purchase,
     on_subscription_delete,
     on_subscription_duration_select,
     on_subscription_select,
@@ -123,12 +125,26 @@ user = Window(
             text=I18nFormat("btn-user.message"),
             id="message",
             state=DashboardUser.MESSAGE,
+            when=F["telegram_id"],
         ),
         Button(
             text=I18nFormat("btn-user.give-access"),
             id="give_access",
             on_click=on_give_access,
         ),
+    ),
+    Row(
+        Button(
+            text=I18nFormat("btn-user.email-purchase"),
+            id="email_purchase",
+            on_click=on_send_email_purchase,
+        ),
+        Button(
+            text=I18nFormat("btn-user.email-connect"),
+            id="email_connect",
+            on_click=on_send_email_connect,
+        ),
+        when=F["email"],
     ),
     Row(
         SwitchTo(

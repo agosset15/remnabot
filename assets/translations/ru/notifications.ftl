@@ -69,6 +69,11 @@ ntf-user =
             *[HAS] <blockquote>{ $error }</blockquote>
         }
 
+    .email-purchase-success = ✅ <i>Письмо о покупке успешно отправлено.</i>
+    .email-purchase-failed = ❌ <i>Не удалось отправить письмо о покупке.</i>
+    .email-connect-success = ✅ <i>Письмо с приглашением в Telegram успешно отправлено.</i>
+    .email-connect-failed = ❌ <i>Не удалось отправить письмо с приглашением в Telegram.</i>
+
     .sync-already = ✅ <i>Данные подписки идентичны.</i>
     .sync-missing-data = ⚠️ <i>Синхронизация невозможна. Данные подписки отсутствуют в панели и в боте.</i>
     .sync-success = ✅ <i>Синхронизация подписки выполнена.</i>

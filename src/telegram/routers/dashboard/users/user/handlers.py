@@ -12,7 +12,9 @@ from loguru import logger
 
 from src.application.common import Notifier, Redirect
 from src.application.common.dao import PlanDao, SubscriptionDao, TransactionDao, UserDao
+from src.application.common.mailer import Mailer
 from src.application.dto import MessagePayloadDto, UserDto
+from src.application.services import BotService
 from src.application.use_cases.plan.commands.access import (
     ToggleUserPlanAccess,
     ToggleUserPlanAccessDto,
@@ -757,3 +759,61 @@ async def on_subscription_duration_select(
         SetUserSubscriptionDto(target_user_id, plan_id, selected_duration),
     )
     await dialog_manager.switch_to(state=DashboardUser.MAIN)
+
+
+@inject
+async def on_send_email_purchase(
+    callback: CallbackQuery,
+    widget: Button,
+    dialog_manager: DialogManager,
+    user_dao: FromDishka[UserDao],
+    subscription_dao: FromDishka[SubscriptionDao],
+    mailer: FromDishka[Mailer],
+    notifier: FromDishka[Notifier],
+) -> None:
+    user: UserDto = dialog_manager.middleware_data[USER_KEY]
+    target_user_id = dialog_manager.dialog_data[TARGET_USER_ID]
+
+    target_user = await user_dao.get_by_id(target_user_id)
+    if not target_user:
+        await notifier.notify_user(user, i18n_key="ntf-user.not-found")
+        return
+
+    subscription = await subscription_dao.get_current(target_user_id)
+    if not subscription:
+        await notifier.notify_user(user, i18n_key="ntf-user.subscription-empty")
+        return
+
+    try:
+        await mailer.send_success_purchase(target_user, subscription)
+        await notifier.notify_user(user, i18n_key="ntf-user.email-purchase-success")
+    except Exception as e:
+        logger.error(f"{user.log} Failed to send purchase email to user '{target_user_id}': {e}")
+        await notifier.notify_user(user, i18n_key="ntf-user.email-purchase-failed")
+
+
+@inject
+async def on_send_email_connect(
+    callback: CallbackQuery,
+    widget: Button,
+    dialog_manager: DialogManager,
+    user_dao: FromDishka[UserDao],
+    bot_service: FromDishka[BotService],
+    mailer: FromDishka[Mailer],
+    notifier: FromDishka[Notifier],
+) -> None:
+    user: UserDto = dialog_manager.middleware_data[USER_KEY]
+    target_user_id = dialog_manager.dialog_data[TARGET_USER_ID]
+
+    target_user = await user_dao.get_by_id(target_user_id)
+    if not target_user:
+        await notifier.notify_user(user, i18n_key="ntf-user.not-found")
+        return
+
+    try:
+        bot_url = await bot_service.get_connect_web_url(target_user.referral_code)
+        await mailer.send_connect_telegram(target_user, bot_url)
+        await notifier.notify_user(user, i18n_key="ntf-user.email-connect-success")
+    except Exception as e:
+        logger.error(f"{user.log} Failed to send connect email to user '{target_user_id}': {e}")
+        await notifier.notify_user(user, i18n_key="ntf-user.email-connect-failed")
