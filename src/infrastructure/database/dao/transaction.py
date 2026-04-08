@@ -58,7 +58,11 @@ class TransactionDaoImpl(TransactionDao):
         return None
 
     async def get_by_user_id(self, user_id: int) -> list[TransactionDto]:
-        smt = select(Transaction).where(Transaction.user_id == user_id)
+        smt = (
+            select(Transaction)
+            .where(Transaction.user_id == user_id)
+            .order_by(Transaction.created_at.desc())
+        )
         result = await self.session.scalars(smt)
         db_transactions = cast(list, result.all())
 

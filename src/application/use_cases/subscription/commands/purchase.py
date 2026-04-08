@@ -144,7 +144,7 @@ class PurchaseSubscription(Interactor[PurchaseSubscriptionDto, None]):
         self.redirect = redirect
         self.mailer = mailer
 
-    async def _execute(self, actor: UserDto, data: PurchaseSubscriptionDto) -> None:
+    async def _execute(self, actor: UserDto, data: PurchaseSubscriptionDto) -> None:  # noqa: C901
         user = data.user
         transaction = data.transaction
         subscription = data.subscription
@@ -172,7 +172,10 @@ class PurchaseSubscription(Interactor[PurchaseSubscriptionDto, None]):
                         subscription=new_sub,
                         user_id=user.id,  # ty: ignore[invalid-argument-type]
                     )
-                    await self.user_dao.set_trial_available(user.id, False)  # ty: ignore[invalid-argument-type]
+                    await self.user_dao.set_trial_available(user.id, False)
+                    if user.purchase_discount:
+                        user.purchase_discount = 0
+                        await self.user_dao.update(user)
                     await self.uow.commit()
 
                     logger.debug(f"{actor.log} Created new subscription for user '{user.id}'")
@@ -204,6 +207,9 @@ class PurchaseSubscription(Interactor[PurchaseSubscriptionDto, None]):
 
                     subscription.plan_snapshot = plan
                     await self.subscription_dao.update(subscription)
+                    if user.purchase_discount:
+                        user.purchase_discount = 0
+                        await self.user_dao.update(user)
                     await self.uow.commit()
                     logger.debug(f"{actor.log} Renewed subscription for user '{user.telegram_id}'")
 
@@ -233,6 +239,9 @@ class PurchaseSubscription(Interactor[PurchaseSubscriptionDto, None]):
                         user_id=user.id,  # ty: ignore[invalid-argument-type]
                     )
 
+                    if user.purchase_discount:
+                        user.purchase_discount = 0
+                        await self.user_dao.update(user)
                     await self.uow.commit()
                     logger.debug(f"{actor.log} Changed subscription for user '{user.telegram_id}'")
 
