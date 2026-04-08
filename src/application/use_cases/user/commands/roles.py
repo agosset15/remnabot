@@ -42,7 +42,11 @@ class GetAdmins(Interactor[None, list[GetAdminsResultDto]]):
         ]
 
     def _is_deletable(self, actor: UserDto, target: UserDto) -> bool:
-        return target.id != actor.id and target.role != Role.OWNER and target.role > actor.role
+        return (
+            target.id != actor.id
+            and target.role != Role.OWNER
+            and actor.role > target.role
+        )
 
 
 class RevokeRole(Interactor[int, None]):
@@ -106,7 +110,31 @@ class SetUserRole(Interactor[SetUserRoleDto, None]):
             logger.warning(
                 f"{actor.log} Attempted to change role for non-existent user '{data.user_id}'"
             )
-            raise ValueError(f"User '{data.user_id}' not found")
+            raise UserNotFoundError(data.user_id)
+
+        if actor.id == target_user.id:
+            logger.warning(f"{actor.log} Attempted to change their own role")
+            raise PermissionDeniedError()
+
+        if target_user.role == Role.OWNER:
+            logger.warning(
+                f"{actor.log} Attempted to change role of OWNER '{data.user_id}'"
+            )
+            raise PermissionDeniedError()
+
+        if not actor.role > data.role:
+            logger.warning(
+                f"{actor.log} Attempted to assign role '{data.role}' "
+                f"which is >= their own role '{actor.role}'"
+            )
+            raise PermissionDeniedError()
+
+        if not actor.role > target_user.role:
+            logger.warning(
+                f"{actor.log} Attempted to change role of '{data.user_id}' "
+                f"({target_user.role}) which is >= their own role '{actor.role}'"
+            )
+            raise PermissionDeniedError()
 
         async with self.uow:
             target_user.role = data.role

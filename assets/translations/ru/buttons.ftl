@@ -111,12 +111,16 @@ btn-users =
     .unblock-all = 🔓 Разблокировать всех
 
 btn-user =
-    .discount = 💸 Изменить скидку
-    .points = 💎 Изменить баллы
+    .discount = 💸 Скидка
+    .discount-personal = 👤 Персональная скидка
+    .discount-purchase = 🎟 На следующую покупку
+    .points = 💎 Баллы
     .statistics = 📊 Статистика
     .referrals = 👪 Рефералы
     .message = 📩 Сообщение
-    .role = 👮‍♂️ Изменить роль
+    .email-purchase = 📧 Письмо: покупка
+    .email-connect = 📧 Письмо: подключить Telegram
+    .role = 👮‍♂️ Роль
     .transactions = 🧾 Транзакции
     .give-access = 🔑 Доступ к планам
     .current-subscription = 💳 Текущая подписка
@@ -157,6 +161,11 @@ btn-user =
     *[OTHER] { $status }
     } { $created_at }
     
+    .trial-toggle = { $is_trial_available ->
+    [1] 🧪 Пробник: доступен
+    *[0] 🧪 Пробник: не доступен
+    }
+
     .block = { $is_blocked ->
     [1] 🔓 Разблокировать
     *[0] 🔒 Заблокировать
@@ -447,7 +456,10 @@ btn-subscription =
     .renew = 🔄 Продлить
     .change = 🔃 Изменить
     .promocode = 🎟 Активировать промокод
-    .payment-method = { gateway-type } | { $price } { $currency }
+    .payment-method = { gateway-type } | { $final_amount ->
+    [0] 🎁
+    *[HAS] { $final_amount }{ $currency }
+    }
     .pay = 💳 Оплатить
     .get = 🎁 Получить бесплатно
     .back-plans = ⬅️ Назад к выбору плана
