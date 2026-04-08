@@ -222,6 +222,36 @@ email-success-purchase =
         </tr></table></td></tr>
         { ftr-email-html }
 
+email-failed-purchase =
+    .title = Платёж не прошёл
+    .message =
+        К сожалению, ваш платёж не был обработан.
+
+        Попробуйте повторить попытку или обратитесь в поддержку.
+        Перейти в бот: { $bot_url }
+
+    .message-html =
+        { hdr-email-html }
+        <div style="display:none;">Ваш платёж не был обработан. Попробуйте ещё раз.</div>
+        <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" class="wrap" style="padding:36px 16px;">
+        <table class="card" width="560" style="max-width:560px;width:100%;background:#fff;border:1px solid #DDE6F4;border-radius:16px;">
+        <tr><td class="hd" align="center" style="background:#FFF5F5;border-bottom:1px solid #FED7D7;padding:40px 32px 32px;border-radius:16px 16px 0 0;">
+        <p style="margin:0 0 16px;"><span style="background:#FFF5F5;border:1px solid #FED7D7;border-radius:100px;padding:4px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#C53030;">&#9888; Платёж не прошёл</span></p>
+        <h1 style="margin:0 0 12px;font-size:26px;font-weight:800;color:#1e2a4a;line-height:1.25;">Что-то пошло не так</h1>
+        <p style="margin:0;font-size:14px;color:#64748B;line-height:1.6;">К сожалению, ваш платёж не был обработан. Попробуйте ещё раз — это займёт пару секунд.</p>
+        </td></tr>
+        <tr><td class="body" style="padding:28px 32px;">
+        <p style="margin:0 0 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#94A3B8;">Что делать дальше</p>
+        <table width="100%" cellpadding="0" cellspacing="0">
+        <tr><td width="30" valign="top"><div style="width:30px;height:30px;background:#3B6FD4;border-radius:50%;text-align:center;line-height:30px;font-size:13px;font-weight:800;color:#fff;">1</div></td><td style="padding-left:12px;padding-bottom:12px;"><b style="font-size:14px;color:#1e2a4a;">Перейдите в бот</b><br><span style="font-size:13px;color:#64748B;">Откройте Telegram и попробуйте оплатить снова</span></td></tr>
+        <tr><td width="30" valign="top"><div style="width:30px;height:30px;background:#F1F5F9;border:1.5px solid #E2E8F0;border-radius:50%;text-align:center;line-height:27px;font-size:13px;font-weight:800;color:#94A3B8;">2</div></td><td style="padding-left:12px;"><b style="font-size:14px;color:#1e2a4a;">Свяжитесь с поддержкой</b><br><span style="font-size:13px;color:#64748B;">Если проблема повторяется — мы поможем разобраться</span></td></tr>
+        </table>
+        </td></tr>
+        <tr><td class="btns" style="padding:0 32px 28px;">
+          <a href="{ $bot_url }" class="btn" style="display:block;padding:15px;background:#3B6FD4;border-radius:10px;text-align:center;text-decoration:none;font-size:15px;font-weight:700;color:#fff;">&#9992;&#65039; Перейти в бот</a>
+        </td></tr>
+        { ftr-email-html }
+
 email-connect-telegram =
     .title = Подключите Telegram для управления подпиской
     .message =

@@ -73,7 +73,25 @@ class SmtpMailerImpl(Mailer):
         await self._dispatch(user.email, msg)
 
     async def send_failed_purchase(self, user: UserDto) -> None:
-        pass  # TODO: implement
+        bot_url = await self._bot_service.get_connect_web_url(user.referral_code)
+
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = self._i18n.get("email-failed-purchase.title")
+        msg.attach(
+            MIMEText(
+                self._i18n.get("email-failed-purchase.message", bot_url=bot_url),
+                "plain",
+                "utf-8",
+            )
+        )
+        msg.attach(
+            MIMEText(
+                self._i18n.get("email-failed-purchase.message-html", bot_url=bot_url),
+                "html",
+                "utf-8",
+            )
+        )
+        await self._dispatch(user.email, msg)
 
     async def send_connect_telegram(self, user: UserDto, bot_url: str) -> None:
         msg = MIMEMultipart("alternative")
