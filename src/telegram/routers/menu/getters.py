@@ -42,6 +42,7 @@ async def menu_getter(
         data: dict[str, Any] = {
             # user
             "telegram_id": user.telegram_id,
+            "email": user.email or False,
             "name": user.name,
             "personal_discount": personal_discount,
             "show_personal_discount": show_personal_discount,
