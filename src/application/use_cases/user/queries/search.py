@@ -62,7 +62,7 @@ class SearchUsers(Interactor[SearchUsersDto, list[UserDto]]):
         if query.startswith(REMNASHOP_PREFIX):
             return await self._search_by_remnashop_id(query)
 
-        return await self._search_by_name(query)
+        return await self._search_by_name_or_email(query)
 
     async def _search_by_numeric_id(self, numeric_id: int) -> list[UserDto]:
         results = []
@@ -78,27 +78,29 @@ class SearchUsers(Interactor[SearchUsersDto, list[UserDto]]):
             return []
 
         results = []
-        results.extend(await self._find_by_telegram_id(numeric_id, label="Remnashop"))
-        results.extend(await self._find_by_user_id(numeric_id, label="Remnashop"))
+        results.extend(await self._find_by_telegram_id(numeric_id))
+        results.extend(await self._find_by_user_id(numeric_id))
         return results
 
-    async def _search_by_name(self, name: str) -> list[UserDto]:
-        users = await self.user_dao.get_by_partial_name(name)
-        logger.info(f"Searched users by partial name '{name}', found '{len(users)}' users")
-        return users
+    async def _search_by_name_or_email(self, name: str) -> list[UserDto]:
+        results = []
+        results.extend(await self.user_dao.get_by_partial_name(name))
+        results.append(await self.user_dao.get_by_email(name))
+        logger.info(f"Searched users by partial name '{name}', found '{len(results)}' users")
+        return results
 
-    async def _find_by_telegram_id(self, numeric_id: int, label: str = "Telegram") -> list[UserDto]:
+    async def _find_by_telegram_id(self, numeric_id: int) -> list[UserDto]:
         user = await self.user_dao.get_by_telegram_id(numeric_id)
         if user:
-            logger.info(f"Searched by {label} ID '{numeric_id}', user found")
+            logger.info(f"Searched by Telegram ID '{numeric_id}', user found")
             return [user]
-        logger.warning(f"Searched by {label} ID '{numeric_id}', user not found")
+        logger.warning(f"Searched by Telegram ID '{numeric_id}', user not found")
         return []
 
-    async def _find_by_user_id(self, numeric_id: int, label: str = "user") -> list[UserDto]:
+    async def _find_by_user_id(self, numeric_id: int) -> list[UserDto]:
         user = await self.user_dao.get_by_id(numeric_id)
         if user:
-            logger.info(f"Searched by {label} ID '{numeric_id}', user found")
+            logger.info(f"Searched by user ID '{numeric_id}', user found")
             return [user]
-        logger.warning(f"Searched by {label} ID '{numeric_id}', user not found")
+        logger.warning(f"Searched by user ID '{numeric_id}', user not found")
         return []

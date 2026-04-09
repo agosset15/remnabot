@@ -218,7 +218,7 @@ class SubscriptionDaoImpl(SubscriptionDao, BaseDaoImpl):
         return squads
 
     async def count_total_trials(self) -> int:
-        stmt = select(func.count(func.distinct(Subscription.user_telegram_id))).where(
+        stmt = select(func.count(func.distinct(Subscription.user_id))).where(
             Subscription.is_trial.is_(True),
         )
         return await self.session.scalar(stmt) or 0

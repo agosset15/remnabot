@@ -15,8 +15,8 @@ from src.application.services import (
     NotificationService,
     PricingService,
     RemnaWebhookService,
-    WebService,
     WebhookService,
+    WebService,
 )
 from src.infrastructure.services import (
     CryptographerImpl,
