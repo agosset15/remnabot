@@ -85,7 +85,9 @@ class SearchUsers(Interactor[SearchUsersDto, list[UserDto]]):
     async def _search_by_name_or_email(self, name: str) -> list[UserDto]:
         results = []
         results.extend(await self.user_dao.get_by_partial_name(name))
-        results.append(await self.user_dao.get_by_email(name))
+        email_user = await self.user_dao.get_by_email(name)
+        if email_user:
+            results.append(email_user)
         logger.info(f"Searched users by partial name '{name}', found '{len(results)}' users")
         return results
 
