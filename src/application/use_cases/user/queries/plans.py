@@ -22,10 +22,10 @@ class GetAvailablePlans(Interactor[UserDto, list[PlanDto]]):
         filtered_plans: list[PlanDto] = []
 
         has_any_subscription = await self.user_dao.has_any_subscription(
-            data.telegram_id,
+            data.id,
             include_trial=False,
         )
-        is_invited_user = await self.user_dao.is_invited_user(data.telegram_id)
+        is_invited_user = await self.user_dao.is_invited_user(data.id)
 
         for plan in all_active_plans:
             match plan.availability:
@@ -44,7 +44,7 @@ class GetAvailablePlans(Interactor[UserDto, list[PlanDto]]):
                     logger.info(f"{data.log} Eligible for invited user plan '{plan.name}'")
                     filtered_plans.append(plan)
 
-                case PlanAvailability.ALLOWED if data.telegram_id in plan.allowed_user_ids:
+                case PlanAvailability.ALLOWED if data.id in plan.allowed_user_ids:
                     logger.info(f"{data.log} Explicitly allowed for plan '{plan.name}'")
                     filtered_plans.append(plan)
 
@@ -70,10 +70,10 @@ class GetAvailableTrial(Interactor[UserDto, Optional[PlanDto]]):
             return None
 
         has_subscription = await self.user_dao.has_any_subscription(
-            data.telegram_id,
+            data.id,
             include_trial=False,
         )
-        is_invited = await self.user_dao.is_invited_user(data.telegram_id)
+        is_invited = await self.user_dao.is_invited_user(data.id)
 
         priority_map = {
             PlanAvailability.ALLOWED: 4,
@@ -89,7 +89,7 @@ class GetAvailableTrial(Interactor[UserDto, Optional[PlanDto]]):
 
             match plan.availability:
                 case PlanAvailability.ALLOWED:
-                    if data.telegram_id in (plan.allowed_user_ids or []):
+                    if data.id in (plan.allowed_user_ids or []):
                         is_eligible = True
                 case PlanAvailability.INVITED:
                     if is_invited:
@@ -146,10 +146,10 @@ class GetAvailablePlanByCode(Interactor[str, Optional[PlanDto]]):
             return False
 
         has_subscription = await self.user_dao.has_any_subscription(
-            user.telegram_id,
+            user.id,
             include_trial=False,
         )
-        is_invited_user = await self.user_dao.is_invited_user(user.telegram_id)
+        is_invited_user = await self.user_dao.is_invited_user(user.id)
 
         match plan.availability:
             case PlanAvailability.LINK:
@@ -163,6 +163,6 @@ class GetAvailablePlanByCode(Interactor[str, Optional[PlanDto]]):
             case PlanAvailability.INVITED:
                 return is_invited_user
             case PlanAvailability.ALLOWED:
-                return user.telegram_id in plan.allowed_user_ids
+                return user.id in plan.allowed_user_ids
             case _:
                 return False

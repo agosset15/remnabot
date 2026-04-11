@@ -300,13 +300,8 @@ class UserDaoImpl(UserDao):
         logger.debug(f"Retrieved '{count}' blocked users")
         return count
 
-    async def has_any_subscription(self, telegram_id: int, *, include_trial: bool = True) -> bool:
-        stmt = (
-            select(func.count())
-            .select_from(Subscription)
-            .join(User, User.id == Subscription.user_id)
-            .where(User.telegram_id == telegram_id)
-        )
+    async def has_any_subscription(self, user_id: int, *, include_trial: bool = True) -> bool:
+        stmt = select(func.count()).select_from(Subscription).where(Subscription.user_id == user_id)
 
         if not include_trial:
             stmt = stmt.where(Subscription.is_trial.is_(False))
@@ -315,19 +310,16 @@ class UserDaoImpl(UserDao):
         count = result.scalar() or 0
         return count > 0
 
-    async def is_invited_user(self, telegram_id: int) -> bool:
+    async def is_invited_user(self, user_id: int) -> bool:
         stmt = (
-            select(func.count())
-            .select_from(Referral)
-            .join(User, User.id == Referral.referred_user_id)
-            .where(User.telegram_id == telegram_id)
+            select(func.count()).select_from(Referral).where(Referral.referred_user_id == user_id)
         )
 
         result = await self.session.execute(stmt)
         count = result.scalar() or 0
 
         is_invited = count > 0
-        logger.debug(f"Checked invite status for user '{telegram_id}', result '{is_invited}'")
+        logger.debug(f"Checked invite status for user '{user_id}', result '{is_invited}'")
         return is_invited
 
     async def toggle_blocked_status(self, user_id: int) -> None:

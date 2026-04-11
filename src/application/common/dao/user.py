@@ -59,12 +59,12 @@ class UserDao(Protocol):
 
     async def has_any_subscription(
         self,
-        telegram_id: int,
+        user_id: int,
         *,
         include_trial: bool = True,
     ) -> bool: ...
 
-    async def is_invited_user(self, telegram_id: int) -> bool: ...
+    async def is_invited_user(self, user_id: int) -> bool: ...
 
     async def toggle_blocked_status(self, user_id: int) -> None: ...
 
