@@ -226,7 +226,7 @@ class NotifyNotConnectedWebUsers(Interactor[None, None]):
 
         sent = 0
         for user in users:
-            if not user.has_only_email:
+            if not user.has_only_email or user.is_blocked:
                 continue
             try:
                 bot_url = await self.bot_service.get_connect_web_url(user.referral_code)
