@@ -231,7 +231,13 @@ class NotificationService(Notifier):
         }
 
         try:
-            if payload.is_text:
+            if payload.forwarded_from_id and payload.forwarded_message_id:
+                message = await self.bot.forward_message(
+                    chat_id=user.telegram_id,
+                    from_chat_id=payload.forwarded_from_id,
+                    message_id=payload.forwarded_message_id,
+                )
+            elif payload.is_text:
                 message = await self.bot.send_message(
                     chat_id=user.telegram_id,
                     text=text,

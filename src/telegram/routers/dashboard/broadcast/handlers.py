@@ -193,7 +193,11 @@ async def on_content_input(
     _update_payload(
         dialog_manager,
         retort,
-        i18n_kwargs={"content": html.unescape(message.html_text)},
+        i18n_kwargs={
+            "content": html.unescape(message.html_text),
+        },
+        forwarded_from_id=message.forward_from.id if message.forward_from else None,
+        forwarded_message_id=message.forward_from_message_id,
         media_type=media_type,
         media=retort.dump(MediaDescriptorDto(kind="file_id", value=file_id)) if file_id else None,
     )

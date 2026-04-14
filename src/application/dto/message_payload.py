@@ -25,6 +25,8 @@ class MessagePayloadDto:
 
     delete_after: Optional[int] = 5
     thread_id: Optional[int] = None
+    forwarded_from_id: Optional[int] = None
+    forwarded_message_id: Optional[int] = None
     message_effect: Optional[MessageEffectId] = None
     disable_notification: bool = False
 
