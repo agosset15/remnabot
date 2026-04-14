@@ -60,16 +60,20 @@ class ConnectWebUser(Interactor[ConnectWebUserDto, Optional[UserDto]]):
 
         telegram_user = data.telegram_user
         current_subscription = await self.subscription_dao.get_by_user_id(web_user.id)
+        survivor, donor = self._pick_survivor(web_user, telegram_user)
 
         async with self.uow:
             if self._has_substantial_data(telegram_user):
-                await self._full_merge(web_user, telegram_user)
+                await self._full_merge(survivor, donor, web_user=web_user, telegram_user=telegram_user)
             else:
-                await self._simple_connect(web_user, telegram_user)
+                await self._simple_connect(survivor, donor, web_user=web_user, telegram_user=telegram_user)
             await self.uow.commit()
 
-        logger.info(f"Connect web: {telegram_user.log} -> merged into web user id='{web_user.id}'")
-        user = await self.user_dao.get_by_id(web_user.id)  # ty: ignore[invalid-argument-type]
+        logger.info(
+            f"Connect web: {telegram_user.log} -> merged into survivor id='{survivor.id}' "
+            f"(older={'web' if survivor is web_user else 'telegram'})"
+        )
+        user = await self.user_dao.get_by_id(survivor.id)  # ty: ignore[invalid-argument-type]
         remna_user = await self.remnawave.update_user_metadata(
             user, current_subscription.user_remna_id
         )
@@ -110,94 +114,125 @@ class ConnectWebUser(Interactor[ConnectWebUserDto, Optional[UserDto]]):
         """True when the Telegram user carries data worth merging."""
         return not user.is_trial_available
 
+    @staticmethod
+    def _pick_survivor(web_user: UserDto, telegram_user: UserDto) -> tuple[UserDto, UserDto]:
+        """Return (survivor, donor). The older account (by created_at) survives."""
+        web_ts = web_user.created_at
+        tg_ts = telegram_user.created_at
+        if web_ts is not None and tg_ts is not None and tg_ts < web_ts:
+            return telegram_user, web_user
+        return web_user, telegram_user
+
     # ──────────────────────────────────────────────────────────────────────────
     # Connect strategies
     # ──────────────────────────────────────────────────────────────────────────
 
-    async def _simple_connect(self, web_user: UserDto, telegram_user: UserDto) -> None:
-        """Attach telegram_id to the web account and remove the Telegram-only stub."""
-        web_user.telegram_id = telegram_user.telegram_id
-        web_user.username = telegram_user.username
+    async def _simple_connect(
+        self,
+        survivor: UserDto,
+        donor: UserDto,
+        *,
+        web_user: UserDto,
+        telegram_user: UserDto,
+    ) -> None:
+        """Attach Telegram identity to the older account and remove the newer stub."""
+        survivor.telegram_id = telegram_user.telegram_id
+        survivor.username = telegram_user.username
+        survivor.email = web_user.email
 
-        if web_user.name == web_user.email:
-            web_user.name = telegram_user.name
+        if survivor.name == web_user.email:
+            survivor.name = telegram_user.name
 
-        await self._transfer_relations(web_user, telegram_user)
-        await self.user_dao.delete(telegram_user.telegram_id)  # ty: ignore[invalid-argument-type]
-        await self.user_dao.update(web_user)
+        await self._transfer_relations(survivor, donor)
+        await self._delete_donor(donor)
+        await self.user_dao.update(survivor)
 
         logger.debug(
             f"Simple connect: telegram_id='{telegram_user.telegram_id}' "
-            f"attached to web user id='{web_user.id}'"
+            f"attached to survivor id='{survivor.id}'"
         )
 
-    async def _full_merge(self, web_user: UserDto, telegram_user: UserDto) -> None:
+    async def _full_merge(
+        self,
+        survivor: UserDto,
+        donor: UserDto,
+        *,
+        web_user: UserDto,
+        telegram_user: UserDto,
+    ) -> None:
         """
-        Merge all data from the Telegram user into the web account.
+        Merge all data into the older account.
 
-        All FK relations are re-pointed first, then the telegram_user record is
-        deleted to release the unique telegram_id constraint, and finally
-        web_user is updated to claim that telegram_id.
+        All FK relations are re-pointed first, then the donor record is
+        deleted to release unique constraints, and finally the survivor
+        is updated with the merged fields.
         """
-        self._apply_merged_fields(web_user, telegram_user)
+        self._apply_merged_fields(survivor, donor, web_user=web_user, telegram_user=telegram_user)
 
-        await self._transfer_relations(web_user, telegram_user)
-        await self.user_dao.delete(telegram_user.telegram_id)  # ty: ignore[invalid-argument-type]
-        await self.user_dao.update(web_user)
+        await self._transfer_relations(survivor, donor)
+        await self._delete_donor(donor)
+        await self.user_dao.update(survivor)
 
         logger.debug(
-            f"Full merge: telegram user id='{telegram_user.id}' "
-            f"consolidated into web user id='{web_user.id}'"
+            f"Full merge: donor id='{donor.id}' consolidated into survivor id='{survivor.id}'"
         )
 
-    async def _transfer_relations(self, web_user: UserDto, telegram_user: UserDto) -> None:
+    async def _transfer_relations(self, survivor: UserDto, donor: UserDto) -> None:
         """
-        Re-point all FK relations from telegram_user to web_user.
+        Re-point all FK relations from donor to survivor.
 
-        Must be called before deleting telegram_user to avoid FK violations.
+        Must be called before deleting donor to avoid FK violations.
         """
-        # Clear current_subscription_id on telegram_user so its FK to
-        # subscriptions can be safely re-pointed to web_user.
+        # Clear current_subscription_id on donor so its FK to
+        # subscriptions can be safely re-pointed to survivor.
         await self.user_dao.clear_current_subscription(
-            telegram_user.id  # ty: ignore[invalid-argument-type]
+            donor.id  # ty: ignore[invalid-argument-type]
         )
 
         await self.subscription_dao.reassign_to_user(
-            from_user_id=telegram_user.id,  # ty: ignore[invalid-argument-type]
-            to_user_id=web_user.id,  # ty: ignore[invalid-argument-type]
+            from_user_id=donor.id,  # ty: ignore[invalid-argument-type]
+            to_user_id=survivor.id,  # ty: ignore[invalid-argument-type]
         )
         await self.transaction_dao.reassign_to_user(
-            from_user_id=telegram_user.id,  # ty: ignore[invalid-argument-type]
-            to_user_id=web_user.id,  # ty: ignore[invalid-argument-type]
+            from_user_id=donor.id,  # ty: ignore[invalid-argument-type]
+            to_user_id=survivor.id,  # ty: ignore[invalid-argument-type]
         )
         await self.referral_dao.reassign_referrer(
-            from_user_id=telegram_user.id,  # ty: ignore[invalid-argument-type]
-            to_user_id=web_user.id,  # ty: ignore[invalid-argument-type]
+            from_user_id=donor.id,  # ty: ignore[invalid-argument-type]
+            to_user_id=survivor.id,  # ty: ignore[invalid-argument-type]
         )
         await self.referral_dao.reassign_referred(
-            from_user_id=telegram_user.id,  # ty: ignore[invalid-argument-type]
-            to_user_id=web_user.id,  # ty: ignore[invalid-argument-type]
+            from_user_id=donor.id,  # ty: ignore[invalid-argument-type]
+            to_user_id=survivor.id,  # ty: ignore[invalid-argument-type]
         )
+
+    async def _delete_donor(self, donor: UserDto) -> None:
+        """Delete the donor account, choosing the right key based on what it has."""
+        if donor.telegram_id is not None:
+            await self.user_dao.delete(donor.telegram_id)  # ty: ignore[invalid-argument-type]
+        else:
+            await self.user_dao.delete_by_id(donor.id)  # ty: ignore[invalid-argument-type]
 
     @staticmethod
-    def _apply_merged_fields(web_user: UserDto, telegram_user: UserDto) -> None:
-        """Merge scalar fields from telegram_user into web_user."""
-        web_user.telegram_id = telegram_user.telegram_id
-        web_user.username = telegram_user.username
-        web_user.points += telegram_user.points
-        web_user.role = max(web_user.role, telegram_user.role)
-        web_user.personal_discount = max(
-            web_user.personal_discount, telegram_user.personal_discount
-        )
-        web_user.purchase_discount = max(
-            web_user.purchase_discount, telegram_user.purchase_discount
-        )
-        web_user.is_trial_available = (
-            web_user.is_trial_available or telegram_user.is_trial_available
-        )
+    def _apply_merged_fields(
+        survivor: UserDto,
+        donor: UserDto,
+        *,
+        web_user: UserDto,
+        telegram_user: UserDto,
+    ) -> None:
+        """Merge scalar fields into the survivor."""
+        survivor.telegram_id = telegram_user.telegram_id
+        survivor.username = telegram_user.username
+        survivor.email = web_user.email
+        survivor.points += donor.points
+        survivor.role = max(survivor.role, donor.role)
+        survivor.personal_discount = max(survivor.personal_discount, donor.personal_discount)
+        survivor.purchase_discount = max(survivor.purchase_discount, donor.purchase_discount)
+        survivor.is_trial_available = survivor.is_trial_available or donor.is_trial_available
 
-        if web_user.name == web_user.email:
-            web_user.name = telegram_user.name
+        if survivor.name == web_user.email:
+            survivor.name = telegram_user.name
 
 
 class NotifyNotConnectedWebUsers(Interactor[None, None]):

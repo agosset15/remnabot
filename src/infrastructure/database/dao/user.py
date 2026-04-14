@@ -192,6 +192,18 @@ class UserDaoImpl(UserDao):
         logger.debug(f"User '{telegram_id}' not found for deletion")
         return False
 
+    async def delete_by_id(self, user_id: int) -> bool:
+        stmt = delete(User).where(User.id == user_id).returning(User.id)
+        result = await self.session.execute(stmt)
+        deleted_id = result.scalar_one_or_none()
+
+        if deleted_id:
+            logger.debug(f"User id='{user_id}' deleted from database")
+            return True
+
+        logger.debug(f"User id='{user_id}' not found for deletion")
+        return False
+
     async def exists(self, telegram_id: int) -> bool:
         stmt = select(select(User).where(User.telegram_id == telegram_id).exists())
         is_exists = await self.session.scalar(stmt) or False
