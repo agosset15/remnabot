@@ -105,6 +105,7 @@ class DashboardUser(StatesGroup):
     SYNC_WAITING = State()
     GIVE_SUBSCRIPTION = State()
     SUBSCRIPTION_DURATION = State()
+    EMAIL = State()
 
 
 class DashboardRemnashop(StatesGroup):

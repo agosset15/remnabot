@@ -14,6 +14,9 @@ DOMAIN_REGEX: Pattern[str] = re.compile(r"^(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$")
 TAG_REGEX: Pattern[str] = re.compile(r"^[A-Z0-9_]{1,16}$")
 URL_PATTERN: Pattern[str] = re.compile(r"^https://\S+$")
 USERNAME_PATTERN: Pattern[str] = re.compile(r"^@[a-zA-Z0-9_]{5,32}$")
+EMAIL_PATTERN: Pattern[str] = re.compile(
+    r"^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$"
+)
 
 REMNAWAVE_MIN_VERSION: Final[Version] = Version("2.7.0")
 REMNAWAVE_MAX_VERSION: Final[Version] = Version("2.8.0")
