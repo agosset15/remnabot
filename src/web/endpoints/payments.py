@@ -4,11 +4,14 @@ from fastapi import APIRouter, Request, Response, status
 from loguru import logger
 
 from src.application.common import EventPublisher
+from src.application.common.dao import TransactionDao
+from src.application.common.uow import UnitOfWork
 from src.application.events import ErrorEvent
 from src.application.use_cases.gateways.queries.providers import GetPaymentGatewayInstance
 from src.core.config import AppConfig
 from src.core.constants import API_V1, PAYMENTS_WEBHOOK_PATH
 from src.core.enums import PaymentGatewayType
+from src.infrastructure.payment_gateways import PlategaGateway
 from src.infrastructure.taskiq.tasks.payments import handle_payment_transaction_task
 
 router = APIRouter(prefix=API_V1 + PAYMENTS_WEBHOOK_PATH)
@@ -22,6 +25,8 @@ async def payments_webhook(
     config: FromDishka[AppConfig],
     event_publisher: FromDishka[EventPublisher],
     get_payment_gateway_instance: FromDishka[GetPaymentGatewayInstance],
+    transaction_dao: FromDishka[TransactionDao],
+    uow: FromDishka[UnitOfWork],
 ) -> Response:
     try:
         gateway_enum = PaymentGatewayType(gateway_type.upper())
@@ -44,6 +49,23 @@ async def payments_webhook(
         result = await gateway.handle_webhook(request)
         if result is not None:
             payment_id, payment_status = result
+            if (
+                gateway_enum == PaymentGatewayType.PLATEGA
+                and isinstance(gateway, PlategaGateway)
+                and gateway.selected_payment_method is not None
+            ):
+                async with uow:
+                    transaction = await transaction_dao.get_by_payment_id(payment_id)
+
+                    if transaction:
+                        transaction.payment_method = gateway.selected_payment_method
+                        await transaction_dao.update(transaction)
+                        await uow.commit()
+                    else:
+                        logger.warning(
+                            f"Transaction '{payment_id}' not found for Platega payment method sync"
+                        )
+
             await handle_payment_transaction_task.kiq(payment_id, payment_status)  # type: ignore[call-overload]
 
     except Exception as e:

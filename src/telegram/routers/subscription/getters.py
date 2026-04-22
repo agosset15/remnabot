@@ -8,12 +8,12 @@ from loguru import logger
 
 from src.application.common import TranslatorRunner
 from src.application.common.dao import PaymentGatewayDao, PlanDao, SettingsDao, SubscriptionDao
-from src.application.dto import PlanDto, PriceDetailsDto, UserDto
+from src.application.dto import PaymentGatewayDto, PlanDto, PriceDetailsDto, UserDto
 from src.application.services import PricingService
 from src.application.use_cases.plan.queries.match import MatchPlan, MatchPlanDto
 from src.application.use_cases.user.queries.plans import GetAvailablePlans
 from src.core.config import AppConfig
-from src.core.enums import PurchaseType
+from src.core.enums import PaymentGatewayType, PurchaseType
 from src.core.utils.i18n_helpers import (
     i18n_format_days,
     i18n_format_device_limit,
@@ -21,6 +21,19 @@ from src.core.utils.i18n_helpers import (
     i18n_format_traffic_limit,
 )
 from src.telegram.states import Subscription
+
+
+def _get_gateway_title(i18n: TranslatorRunner, gateway: PaymentGatewayDto) -> str:
+    if gateway.settings and gateway.settings.display_name:
+        return gateway.settings.display_name
+
+    if (
+        gateway.type == PaymentGatewayType.PLATEGA
+        and getattr(gateway.settings, "payment_method", None) is None
+    ):
+        return i18n.get("gateway-display-name-platega")
+
+    return i18n.get("gateway-type", gateway_type=gateway.type)
 
 
 @inject
@@ -191,6 +204,7 @@ async def payment_method_getter(
         payment_methods.append(
             {
                 "gateway_type": gateway.type,
+                "gateway_title": _get_gateway_title(i18n, gateway),
                 "final_amount": price.final_amount,
                 "original_amount": price.original_amount,
                 "discount_percent": price.discount_percent,
@@ -268,6 +282,7 @@ async def confirm_getter(
         "traffic": i18n_format_traffic_limit(plan.traffic_limit),
         "period": i18n.get(key, **kw),
         "payment_method": selected_payment_method,
+        "payment_method_title": _get_gateway_title(i18n, payment_gateway),
         "final_amount": pricing.final_amount,
         "discount_percent": pricing.discount_percent,
         "original_amount": pricing.original_amount,

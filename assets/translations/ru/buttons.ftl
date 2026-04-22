@@ -472,7 +472,7 @@ btn-subscription =
     .renew = 🔄 Продлить
     .change = 🔃 Изменить
     .promocode = 🎟 Активировать промокод
-    .payment-method = { gateway-type } | { $final_amount ->
+    .payment-method = { $gateway_title } | { $final_amount ->
     [0] 🎁
     *[HAS] { $final_amount }{ $currency }
     }
