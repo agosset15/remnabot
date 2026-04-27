@@ -1,3 +1,4 @@
+import html
 from typing import Union
 from uuid import UUID
 
@@ -120,8 +121,8 @@ async def on_trial_toggle(
     toggle_user_trial_available: FromDishka[ToggleUserTrialAvailable],
 ) -> None:
     user: UserDto = dialog_manager.middleware_data[USER_KEY]
-    target_telegram_id = dialog_manager.dialog_data[TARGET_TELEGRAM_ID]
-    await toggle_user_trial_available(user, target_telegram_id)
+    target_user_id = dialog_manager.dialog_data[TARGET_USER_ID]
+    await toggle_user_trial_available(user, target_user_id)
 
 
 @inject
@@ -305,11 +306,11 @@ async def on_purchase_discount_select(
     set_user_purchase_discount: FromDishka[SetUserPurchaseDiscount],
 ) -> None:
     user: UserDto = dialog_manager.middleware_data[USER_KEY]
-    target_telegram_id = dialog_manager.dialog_data[TARGET_TELEGRAM_ID]
+    target_user_id = dialog_manager.dialog_data[TARGET_USER_ID]
 
     await set_user_purchase_discount(
         user,
-        SetUserPurchaseDiscountDto(target_telegram_id, selected_discount),
+        SetUserPurchaseDiscountDto(target_user_id, selected_discount),
     )
 
     await dialog_manager.switch_to(state=DashboardUser.DISCOUNT)
@@ -325,7 +326,7 @@ async def on_purchase_discount_input(
 ) -> None:
     dialog_manager.show_mode = ShowMode.EDIT
     user: UserDto = dialog_manager.middleware_data[USER_KEY]
-    target_telegram_id = dialog_manager.dialog_data[TARGET_TELEGRAM_ID]
+    target_user_id = dialog_manager.dialog_data[TARGET_USER_ID]
 
     if not message.text or not message.text.isdigit():
         await notifier.notify_user(user, i18n_key="ntf-common.invalid-value")
@@ -334,7 +335,7 @@ async def on_purchase_discount_input(
     try:
         await set_user_purchase_discount(
             user,
-            SetUserPurchaseDiscountDto(target_telegram_id, discount=int(message.text)),
+            SetUserPurchaseDiscountDto(target_user_id, discount=int(message.text)),
         )
         await dialog_manager.switch_to(state=DashboardUser.DISCOUNT)
     except ValueError:
@@ -782,7 +783,7 @@ async def on_email_input(
     try:
         await set_user_email(user, SetUserEmailDto(target_user_id, message.text))
         await notifier.notify_user(user, i18n_key="ntf-user.email-set-success")
-        await dialog_manager.switch_to(state=DashboardUser.MAIN)
+        await dialog_manager.switch_to(state=DashboardUser.EMAIL_OPTIONS)
     except ValueError as e:
         logger.warning(f"{user.log} Failed to set email for '{target_user_id}': {e}")
         err = str(e)
@@ -808,7 +809,7 @@ async def on_email_clear(
     try:
         await set_user_email(user, SetUserEmailDto(target_user_id, None))
         await notifier.notify_user(user, i18n_key="ntf-user.email-cleared")
-        await dialog_manager.switch_to(state=DashboardUser.MAIN)
+        await dialog_manager.switch_to(state=DashboardUser.EMAIL_OPTIONS)
     except ValueError as e:
         logger.warning(f"{user.log} Failed to clear email for '{target_user_id}': {e}")
         if "no telegram_id" in str(e):
@@ -873,3 +874,98 @@ async def on_send_email_connect(
     except Exception as e:
         logger.error(f"{user.log} Failed to send connect email to user '{target_user_id}': {e}")
         await notifier.notify_user(user, i18n_key="ntf-user.email-connect-failed")
+
+
+@inject
+async def on_email_custom_input(
+    message: Message,
+    widget: MessageInput,
+    dialog_manager: DialogManager,
+    notifier: FromDishka[Notifier],
+) -> None:
+    dialog_manager.show_mode = ShowMode.EDIT
+    user: UserDto = dialog_manager.middleware_data[USER_KEY]
+
+    if not message.html_text:
+        await notifier.notify_user(user, i18n_key="ntf-common.invalid-value")
+        return
+
+    if len(message.html_text) > 4096:
+        await notifier.notify_user(
+            user,
+            payload=MessagePayloadDto(
+                i18n_key="ntf-broadcast.text-too-long",
+                i18n_kwargs={"max_limit": 4096},
+            ),
+        )
+        return
+
+    dialog_manager.dialog_data["email_custom_body"] = html.unescape(message.html_text)
+    await notifier.notify_user(user, i18n_key="ntf-broadcast.content-saved")
+
+
+@inject
+async def on_email_custom_preview(
+    callback: CallbackQuery,
+    widget: Button,
+    dialog_manager: DialogManager,
+    notifier: FromDishka[Notifier],
+) -> None:
+    user: UserDto = dialog_manager.middleware_data[USER_KEY]
+    body = dialog_manager.dialog_data.get("email_custom_body")
+
+    if not body:
+        await notifier.notify_user(user, i18n_key="ntf-user.email-custom-empty")
+        return
+
+    await notifier.notify_user(
+        user,
+        payload=MessagePayloadDto(
+            i18n_key="ntf-user.email-custom-preview",
+            i18n_kwargs={"body": body},
+            disable_default_markup=False,
+        ),
+    )
+
+
+@inject
+async def on_send_email_custom(
+    callback: CallbackQuery,
+    widget: Button,
+    dialog_manager: DialogManager,
+    user_dao: FromDishka[UserDao],
+    bot_service: FromDishka[BotService],
+    mailer: FromDishka[Mailer],
+    notifier: FromDishka[Notifier],
+) -> None:
+    user: UserDto = dialog_manager.middleware_data[USER_KEY]
+    target_user_id = dialog_manager.dialog_data[TARGET_USER_ID]
+    body = dialog_manager.dialog_data.get("email_custom_body")
+
+    if not body:
+        await notifier.notify_user(user, i18n_key="ntf-user.email-custom-empty")
+        return
+
+    target_user = await user_dao.get_by_id(target_user_id)
+    if not target_user:
+        await notifier.notify_user(user, i18n_key="ntf-user.not-found")
+        return
+
+    if not target_user.email:
+        await notifier.notify_user(user, i18n_key="ntf-user.email-custom-no-email")
+        return
+
+    if not is_double_click(dialog_manager, key="email_custom_confirm", cooldown=5):
+        await notifier.notify_user(user, i18n_key="ntf-common.double-click-confirm")
+        logger.debug(f"{user.log} Awaiting confirmation for custom email to '{target_user_id}'")
+        return
+
+    try:
+        bot_url = await bot_service.get_connect_web_url(target_user.referral_code)
+        await mailer.send_custom_message(target_user, body, bot_url)
+        await notifier.notify_user(user, i18n_key="ntf-user.email-custom-success")
+        dialog_manager.dialog_data.pop("email_custom_body", None)
+        await dialog_manager.switch_to(state=DashboardUser.EMAIL_OPTIONS)
+    except Exception as e:
+        logger.error(f"{user.log} Failed to send custom email to user '{target_user_id}': {e}")
+        await notifier.notify_user(user, i18n_key="ntf-user.email-custom-failed")

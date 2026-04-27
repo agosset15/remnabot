@@ -112,6 +112,25 @@ class SmtpMailerImpl(Mailer):
         )
         await self._dispatch(user.email, msg)
 
+    async def send_custom_message(self, user: UserDto, body: str, bot_url: str) -> None:
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = self._i18n.get("email-custom-message.title")
+        msg.attach(
+            MIMEText(
+                self._i18n.get("email-custom-message.message", body=body, bot_url=bot_url),
+                "plain",
+                "utf-8",
+            )
+        )
+        msg.attach(
+            MIMEText(
+                self._i18n.get("email-custom-message.message-html", body=body, bot_url=bot_url),
+                "html",
+                "utf-8",
+            )
+        )
+        await self._dispatch(user.email, msg)
+
     async def _dispatch(self, email: str, msg: MIMEMultipart) -> None:
         """Offload the blocking SMTP call to a thread executor."""
         msg["From"] = f'"{self._config.sender_name}" <{self._config.sender_email}>'

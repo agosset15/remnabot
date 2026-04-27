@@ -10,6 +10,7 @@ from src.application.common import Interactor, Remnawave
 from src.application.common.dao import SettingsDao, SubscriptionDao, UserDao
 from src.application.common.policy import Permission
 from src.application.dto import SubscriptionDto, UserDto
+from src.application.services import BotService, WebService
 from src.core.config import AppConfig
 from src.core.types import RemnaUserDto
 
@@ -18,6 +19,7 @@ from src.core.types import RemnaUserDto
 class GetUserProfileResultDto:
     target_user: UserDto
     subscription: Optional[SubscriptionDto]
+    web_connect_url: Optional[str]
     show_points: bool
     is_not_self: bool
     can_edit: bool
@@ -28,11 +30,13 @@ class GetUserProfile(Interactor[int, GetUserProfileResultDto]):
 
     def __init__(
         self,
+        bot_service: BotService,
         user_dao: UserDao,
         settings_dao: SettingsDao,
         subscription_dao: SubscriptionDao,
         config: AppConfig,
     ):
+        self.bot_service = bot_service
         self.user_dao = user_dao
         self.settings_dao = settings_dao
         self.subscription_dao = subscription_dao
@@ -47,13 +51,18 @@ class GetUserProfile(Interactor[int, GetUserProfileResultDto]):
         settings = await self.settings_dao.get()
         subscription = await self.subscription_dao.get_current(user_id)
 
+        web_connect_url = None
+        if target_user.has_only_email:
+            web_connect_url = await self.bot_service.get_connect_web_url(target_user.referral_code)
+
         logger.info(f"{actor.log} Viewed details for user '{user_id}'")
 
         return GetUserProfileResultDto(
             target_user=target_user,
             subscription=subscription,
+            web_connect_url=web_connect_url,
             show_points=settings.referral.reward.is_points,
-            is_not_self=target_user.telegram_id != actor.telegram_id,
+            is_not_self=target_user.id != actor.id,
             can_edit=actor.role > target_user.role,
         )
 
