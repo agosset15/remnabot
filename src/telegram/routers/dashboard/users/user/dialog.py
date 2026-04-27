@@ -598,9 +598,9 @@ referrals = Window(
     I18nFormat("msg-user-referrals"),
     ScrollingGroup(
         Select(
-            text=Format("{item[telegram_id]} ({item[name]})"),
+            text=Format("{item[user_id]} ({item[name]})"),
             id="referral_select",
-            item_id_getter=lambda item: item["telegram_id"],
+            item_id_getter=lambda item: item["user_id"],
             items="referrals",
             type_factory=int,
             on_click=on_user_select,

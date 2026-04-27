@@ -405,7 +405,7 @@ async def referrals_getter(
     return {
         "referrals": [
             {
-                "telegram_id": r.referred.telegram_id,
+                "user_id": r.referred.id,
                 "name": r.referred.name,
             }
             for r in referrals
