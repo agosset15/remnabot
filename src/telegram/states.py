@@ -106,6 +106,8 @@ class DashboardUser(StatesGroup):
     GIVE_SUBSCRIPTION = State()
     SUBSCRIPTION_DURATION = State()
     EMAIL = State()
+    EMAIL_OPTIONS = State()
+    EMAIL_CUSTOM = State()
 
 
 class DashboardRemnashop(StatesGroup):

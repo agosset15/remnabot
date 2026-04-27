@@ -44,7 +44,7 @@ class SetUserPersonalDiscount(Interactor[SetUserPersonalDiscountDto, None]):
 
 @dataclass(frozen=True)
 class SetUserPurchaseDiscountDto:
-    telegram_id: int
+    user_id: int
     discount: int
 
 
@@ -60,16 +60,16 @@ class SetUserPurchaseDiscount(Interactor[SetUserPurchaseDiscountDto, None]):
             raise ValueError(f"Invalid discount value '{data.discount}'")
 
         async with self.uow:
-            target_user = await self.user_dao.get_by_telegram_id(data.telegram_id)
+            target_user = await self.user_dao.get_by_id(data.user_id)
             if not target_user:
-                raise ValueError(f"User '{data.telegram_id}' not found")
+                raise ValueError(f"User '{data.user_id}' not found")
 
             target_user.purchase_discount = data.discount
             await self.user_dao.update(target_user)
             await self.uow.commit()
 
         logger.info(
-            f"{actor.log} Set purchase discount to '{data.discount}' for user '{data.telegram_id}'"
+            f"{actor.log} Set purchase discount to '{data.discount}' for user '{data.user_id}'"
         )
 
 
@@ -126,7 +126,7 @@ class ToggleUserTrialAvailable(Interactor[int, None]):
 
     async def _execute(self, actor: UserDto, data: int) -> None:
         async with self.uow:
-            target_user = await self.user_dao.get_by_telegram_id(data)
+            target_user = await self.user_dao.get_by_id(data)
             if not target_user:
                 raise ValueError(f"User '{data}' not found")
 

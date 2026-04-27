@@ -99,6 +99,7 @@ frg-user-details =
         [0] { space }
         *[HAS] (<a href="tg://user?id={ $telegram_id }">@{ $username }</a>)
     }
+    • <b>Реферальный код</b>: <code>{ $referral_code }</code>
     • <b>Роль</b>: { role }
     • <b>Язык</b>: { language }
     • <b>Бот заблокирован</b>: { $is_bot_blocked ->

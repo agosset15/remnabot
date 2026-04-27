@@ -54,16 +54,18 @@ async def user_getter(
         "email": profile.target_user.email or False,
         "username": profile.target_user.username or False,
         "name": profile.target_user.name,
+        "referral_code": profile.target_user.referral_code,
         "role": profile.target_user.role,
         "language": profile.target_user.language,
         "show_points": profile.show_points,
         "points": profile.target_user.points,
         "personal_discount": profile.target_user.personal_discount,
         "purchase_discount": profile.target_user.purchase_discount,
+        "web_connect_url": profile.web_connect_url or False,
         "is_blocked": profile.target_user.is_blocked,
         "is_bot_blocked": profile.target_user.is_bot_blocked,
         "is_trial_available": profile.target_user.is_trial_available,
-        "is_not_self": profile.target_user.telegram_id != user.telegram_id,
+        "is_not_self": profile.is_not_self,
         "can_edit": profile.can_edit,
         "status": None,
         "is_trial": False,
@@ -188,6 +190,42 @@ async def email_getter(
     return {
         "email": target_user.email or False,
         "has_telegram_id": target_user.telegram_id is not None,
+    }
+
+
+@inject
+async def email_options_getter(
+    dialog_manager: DialogManager,
+    user_dao: FromDishka[UserDao],
+    **kwargs: Any,
+) -> dict[str, Any]:
+    target_user_id = dialog_manager.dialog_data[TARGET_USER_ID]
+    target_user = await user_dao.get_by_id(target_user_id)
+
+    if not target_user:
+        raise ValueError(f"User '{target_user_id}' not found")
+
+    return {
+        "email": target_user.email or False,
+        "has_telegram_id": target_user.telegram_id is not None,
+    }
+
+
+@inject
+async def email_custom_getter(
+    dialog_manager: DialogManager,
+    user_dao: FromDishka[UserDao],
+    **kwargs: Any,
+) -> dict[str, Any]:
+    target_user_id = dialog_manager.dialog_data[TARGET_USER_ID]
+    target_user = await user_dao.get_by_id(target_user_id)
+
+    if not target_user:
+        raise ValueError(f"User '{target_user_id}' not found")
+
+    return {
+        "email": target_user.email or False,
+        "has_draft": bool(dialog_manager.dialog_data.get("email_custom_body")),
     }
 
 

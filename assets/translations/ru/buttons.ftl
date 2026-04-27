@@ -118,8 +118,13 @@ btn-user =
     .statistics = 📊 Статистика
     .referrals = 👪 Рефералы
     .message = 📩 Сообщение
+    .email = { $has_email ->
+        [0] ✉️ Почта
+        *[other] ✉️ Почта: { $has_email }
+    }
     .email-purchase = 📧 Письмо: покупка
     .email-connect = 📧 Письмо: подключить Telegram
+    .email-custom = 📨 Письмо: произвольный текст
     .email-set = { $has_email ->
         [0] ✉️ Задать почту
         *[other] ✉️ Изменить почту
