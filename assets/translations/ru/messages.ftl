@@ -550,6 +550,20 @@ msg-user-give-subscription-duration =
 
     Выберите длительность выдаваемой подписки.
 
+msg-user-email =
+    <b>✉️ Почта пользователя</b>
+
+    { $has_email ->
+        [0] <i>Почта не задана.</i>
+        *[other] <b>Текущая почта:</b> <code>{ $has_email }</code>
+    }
+
+    Отправьте новый email сообщением, чтобы задать или изменить.
+    { $has_telegram_id ->
+        [0] { empty }
+        *[other] Также можно удалить почту кнопкой ниже.
+    }
+
 msg-user-discount =
     <b>💸 Изменить скидку</b>
 

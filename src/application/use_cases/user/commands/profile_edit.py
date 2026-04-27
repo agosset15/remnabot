@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Optional
 
 from loguru import logger
 
@@ -7,6 +8,7 @@ from src.application.common.dao import UserDao
 from src.application.common.policy import Permission
 from src.application.common.uow import UnitOfWork
 from src.application.dto import UserDto
+from src.core.utils.validators import is_valid_email
 
 
 @dataclass(frozen=True)
@@ -69,6 +71,50 @@ class SetUserPurchaseDiscount(Interactor[SetUserPurchaseDiscountDto, None]):
         logger.info(
             f"{actor.log} Set purchase discount to '{data.discount}' for user '{data.telegram_id}'"
         )
+
+
+@dataclass(frozen=True)
+class SetUserEmailDto:
+    user_id: int
+    email: Optional[str]
+
+
+class SetUserEmail(Interactor[SetUserEmailDto, None]):
+    required_permission = Permission.USER_EDITOR
+
+    def __init__(self, uow: UnitOfWork, user_dao: UserDao):
+        self.uow = uow
+        self.user_dao = user_dao
+
+    async def _execute(self, actor: UserDto, data: SetUserEmailDto) -> None:
+        normalized: Optional[str] = None
+        if data.email is not None:
+            normalized = data.email.strip().lower()
+            if not normalized:
+                normalized = None
+            elif not is_valid_email(normalized):
+                raise ValueError(f"Invalid email '{data.email}'")
+
+        async with self.uow:
+            target_user = await self.user_dao.get_by_id(data.user_id)
+            if not target_user:
+                raise ValueError(f"User '{data.user_id}' not found")
+
+            if normalized is None and target_user.telegram_id is None:
+                raise ValueError(
+                    f"User '{data.user_id}' has no telegram_id; email cannot be cleared"
+                )
+
+            if normalized is not None and normalized != target_user.email:
+                existing = await self.user_dao.get_by_email(normalized)
+                if existing and existing.id != target_user.id:
+                    raise ValueError(f"Email '{normalized}' already used")
+
+            target_user.email = normalized
+            await self.user_dao.update(target_user)
+            await self.uow.commit()
+
+        logger.info(f"{actor.log} Set email to '{normalized}' for user '{data.user_id}'")
 
 
 class ToggleUserTrialAvailable(Interactor[int, None]):

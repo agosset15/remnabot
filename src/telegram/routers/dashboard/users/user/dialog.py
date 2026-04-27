@@ -27,6 +27,7 @@ from .getters import (
     device_limit_getter,
     devices_getter,
     discount_getter,
+    email_getter,
     expire_time_getter,
     external_squads_getter,
     give_access_getter,
@@ -50,6 +51,8 @@ from .handlers import (
     on_block_toggle,
     on_current_subscription,
     on_device_delete,
+    on_email_clear,
+    on_email_input,
     on_device_limit_input,
     on_device_limit_select,
     on_devices,
@@ -145,6 +148,13 @@ user = Window(
             on_click=on_send_email_connect,
         ),
         when=F["email"],
+    ),
+    Row(
+        SwitchTo(
+            text=I18nFormat("btn-user.email-set", has_email=F["email"]),
+            id="email_set",
+            state=DashboardUser.EMAIL,
+        ),
     ),
     Row(
         SwitchTo(
@@ -852,6 +862,30 @@ role = Window(
     getter=role_getter,
 )
 
+email = Window(
+    Banner(BannerName.DASHBOARD),
+    I18nFormat("msg-user-email", has_email=F["email"], has_telegram_id=F["has_telegram_id"]),
+    Row(
+        Button(
+            text=I18nFormat("btn-user.email-clear"),
+            id="email_clear",
+            on_click=on_email_clear,
+            when=F["email"] & F["has_telegram_id"],
+        ),
+    ),
+    Row(
+        SwitchTo(
+            text=I18nFormat("btn-back.general"),
+            id="back",
+            state=DashboardUser.MAIN,
+        ),
+    ),
+    MessageInput(func=on_email_input),
+    IgnoreUpdate(),
+    state=DashboardUser.EMAIL,
+    getter=email_getter,
+)
+
 router = Dialog(
     user,
     subscription,
@@ -877,4 +911,5 @@ router = Dialog(
     points,
     give_access,
     role,
+    email,
 )

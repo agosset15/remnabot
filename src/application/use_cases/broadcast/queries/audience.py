@@ -89,5 +89,12 @@ class GetBroadcastAudienceUsers(Interactor[GetBroadcastAudienceUsersDto, list[Us
             logger.error(f"{actor.log} Received unknown broadcast audience '{audience}'")
             raise ValueError(f"Unknown broadcast audience '{audience}'")
 
+        skipped_no_tg = sum(1 for u in users if u.telegram_id is None)
+        if skipped_no_tg:
+            logger.info(
+                f"Skipping '{skipped_no_tg}' users without telegram_id"
+            )
+            users = [u for u in users if u.telegram_id is not None]
+
         logger.info(f"{actor.log} Retrieved '{len(users)}' users for audience '{audience}'")
         return users

@@ -55,6 +55,8 @@ from src.application.use_cases.user.commands.messaging import (
 from src.application.use_cases.user.commands.profile_edit import (
     ChangeUserPoints,
     ChangeUserPointsDto,
+    SetUserEmail,
+    SetUserEmailDto,
     SetUserPersonalDiscount,
     SetUserPersonalDiscountDto,
     SetUserPurchaseDiscount,
@@ -759,6 +761,60 @@ async def on_subscription_duration_select(
         SetUserSubscriptionDto(target_user_id, plan_id, selected_duration),
     )
     await dialog_manager.switch_to(state=DashboardUser.MAIN)
+
+
+@inject
+async def on_email_input(
+    message: Message,
+    widget: MessageInput,
+    dialog_manager: DialogManager,
+    notifier: FromDishka[Notifier],
+    set_user_email: FromDishka[SetUserEmail],
+) -> None:
+    dialog_manager.show_mode = ShowMode.EDIT
+    user: UserDto = dialog_manager.middleware_data[USER_KEY]
+    target_user_id = dialog_manager.dialog_data[TARGET_USER_ID]
+
+    if not message.text:
+        await notifier.notify_user(user, i18n_key="ntf-common.invalid-value")
+        return
+
+    try:
+        await set_user_email(user, SetUserEmailDto(target_user_id, message.text))
+        await notifier.notify_user(user, i18n_key="ntf-user.email-set-success")
+        await dialog_manager.switch_to(state=DashboardUser.MAIN)
+    except ValueError as e:
+        logger.warning(f"{user.log} Failed to set email for '{target_user_id}': {e}")
+        err = str(e)
+        if "already used" in err:
+            await notifier.notify_user(user, i18n_key="ntf-user.email-duplicate")
+        elif "no telegram_id" in err:
+            await notifier.notify_user(user, i18n_key="ntf-user.email-required")
+        else:
+            await notifier.notify_user(user, i18n_key="ntf-common.invalid-value")
+
+
+@inject
+async def on_email_clear(
+    callback: CallbackQuery,
+    widget: Button,
+    dialog_manager: DialogManager,
+    notifier: FromDishka[Notifier],
+    set_user_email: FromDishka[SetUserEmail],
+) -> None:
+    user: UserDto = dialog_manager.middleware_data[USER_KEY]
+    target_user_id = dialog_manager.dialog_data[TARGET_USER_ID]
+
+    try:
+        await set_user_email(user, SetUserEmailDto(target_user_id, None))
+        await notifier.notify_user(user, i18n_key="ntf-user.email-cleared")
+        await dialog_manager.switch_to(state=DashboardUser.MAIN)
+    except ValueError as e:
+        logger.warning(f"{user.log} Failed to clear email for '{target_user_id}': {e}")
+        if "no telegram_id" in str(e):
+            await notifier.notify_user(user, i18n_key="ntf-user.email-required")
+        else:
+            await notifier.notify_user(user, i18n_key="ntf-common.invalid-value")
 
 
 @inject

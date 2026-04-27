@@ -120,6 +120,11 @@ btn-user =
     .message = 📩 Сообщение
     .email-purchase = 📧 Письмо: покупка
     .email-connect = 📧 Письмо: подключить Telegram
+    .email-set = { $has_email ->
+        [0] ✉️ Задать почту
+        *[other] ✉️ Изменить почту
+    }
+    .email-clear = 🗑 Удалить почту
     .role = 👮‍♂️ Роль
     .transactions = 🧾 Транзакции
     .give-access = 🔑 Доступ к планам
