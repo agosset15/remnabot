@@ -118,6 +118,7 @@ btn-user =
     .statistics = 📊 Статистика
     .referrals = 👪 Рефералы
     .message = 📩 Сообщение
+    .connect_web_copy = 🔗 Connect WEB
     .email = { $has_email ->
         [0] ✉️ Почта
         *[other] ✉️ Почта: { $has_email }
