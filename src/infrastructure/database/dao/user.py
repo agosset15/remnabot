@@ -93,7 +93,7 @@ class UserDaoImpl(UserDao):
         conditions = []
 
         if telegram_id is not None:
-            conditions.append(User.telegram_id == telegram_id)
+            conditions.append(User.telegram_id == int(telegram_id))
         if email is not None:
             conditions.append(User.email == email)
 
