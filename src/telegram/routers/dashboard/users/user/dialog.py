@@ -143,7 +143,7 @@ user = Window(
     ),
     Row(
         SwitchTo(
-            text=I18nFormat("btn-user.email", has_email=F["email"]),
+            text=I18nFormat("btn-user.email"),
             id="email_menu",
             state=DashboardUser.EMAIL_OPTIONS,
         ),
@@ -859,9 +859,9 @@ role = Window(
     getter=role_getter,
 )
 
-email = Window(
+email_set = Window(
     Banner(BannerName.DASHBOARD),
-    I18nFormat("msg-user-email", has_email=F["email"]),
+    I18nFormat("msg-user-email-set", email=F["email"]),
     Row(
         SwitchTo(
             text=I18nFormat("btn-back.general"),
@@ -871,13 +871,13 @@ email = Window(
     ),
     MessageInput(func=on_email_input),
     IgnoreUpdate(),
-    state=DashboardUser.EMAIL,
+    state=DashboardUser.EMAIL_SET,
     getter=email_getter,
 )
 
 email_options = Window(
     Banner(BannerName.DASHBOARD),
-    I18nFormat("msg-user-email-options", has_email=F["email"]),
+    I18nFormat("msg-user-email-options", email=F["email"]),
     Row(
         Button(
             text=I18nFormat("btn-user.email-purchase"),
@@ -903,7 +903,7 @@ email_options = Window(
         SwitchTo(
             text=I18nFormat("btn-user.email-set", has_email=F["email"]),
             id="email_set",
-            state=DashboardUser.EMAIL,
+            state=DashboardUser.EMAIL_SET,
         ),
         Button(
             text=I18nFormat("btn-user.email-clear"),
@@ -926,7 +926,7 @@ email_options = Window(
 
 email_custom = Window(
     Banner(BannerName.DASHBOARD),
-    I18nFormat("msg-user-email-custom", has_email=F["email"]),
+    I18nFormat("msg-user-email-custom", email=F["email"]),
     Row(
         Button(
             text=I18nFormat("btn-user.message-preview"),
@@ -979,7 +979,7 @@ router = Dialog(
     points,
     give_access,
     role,
-    email,
+    email_set,
     email_options,
     email_custom,
 )

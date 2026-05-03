@@ -156,7 +156,7 @@ async def checkout(
     payment = await gateway_instance.handle_create_payment(
         amount=pricing.final_amount,
         details=f"{plan.name} - {body.duration_days} days (u{user.id})",
-        return_url=body.return_url,
+        return_url=f"{body.return_url}?uid={user.referral_code}",
     )
 
     transaction = TransactionDto(
@@ -187,7 +187,6 @@ async def get_payment_status(
     user_dao: FromDishka[UserDao],
     subscription_dao: FromDishka[SubscriptionDao],
     bot_service: FromDishka[BotService],
-    cryptographer: FromDishka[Cryptographer],
 ) -> PaymentStatusResponse:
     try:
         pid = uuid.UUID(payment_id)

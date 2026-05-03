@@ -313,7 +313,7 @@ email-custom-message =
         <table class="card" width="560" style="max-width:560px;width:100%;background:#fff;border:1px solid #DDE6F4;border-radius:16px;">
         <tr><td class="hd" align="center" style="background:#EFF6FF;border-bottom:1px solid #DBEAFE;padding:40px 32px 32px;border-radius:16px 16px 0 0;">
         <p style="margin:0 0 16px;"><span style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:100px;padding:4px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#3B6FD4;">&#9993; Сообщение</span></p>
-        <h1 style="margin:0 0 12px;font-size:26px;font-weight:800;color:#1e2a4a;line-height:1.25;">У нас для вас<br><span style="color:#3B6FD4;">важная новость</span></h1>
+        <h1 style="margin:0 0 12px;font-size:26px;font-weight:800;color:#1e2a4a;line-height:1.25;">У нас для вас<br><span style="color:#3B6FD4;">важное сообщение</span></h1>
         </td></tr>
         <tr><td class="body" style="padding:28px 32px;font-size:15px;color:#1e2a4a;line-height:1.6;">
           { $body }

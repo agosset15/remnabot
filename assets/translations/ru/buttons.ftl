@@ -119,10 +119,7 @@ btn-user =
     .referrals = 👪 Рефералы
     .message = 📩 Сообщение
     .connect_web_copy = 🔗 Connect WEB
-    .email = { $has_email ->
-        [0] ✉️ Почта
-        *[other] ✉️ Почта: { $has_email }
-    }
+    .email = ✉️ Почта
     .email-purchase = 📧 Письмо: покупка
     .email-connect = 📧 Письмо: подключить Telegram
     .email-custom = 📨 Письмо: произвольный текст

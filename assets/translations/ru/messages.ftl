@@ -550,12 +550,12 @@ msg-user-give-subscription-duration =
 
     Выберите длительность выдаваемой подписки.
 
-msg-user-email =
+msg-user-email-set =
     <b>✉️ Почта пользователя</b>
 
     { $has_email ->
         [0] <i>Почта не задана.</i>
-        *[other] <b>Текущая почта:</b> <code>{ $has_email }</code>
+        *[other] <b>Текущая почта:</b> <code>{ $email }</code>
     }
 
     Отправьте новый email сообщением, чтобы задать или изменить.
@@ -563,9 +563,9 @@ msg-user-email =
 msg-user-email-options =
     <b>✉️ Почта пользователя</b>
 
-    { $has_email ->
+    { $email ->
         [0] <i>Почта не задана. Задайте её, чтобы получить доступ к отправке писем.</i>
-        *[other] <b>Текущая почта:</b> <code>{ $has_email }</code>
+        *[other] <b>Текущая почта:</b> <code>{ $email }</code>
     }
 
     Выберите действие.
@@ -573,7 +573,7 @@ msg-user-email-options =
 msg-user-email-custom =
     <b>📨 Произвольное письмо</b>
 
-    Получатель: <code>{ $has_email }</code>
+    Получатель: <code>{ $email }</code>
 
     Отправьте текстом или HTML-сообщением содержимое письма (поддерживается HTML, до 4096 символов). Текст разместится в центре письма, ниже добавится кнопка перехода в Telegram-бота.
 
