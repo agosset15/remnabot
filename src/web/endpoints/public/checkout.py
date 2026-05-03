@@ -19,6 +19,7 @@ from src.application.dto.plan import PlanSnapshotDto
 from src.application.dto.transaction import PriceDetailsDto, TransactionDto
 from src.application.services.bot import BotService
 from src.application.use_cases.gateways.queries.providers import GetPaymentGatewayInstance
+from src.application.use_cases.plan.queries.match import MatchPlan, MatchPlanDto
 from src.application.use_cases.user.commands.registration import (
     GetOrCreateWebUser,
     GetOrCreateWebUserDto,
@@ -71,9 +72,11 @@ async def checkout(
     plan_dao: FromDishka[PlanDao],
     gateway_dao: FromDishka[PaymentGatewayDao],
     transaction_dao: FromDishka[TransactionDao],
+    subscription_dao: FromDishka[SubscriptionDao],
     uow: FromDishka[UnitOfWork],
     get_or_create_user: FromDishka[GetOrCreateWebUser],
     get_payment_gateway_instance: FromDishka[GetPaymentGatewayInstance],
+    match_plan: FromDishka[MatchPlan],
     config: FromDishka[AppConfig],
 ) -> CheckoutResponse:
     _validate_return_url(body.return_url, config.origins)
@@ -100,7 +103,7 @@ async def checkout(
             status_code=400, detail=f"Payment gateway '{gateway_type}' is not available"
         )
 
-    price = next((p.price for p in duration.prices if p.currency == gateway.currency), None)
+    price = duration.get_price(gateway.currency)
     if price is None:
         raise HTTPException(
             status_code=400,
@@ -110,6 +113,18 @@ async def checkout(
     user = await get_or_create_user.system(
         GetOrCreateWebUserDto(email=str(body.email), referral_code=body.referral_code)
     )
+
+    current_subscription = await subscription_dao.get_current(user.id)  # ty: ignore[invalid-argument-type]
+    if current_subscription:
+        matched_plan = await match_plan.system(
+            MatchPlanDto(plan_snapshot=current_subscription.plan_snapshot, plans=[plan])
+        )
+        if matched_plan and not current_subscription.is_unlimited:
+            purchase_type = PurchaseType.RENEW
+        else:
+            purchase_type = PurchaseType.CHANGE
+    else:
+        purchase_type = PurchaseType.NEW
 
     plan_snapshot = PlanSnapshotDto.from_plan(plan, body.duration_days)
     pricing = PriceDetailsDto(
@@ -126,7 +141,7 @@ async def checkout(
             payment_id=payment_id,
             user_id=user.id,  # ty: ignore[invalid-argument-type]
             status=TransactionStatus.PENDING,
-            purchase_type=PurchaseType.NEW,
+            purchase_type=purchase_type,
             gateway_type=gateway_type,
             pricing=pricing,
             currency=gateway.currency,
@@ -135,19 +150,20 @@ async def checkout(
         async with uow:
             await transaction_dao.create(transaction)
             await uow.commit()
+        # TODO: add subscription for free
         return CheckoutResponse(payment_url=None, payment_id=str(payment_id))
 
     payment = await gateway_instance.handle_create_payment(
         amount=pricing.final_amount,
-        details=f"{plan.name} - {body.duration_days} days",
-        return_url=body.return_url,
+        details=f"{plan.name} - {body.duration_days} days (u{user.id})",
+        return_url=f"{body.return_url}?uid={user.referral_code}",
     )
 
     transaction = TransactionDto(
         payment_id=payment.id,
         user_id=user.id,  # ty: ignore[invalid-argument-type]
         status=TransactionStatus.PENDING,
-        purchase_type=PurchaseType.NEW,
+        purchase_type=purchase_type,
         gateway_type=gateway_type,
         pricing=pricing,
         currency=gateway.currency,
@@ -171,7 +187,6 @@ async def get_payment_status(
     user_dao: FromDishka[UserDao],
     subscription_dao: FromDishka[SubscriptionDao],
     bot_service: FromDishka[BotService],
-    cryptographer: FromDishka[Cryptographer],
 ) -> PaymentStatusResponse:
     try:
         pid = uuid.UUID(payment_id)

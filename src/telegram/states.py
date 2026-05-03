@@ -105,7 +105,7 @@ class DashboardUser(StatesGroup):
     SYNC_WAITING = State()
     GIVE_SUBSCRIPTION = State()
     SUBSCRIPTION_DURATION = State()
-    EMAIL = State()
+    EMAIL_SET = State()
     EMAIL_OPTIONS = State()
     EMAIL_CUSTOM = State()
 
