@@ -124,11 +124,11 @@ class ToggleLteSquad(Interactor[RemnaUserDto, None]):
         internal_squads = {s.uuid for s in data.active_internal_squads}
         lte_squad_uuid = self.config.remnawave.lte_squad_uuid
 
-        if lte_squad_uuid in internal_squads and data.status == SubscriptionStatus.LIMITED:
+        if data.status == SubscriptionStatus.LIMITED and lte_squad_uuid in internal_squads:
             internal_squads.discard(lte_squad_uuid)
-            await self.remnawave.reset_traffic(data.uuid)
-        elif data.status == SubscriptionStatus.ACTIVE:
+            await self.remnawave.update_user_internal_squads(data.uuid, list(internal_squads))
+            logger.info(f"Excluded user '{data.uuid}' from LTE squad")
+        elif data.status == SubscriptionStatus.ACTIVE and lte_squad_uuid not in internal_squads:
             internal_squads.add(lte_squad_uuid)
-
-        await self.remnawave.update_user_internal_squads(data.uuid, list(internal_squads))
-        logger.info(f"Toggled LTE squad for user '{data.uuid}'")
+            await self.remnawave.update_user_internal_squads(data.uuid, list(internal_squads))
+            logger.info(f"Returned user '{data.uuid}' to LTE squad")
