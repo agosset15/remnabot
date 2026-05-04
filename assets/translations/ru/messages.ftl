@@ -553,7 +553,7 @@ msg-user-give-subscription-duration =
 msg-user-email-set =
     <b>✉️ Почта пользователя</b>
 
-    { $has_email ->
+    { $email ->
         [0] <i>Почта не задана.</i>
         *[other] <b>Текущая почта:</b> <code>{ $email }</code>
     }
