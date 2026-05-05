@@ -20,7 +20,7 @@ from src.core.constants import INLINE_QUERY_INVITE, PAYMENT_PREFIX
 from src.core.enums import BannerName
 from src.telegram.keyboards import connect_buttons, custom_buttons
 from src.telegram.routers.dashboard.users.handlers import on_user_search
-from src.telegram.states import Dashboard, MainMenu, Subscription
+from src.telegram.states import Dashboard, MainMenu, Profile, Subscription
 from src.telegram.utils import require_permission
 from src.telegram.widgets import Banner, I18nFormat, IgnoreUpdate
 from src.telegram.window import Window
@@ -99,6 +99,13 @@ menu = Window(
             text=I18nFormat("btn-menu.support"),
             id="support",
             url=Format("{support_url}"),
+        ),
+    ),
+    Row(
+        Start(
+            text=I18nFormat("btn-menu.profile"),
+            id="profile",
+            state=Profile.MAIN,
         ),
     ),
     *custom_buttons,

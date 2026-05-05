@@ -49,3 +49,21 @@ class TrialError(Exception): ...
 
 
 class MenuEditorInvalidPayloadError(Exception): ...
+
+
+class OtpError(Exception): ...
+
+
+class OtpCooldownError(OtpError):
+    def __init__(self, seconds: int) -> None:
+        self.seconds = seconds
+        super().__init__(f"OTP cooldown: {seconds} seconds remaining")
+
+
+class OtpSendError(OtpError): ...
+
+
+class OtpExpiredError(OtpError): ...
+
+
+class OtpInvalidError(OtpError): ...

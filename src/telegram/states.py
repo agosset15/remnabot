@@ -13,6 +13,12 @@ class MainMenu(StatesGroup):
     INVITE_ABOUT = State()
 
 
+class Profile(StatesGroup):
+    MAIN = State()
+    EMAIL_INPUT = State()
+    EMAIL_OTP = State()
+
+
 class Notification(StatesGroup):
     CLOSE = State()
 

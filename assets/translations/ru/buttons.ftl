@@ -46,14 +46,22 @@ btn-menu =
     .subscription = 💳 Подписка
     .invite = 👥 Пригласить
     .support = 🆘 Поддержка
+    .profile = 👤 Профиль
     .dashboard = 🛠 Панель управления
 
     .connect-not-available =
-    ⚠️ { $status -> 
+    ⚠️ { $status ->
     [LIMITED] ПРЕВЫШЕН ЛИМИТ ТРАФИКА
     [EXPIRED] СРОК ДЕЙСТВИЯ ИСТЕК
     *[OTHER] ВАША ПОДПИСКА НЕ РАБОТАЕТ
     } ⚠️
+
+btn-profile =
+    .email-set = { $email_set ->
+        [0] ✉️ Добавить почту
+        *[other] ✉️ Изменить почту
+    }
+    .otp-resend = 🔁 Отправить код повторно
 
 btn-invite =
     .about = ❓ Подробнее о награде

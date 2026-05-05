@@ -1,5 +1,4 @@
 import json
-import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Annotated, Optional
 
@@ -12,16 +11,25 @@ from redis.asyncio import Redis
 
 from src.application.common.cryptography import Cryptographer
 from src.application.common.dao import UserDao
-from src.application.common.mailer import Mailer
 from src.application.dto import UserDto
+from src.application.use_cases.user.commands.email_otp import (
+    RequestEmailOtp,
+    RequestEmailOtpDto,
+    VerifyEmailOtp,
+    VerifyEmailOtpDto,
+)
 from src.application.use_cases.user.commands.registration import (
     GetOrCreateTelegramUser,
     GetOrCreateTelegramUserDto,
 )
 from src.core.config import AppConfig
 from src.core.enums import JwtTyp, Locale, Role
-from src.infrastructure.redis.key_builder import serialize_storage_key
-from src.infrastructure.redis.keys import EmailOtpKey
+from src.core.exceptions import (
+    OtpCooldownError,
+    OtpExpiredError,
+    OtpInvalidError,
+    OtpSendError,
+)
 from src.web.dependencies.auth import get_current_user
 
 router = APIRouter()
@@ -29,9 +37,6 @@ router = APIRouter()
 JWKS_URL = "https://oauth.telegram.org/.well-known/jwks.json"
 JWKS_CACHE_KEY = "telegram:jwks"
 JWKS_CACHE_TTL = 3600
-
-OTP_TTL = 600  # seconds — how long a code is valid
-OTP_RESEND_COOLDOWN = 60  # seconds — minimum gap between re-sends
 
 
 class UserResponse(BaseModel):
@@ -184,17 +189,11 @@ class EmailOtpVerifyRequest(BaseModel):
     code: str
 
 
-def _generate_otp() -> str:
-    """Return a cryptographically random 6-digit string."""
-    return f"{secrets.randbelow(1_000_000):06d}"
-
-
 @router.post("/email/request-otp")
 @inject
 async def request_email_otp(
     body: EmailOtpRequest,
-    mailer: FromDishka[Mailer],
-    redis: FromDishka[Redis],
+    request_otp: FromDishka[RequestEmailOtp],
 ) -> dict:
     """
     Send a one-time password to the provided email address.
@@ -202,25 +201,14 @@ async def request_email_otp(
     Rate-limited: a new code can only be requested once every
     ``OTP_RESEND_COOLDOWN`` seconds.
     """
-    email = str(body.email).lower()
-    otp_key = serialize_storage_key(EmailOtpKey(email=email))
-
-    remaining_ttl = await redis.ttl(otp_key)
-    if remaining_ttl > OTP_TTL - OTP_RESEND_COOLDOWN:
-        wait = remaining_ttl - (OTP_TTL - OTP_RESEND_COOLDOWN)
+    try:
+        await request_otp.system(RequestEmailOtpDto(email=str(body.email)))
+    except OtpCooldownError as exc:
         raise HTTPException(
             status_code=429,
-            detail=f"Please wait {wait} seconds before requesting another code",
+            detail=f"Please wait {exc.seconds} seconds before requesting another code",
         )
-
-    code = _generate_otp()
-    await redis.setex(otp_key, OTP_TTL, code)
-
-    try:
-        await mailer.send_otp(email, code)
-    except Exception:
-        # Remove the stored code so the user can retry immediately
-        await redis.delete(otp_key)
+    except OtpSendError:
         raise HTTPException(status_code=502, detail="Failed to send verification email")
 
     return {"ok": True}
@@ -231,10 +219,10 @@ async def request_email_otp(
 async def verify_email_otp(
     body: EmailOtpVerifyRequest,
     response: Response,
+    verify_otp: FromDishka[VerifyEmailOtp],
     user_dao: FromDishka[UserDao],
     config: FromDishka[AppConfig],
     cryptographer: FromDishka[Cryptographer],
-    redis: FromDishka[Redis],
 ) -> AuthResponse:
     """
     Verify a one-time password and issue a session cookie.
@@ -242,17 +230,13 @@ async def verify_email_otp(
     Creates the user account on first login if one does not yet exist.
     """
     email = str(body.email).lower()
-    otp_key = serialize_storage_key(EmailOtpKey(email=email))
 
-    stored_code: Optional[bytes] = await redis.get(otp_key)
-    if stored_code is None:
+    try:
+        await verify_otp.system(VerifyEmailOtpDto(email=email, code=body.code))
+    except OtpExpiredError:
         raise HTTPException(status_code=400, detail="No active verification code for this email")
-
-    if stored_code.decode() != body.code.strip():
+    except OtpInvalidError:
         raise HTTPException(status_code=400, detail="Invalid verification code")
-
-    # Invalidate the OTP immediately after a successful check
-    await redis.delete(otp_key)
 
     user = await user_dao.get_by_email(email)
 

@@ -1,6 +1,7 @@
-from . import dialog, handlers
+from . import dialog, handlers, profile
 
 __all__ = [
     "dialog",
     "handlers",
+    "profile",
 ]
