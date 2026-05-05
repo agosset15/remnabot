@@ -41,8 +41,8 @@ class SendMessageToUser(Interactor[SendMessageToUserDto, bool]):
         message = await self.notifier.notify_user(user=target_user, payload=data.payload)
 
         if message:
-            logger.info(f"{actor.log} Sent message to user '{data.telegram_id}'")
+            logger.info(f"{actor.log} Sent message to user '{data.user_id}'")
             return True
 
-        logger.warning(f"{actor.log} Failed to send message to user '{data.telegram_id}'")
+        logger.warning(f"{actor.log} Failed to send message to user '{data.user_id}'")
         return False
