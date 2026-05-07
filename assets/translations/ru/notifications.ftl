@@ -199,22 +199,46 @@ email-otp =
         <p>The code is valid for <strong>10 minutes</strong>. Do not share it with anyone.</p>
 
 email-success-purchase =
-    .title = Покупка успешно завершена
+    .title = { $purchase_type ->
+        [RENEW] Подписка успешно продлена
+        [CHANGE] Тариф успешно изменён
+       *[NEW] Покупка успешно завершена
+        }
     .message =
-        Ваш заказ успешно оформлен.
+        { $purchase_type ->
+            [RENEW] Ваша подписка успешно продлена.
+            [CHANGE] Ваш тариф успешно изменён.
+           *[NEW] Ваш заказ успешно оформлен.
+        }
         Ссылка для подключения: { $subscription_url }
         Переходите в telegram-бота, для управления подпиской: { $bot_url }
         Спасибо за то что вы выбераете нас!
 
     .message-html =
         { hdr-email-html }
-        <div style="display:none;">Ваша подписка KAGO VPN активирована. Подключитесь за 2 шага.</div>
+        <div style="display:none;">{ $purchase_type ->
+            [RENEW] Ваша подписка KAGO VPN продлена. Можно продолжать пользоваться сервисом.
+            [CHANGE] Ваш тариф KAGO VPN обновлён. Подключитесь, чтобы применить изменения.
+           *[NEW] Ваша подписка KAGO VPN активирована. Подключитесь за 2 шага.
+        }</div>
         <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" class="wrap" style="padding:36px 16px;">
         <table class="card" width="560" style="max-width:560px;width:100%;background:#fff;border:1px solid #DDE6F4;border-radius:16px;">
         <tr><td class="hd" align="center" style="background:#EFF6FF;border-bottom:1px solid #DBEAFE;padding:40px 32px 32px;border-radius:16px 16px 0 0;">
-        <p style="margin:0 0 16px;"><span style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:100px;padding:4px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#16A34A;">&#9679; Подписка активна</span></p>
-        <h1 style="margin:0 0 12px;font-size:26px;font-weight:800;color:#1e2a4a;line-height:1.25;">Добро пожаловать,<br><span style="color:#3B6FD4;">вы защищены!</span></h1>
-        <p style="margin:0;font-size:14px;color:#64748B;line-height:1.6;">Ваша подписка успешно оформлена. Выполните два шага, чтобы начать.</p>
+        <p style="margin:0 0 16px;"><span style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:100px;padding:4px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#16A34A;">&#9679; { $purchase_type ->
+            [RENEW] Подписка продлена
+            [CHANGE] Тариф изменён
+           *[NEW] Подписка активна
+        }</span></p>
+        <h1 style="margin:0 0 12px;font-size:26px;font-weight:800;color:#1e2a4a;line-height:1.25;">{ $purchase_type ->
+            [RENEW] С возвращением,<br><span style="color:#3B6FD4;">подписка продлена!</span>
+            [CHANGE] Тариф обновлён,<br><span style="color:#3B6FD4;">всё готово!</span>
+           *[NEW] Добро пожаловать,<br><span style="color:#3B6FD4;">вы защищены!</span>
+        }</h1>
+        <p style="margin:0;font-size:14px;color:#64748B;line-height:1.6;">{ $purchase_type ->
+            [RENEW] Ваша подписка успешно продлена. Можно продолжать пользоваться сервисом.
+            [CHANGE] Ваш тариф успешно изменён. Подключитесь заново, чтобы применить изменения.
+           *[NEW] Ваша подписка успешно оформлена. Выполните два шага, чтобы начать.
+        }</p>
         </td></tr>
         <tr><td class="body" style="padding:28px 32px;">
         <p style="margin:0 0 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#94A3B8;">Что нужно сделать</p>

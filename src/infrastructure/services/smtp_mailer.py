@@ -10,6 +10,7 @@ from src.application.common.mailer import Mailer
 from src.application.dto import SubscriptionDto, UserDto
 from src.application.services import BotService
 from src.core.config import AppConfig
+from src.core.enums import PurchaseType
 from src.core.utils.i18n_helpers import i18n_format_device_limit
 
 
@@ -40,17 +41,27 @@ class SmtpMailerImpl(Mailer):
         msg.attach(MIMEText(self._i18n.get("email-otp.message-html", code=code), "html", "utf-8"))
         await self._dispatch(email, msg)
 
-    async def send_success_purchase(self, user: UserDto, subscription: SubscriptionDto) -> None:
+    async def send_success_purchase(
+        self,
+        user: UserDto,
+        subscription: SubscriptionDto,
+        purchase_type: PurchaseType,
+    ) -> None:
         bot_url = await self._bot_service.get_connect_web_url(user.referral_code)
+        purchase_type_value = purchase_type.value
 
         msg = MIMEMultipart("alternative")
-        msg["Subject"] = self._i18n.get("email-success-purchase.title")
+        msg["Subject"] = self._i18n.get(
+            "email-success-purchase.title",
+            purchase_type=purchase_type_value,
+        )
         msg.attach(
             MIMEText(
                 self._i18n.get(
                     "email-success-purchase.message",
                     subscription_url=subscription.url,
                     bot_url=bot_url,
+                    purchase_type=purchase_type_value,
                 ),
                 "plain",
                 "utf-8",
@@ -65,6 +76,7 @@ class SmtpMailerImpl(Mailer):
                     expire_date=subscription.expire_at.strftime("%d.%m.%Y"),
                     devices=i18n_format_device_limit(subscription.device_limit),
                     plan_name=subscription.plan_snapshot.name,
+                    purchase_type=purchase_type_value,
                 ),
                 "html",
                 "utf-8",
