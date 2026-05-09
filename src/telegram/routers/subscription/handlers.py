@@ -35,8 +35,8 @@ class CachedPaymentData(TypedDict):
     final_pricing: str
 
 
-def _get_cache_key(duration: int, gateway_type: PaymentGatewayType) -> str:
-    return f"{duration}:{gateway_type.value}"
+def _get_cache_key(duration: int, gateway_type: PaymentGatewayType, purchase_type: PurchaseType) -> str:
+    return f"{purchase_type}:{duration}:{gateway_type.value}"
 
 
 def _load_payment_data(dialog_manager: DialogManager) -> dict[str, CachedPaymentData]:
@@ -114,6 +114,7 @@ async def on_purchase_type_select(
     gateways = await payment_gateway_dao.get_active()
     dialog_manager.dialog_data["purchase_type"] = purchase_type
     dialog_manager.dialog_data.pop(CURRENT_DURATION_KEY, None)
+    dialog_manager.dialog_data.pop(PAYMENT_CACHE_KEY, None)
 
     if not plans:
         logger.warning(f"{user.log} No available subscription plans")
@@ -180,6 +181,7 @@ async def on_subscription_plans(  # noqa: C901
     dialog_manager.dialog_data["purchase_type"] = purchase_type
 
     dialog_manager.dialog_data.pop(CURRENT_DURATION_KEY, None)
+    dialog_manager.dialog_data.pop(PAYMENT_CACHE_KEY, None)
 
     if not plans:
         logger.warning(f"{user.log} No available subscription plans")
@@ -325,8 +327,9 @@ async def on_duration_select(
         selected_payment_method = gateways[0].type
         dialog_manager.dialog_data[CURRENT_METHOD_KEY] = selected_payment_method
 
+        purchase_type: PurchaseType = dialog_manager.dialog_data["purchase_type"]
         cache = _load_payment_data(dialog_manager)
-        cache_key = _get_cache_key(selected_duration, selected_payment_method)
+        cache_key = _get_cache_key(selected_duration, selected_payment_method, purchase_type)
 
         if cache_key in cache:
             logger.info(f"{user.log} Re-selected same duration and single gateway")
@@ -375,8 +378,9 @@ async def on_payment_method_select(
 
     selected_duration = dialog_manager.dialog_data[CURRENT_DURATION_KEY]
     dialog_manager.dialog_data[CURRENT_METHOD_KEY] = selected_payment_method
+    purchase_type: PurchaseType = dialog_manager.dialog_data["purchase_type"]
     cache = _load_payment_data(dialog_manager)
-    cache_key = _get_cache_key(selected_duration, selected_payment_method)
+    cache_key = _get_cache_key(selected_duration, selected_payment_method, purchase_type)
 
     if cache_key in cache:
         logger.info(f"{user.log} Re-selected same method and duration")
