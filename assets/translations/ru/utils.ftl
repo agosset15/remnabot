@@ -76,7 +76,7 @@ frg-user-info =
         *[HAS] • <b>ID</b>: <code>{ NUMBER($telegram_id, useGrouping: 0) }</code>
     }
     { $email ->
-        [0] { space }
+        [0] { empty }
         *[HAS] • <b>Email</b>: <code>{ $email }</code>
     }
     • <b>Имя</b>: { $name } { $username -> 
@@ -169,7 +169,7 @@ frg-node-info =
     • <b>Название</b>: { $country } { $name }
     • <b>Адрес</b>: <code>{ $address }{ $port ->
     [0] { space }
-    *[HAS] :{ $port }</code>
+    *[HAS] :{ NUMBER($port, useGrouping: 0) }</code>
     }
     • <b>Трафик</b>: { $traffic_used } / { $traffic_limit }
     { $last_status_message -> 
