@@ -21,9 +21,6 @@ def get_dispatcher(config: AppConfig) -> Dispatcher:
         ),
         json_loads=json.decode,
         json_dumps=json.encode,
-        socket_keepalive=True,
-        retry_on_timeout=True,
-        health_check_interval=30,
     )
 
     dispatcher = Dispatcher(storage=storage, config=config)
