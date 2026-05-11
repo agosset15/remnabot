@@ -19,7 +19,7 @@ from aiogram.utils.formatting import Text
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from loguru import logger
 
-from src.application.common import Notifier, TranslatorHub
+from src.application.common import Mailer, Notifier, TranslatorHub
 from src.application.common.dao import SettingsDao, UserDao
 from src.application.dto import (
     MediaDescriptorDto,
@@ -50,6 +50,7 @@ class NotificationService(Notifier):
         user_dao: UserDao,
         settings_dao: SettingsDao,
         queue: NotificationQueue,
+        mailer: Mailer,
     ) -> None:
         self.bot = bot
         self.config = config
@@ -57,6 +58,7 @@ class NotificationService(Notifier):
         self.user_dao = user_dao
         self.settings_dao = settings_dao
         self.queue = queue
+        self.mailer = mailer
         self.queue.start(self._process_task)
 
     async def notify_user(
@@ -209,18 +211,22 @@ class NotificationService(Notifier):
             user_data = asdict(user)
             render_kwargs = {**user_data, **payload.i18n_kwargs}
 
+        text = self._get_translated_text(
+            locale=user.language,
+            i18n_key=payload.i18n_key,
+            i18n_kwargs=render_kwargs,
+        )
+
+        if isinstance(user, UserDto) and user.has_only_email:
+            await self._send_email_notification(user, text)
+            return None
+
         reply_markup = self._prepare_reply_markup(
             payload.reply_markup,
             payload.disable_default_markup,
             payload.delete_after,
             user.language,
             user.telegram_id,
-        )
-
-        text = self._get_translated_text(
-            locale=user.language,
-            i18n_key=payload.i18n_key,
-            i18n_kwargs=render_kwargs,
         )
 
         kwargs: dict[str, Any] = {
@@ -274,6 +280,17 @@ class NotificationService(Notifier):
         except Exception as e:
             logger.exception(f"Failed to send notification to '{user.telegram_id}': {e}")
             raise
+
+    async def _send_email_notification(self, user: UserDto, text: str) -> None:
+        if not text:
+            logger.debug(f"Skip email notification for user '{user.log}': empty text")
+            return
+
+        try:
+            await self.mailer.send_notification(user, text)
+            logger.info(f"Email notification sent to user '{user.log}'")
+        except Exception as e:
+            logger.error(f"Failed to send email notification to '{user.log}': {e}")
 
     def _get_media_method(self, payload: MessagePayloadDto) -> Optional[Callable[..., Any]]:
         if payload.is_photo:

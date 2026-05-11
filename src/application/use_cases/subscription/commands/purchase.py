@@ -183,9 +183,7 @@ class PurchaseSubscription(Interactor[PurchaseSubscriptionDto, None]):
                 # 2. RENEW (NOT TRIAL)
                 elif purchase_type == PurchaseType.RENEW and not has_trial:
                     if not subscription:
-                        raise ValueError(
-                            f"No subscription found for renewal for user '{user.telegram_id}'"
-                        )
+                        raise ValueError(f"No subscription found for renewal for user '{user.id}'")
 
                     base_date = max(subscription.expire_at, datetime_now())
                     duration = transaction.plan_snapshot.duration
@@ -211,14 +209,12 @@ class PurchaseSubscription(Interactor[PurchaseSubscriptionDto, None]):
                         user.purchase_discount = 0
                         await self.user_dao.update(user)
                     await self.uow.commit()
-                    logger.debug(f"{actor.log} Renewed subscription for user '{user.telegram_id}'")
+                    logger.debug(f"{actor.log} Renewed subscription for user '{user.id}'")
 
                 # 3. CHANGE OR CONVERT FROM TRIAL
                 elif purchase_type == PurchaseType.CHANGE or has_trial:
                     if not subscription:
-                        raise ValueError(
-                            f"No subscription found for change for user '{user.telegram_id}'"
-                        )
+                        raise ValueError(f"No subscription found for change for user '{user.id}'")
 
                     # Deactivate old subscription
                     await self.subscription_dao.update_status(
@@ -243,20 +239,19 @@ class PurchaseSubscription(Interactor[PurchaseSubscriptionDto, None]):
                         user.purchase_discount = 0
                         await self.user_dao.update(user)
                     await self.uow.commit()
-                    logger.debug(f"{actor.log} Changed subscription for user '{user.telegram_id}'")
+                    logger.debug(f"{actor.log} Changed subscription for user '{user.id}'")
 
                 else:
                     raise ValueError(
-                        f"Unknown purchase type '{purchase_type}' for user '{user.telegram_id}'"
+                        f"Unknown purchase type '{purchase_type}' for user '{user.id}'"
                     )
 
                 if user.has_only_email:
-                    await self.mailer.send_success_purchase(user, new_sub or subscription)
+                    subscription = await self.subscription_dao.get_by_user_id(user.id)  # ty: ignore[invalid-argument-type]
+                    await self.mailer.send_success_purchase(user, subscription, purchase_type)
                 else:
                     await self.redirect.to_success_payment(user.telegram_id, purchase_type)  # ty: ignore[invalid-argument-type]
-                logger.info(
-                    f"{actor.log} Purchase subscription completed for user '{user.telegram_id}'"
-                )
+                logger.info(f"{actor.log} Purchase subscription completed for user '{user.id}'")
 
             except Exception as e:
                 logger.exception(
