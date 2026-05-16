@@ -1,7 +1,9 @@
 import asyncio
+import re
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from email.utils import formatdate, make_msgid
 
 from loguru import logger
 
@@ -12,6 +14,8 @@ from src.application.services import BotService
 from src.core.config import AppConfig
 from src.core.enums import PurchaseType
 from src.core.utils.i18n_helpers import i18n_format_device_limit
+
+_HTML_TAG_RE = re.compile(r"<[^>]+>")
 
 
 class SmtpMailerImpl(Mailer):
@@ -24,6 +28,7 @@ class SmtpMailerImpl(Mailer):
         bot_service: BotService,
     ) -> None:
         self._config = config.smtp
+        self._i18n_hub = i18n_hub
         self._i18n = i18n_hub.get_translator_by_locale(config.default_locale)
         self._bot_service = bot_service
         logger.info(
@@ -124,6 +129,33 @@ class SmtpMailerImpl(Mailer):
         )
         await self._dispatch(user.email, msg)
 
+    async def send_notification(self, user: UserDto, body: str) -> None:
+        if not user.email:
+            logger.warning("Skip notification email for user '{log}': no email", log=user.log)
+            return
+
+        i18n = self._i18n_hub.get_translator_by_locale(user.language)
+        bot_url = await self._bot_service.get_connect_web_url(user.referral_code)
+        plain_body = _HTML_TAG_RE.sub("", body).strip()
+
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = i18n.get("email-notification.title")
+        msg.attach(
+            MIMEText(
+                i18n.get("email-notification.message", body=plain_body, bot_url=bot_url),
+                "plain",
+                "utf-8",
+            )
+        )
+        msg.attach(
+            MIMEText(
+                i18n.get("email-notification.message-html", body=body, bot_url=bot_url),
+                "html",
+                "utf-8",
+            )
+        )
+        await self._dispatch(user.email, msg)
+
     async def send_custom_message(self, user: UserDto, body: str, bot_url: str) -> None:
         msg = MIMEMultipart("alternative")
         msg["Subject"] = self._i18n.get("email-custom-message.title")
@@ -147,6 +179,8 @@ class SmtpMailerImpl(Mailer):
         """Offload the blocking SMTP call to a thread executor."""
         msg["From"] = f'"{self._config.sender_name}" <{self._config.sender_email}>'
         msg["To"] = email
+        msg["Date"] = formatdate(localtime=False)
+        msg["Message-ID"] = make_msgid(domain=self._config.sender_email.split("@", 1)[1])
         loop = asyncio.get_event_loop()
         await loop.run_in_executor(None, self._send_sync, email, msg)
 
