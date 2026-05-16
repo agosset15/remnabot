@@ -3,9 +3,9 @@ from typing import Any
 from uuid import UUID
 
 from remnapy.enums.users import TrafficLimitStrategy
-from sqlalchemy import ARRAY, DateTime, Enum, Integer
+from sqlalchemy import DateTime, Enum, Integer
 from sqlalchemy import UUID as PG_UUID
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.orm import DeclarativeBase, registry
 
 from src.core.enums import (
