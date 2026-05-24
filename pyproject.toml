@@ -74,6 +74,9 @@ lint.select = [
 lint.ignore = ["N805"]
 exclude = ["venv", ".venv", ".idea"]
 
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
 
 [tool.mypy]
 packages = ["src"]

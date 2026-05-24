@@ -11,6 +11,7 @@ logs/*
 .history
 .claude
 CLAUDE.md
+docs/
 
 # Environment
 .venv/
