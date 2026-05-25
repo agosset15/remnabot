@@ -18,6 +18,7 @@ from src.core.enums import BannerFormat, BannerName, Locale
 @functools.lru_cache(maxsize=64)
 def get_banner(
     banners_dir: Path,
+    default_banners_dir: Path,
     name: BannerName,
     locale: Locale,
     default_locale: Locale,
@@ -28,6 +29,11 @@ def get_banner(
         (banners_dir / default_locale, name),
         (banners_dir / default_locale, BannerName.DEFAULT),
         (banners_dir, BannerName.DEFAULT),
+        (default_banners_dir / locale, name),
+        (default_banners_dir / locale, BannerName.DEFAULT),
+        (default_banners_dir / default_locale, name),
+        (default_banners_dir / default_locale, BannerName.DEFAULT),
+        (default_banners_dir, BannerName.DEFAULT),
     ]
 
     for directory, banner_name in search_targets:
@@ -65,6 +71,7 @@ class Banner(StaticMedia):
         try:
             banner_path, banner_content_type = get_banner(
                 banners_dir=config.banners_dir,
+                default_banners_dir=config.default_banners_dir,
                 name=self.banner_name,
                 locale=user.language,
                 default_locale=config.default_locale,

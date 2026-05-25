@@ -97,7 +97,7 @@ extra_checks = true
 explicit_package_bases = true
 
 [[tool.mypy.overrides]]
-module = ["fluentogram.*", "remnawave.*", "qrcode.*", "remnapy.*"]
+module = ["fluentogram.*", "fluent_compiler.*", "remnawave.*", "qrcode.*", "remnapy.*"]
 follow_untyped_imports = true
 
 [[tool.mypy.overrides]]

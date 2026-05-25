@@ -5,7 +5,7 @@ from typing import Self
 from pydantic import Field, SecretStr, field_validator
 from pydantic_core.core_schema import FieldValidationInfo
 
-from src.core.constants import API_V1, ASSETS_DIR, PAYMENTS_WEBHOOK_PATH
+from src.core.constants import API_V1, ASSETS_DEFAULT_DIR, ASSETS_DIR, PAYMENTS_WEBHOOK_PATH
 from src.core.enums import Locale, PaymentGatewayType
 from src.core.types import LocaleList, StringList
 from src.core.utils.validators import is_valid_domain
@@ -45,12 +45,24 @@ class AppConfig(BaseConfig, env_prefix="APP_"):
     log: LogConfig = Field(default_factory=LogConfig)
 
     @property
+    def default_assets_dir(self) -> Path:
+        return ASSETS_DEFAULT_DIR
+
+    @property
     def banners_dir(self) -> Path:
         return self.assets_dir / "banners"
 
     @property
     def translations_dir(self) -> Path:
         return self.assets_dir / "translations"
+
+    @property
+    def default_banners_dir(self) -> Path:
+        return self.default_assets_dir / "banners"
+
+    @property
+    def default_translations_dir(self) -> Path:
+        return self.default_assets_dir / "translations"
 
     def get_webhook(self, gateway_type: PaymentGatewayType) -> str:
         domain = f"https://{self.domain.get_secret_value()}"

@@ -1,49 +1,33 @@
 # `Banners`
 
-The `banners` folder contains all banner images.
+The `banners/` folder in your **user volume** contains your custom banner images. The bot ships default banners baked into the Docker image at `assets.default/banners/`.
 
 ## Banner configuration
 
-You can configure how banners are displayed in the bot using an environment variable:
+* **`BOT_USE_BANNERS`**: Set to `true` to enable banners, or `false` to disable them.
 
-* **`BOT_USE_BANNERS`**: Set to true to enable banners, or false to disable them.
-
-## Locale support
-
-The banner system supports **localized versions**. A banner corresponding to the user's **locale** will be loaded for each user. Available locales are defined by the `APP_LOCALES` environment variable.
-
-### How it works:
+## How it works
 
 When loading a banner, the system searches in the following order:
 
+**User volume (`assets/banners/`):**
 1. `banners/{user_locale}/{page}` — page-specific banner for the user’s locale
 2. `banners/{user_locale}/default` — default banner for the user’s locale
-3. `banners/{default_locale}/{page}` — page-specific banner for the default locale (`APP_DEFAULT_LOCALE`)
+3. `banners/{default_locale}/{page}` — page-specific banner for the default locale
 4. `banners/{default_locale}/default` — default banner for the default locale
-5. `banners/default` — global fallback
+5. `banners/default` — global user fallback
 
-Steps 3–4 handle the case where a user’s locale is not supported — the system falls back to the default locale’s banners before using the global default.
+**Bot defaults (`assets.default/banners/`, inside image):**
+6. `banners/{user_locale}/{page}` — bot default page banner
+7. `banners/default` — bot global default (last resort)
 
-This means:
-- To use **one image everywhere** — place a single `banners/default.jpg`.
-- To use **one image per locale** — place `banners/{locale}/default.jpg` for each locale.
-- To use **per-page images** — place `banners/{locale}/{page}.jpg` for each page and locale.
+To **use your own banner** — place the file in `assets/banners/`. It automatically takes priority over the bot’s built-in defaults.
 
-This ensures that even if a specific banner or locale is not found, some banner will always be displayed, preventing empty or missing images.
+To **use the bot’s shipped defaults** — simply don’t place a file; the image provides it.
 
-## Supported formats
+## Locale support
 
-The following file formats are supported, as defined in `/remnashop/src/core/enums.py` as `BannerFormat`:
-
-* **JPG**
-* **JPEG**
-* **PNG**
-* **GIF**
-* **WEBP**
-
-## Banner names
-
-Banner filenames must correspond to the following predefined names, specified in `/remnashop/src/core/enums.py` as `BannerName`:
+Banner filenames must correspond to the predefined names in `/remnashop/src/core/enums.py` as `BannerName`:
 
 * **`DEFAULT`**: The default banner, used when a specific banner is not found.
 * **`MENU`**: The main menu banner.
@@ -51,31 +35,33 @@ Banner filenames must correspond to the following predefined names, specified in
 * **`SUBSCRIPTION`**: The subscription banner.
 * **`REFERRAL`**: The referral banner.
 
-## Example file structure
+## Supported formats
 
-```
-banners/
-├── default.jpg       ← global default (used for all pages and locales as last fallback)
-├── ru/
-│   ├── default.jpg   ← default for all pages in ru locale
-│   ├── menu.jpg      ← page-specific banner for ru locale
-│   └── subscription.jpg
-└── en/
-    ├── default.jpg   ← default for all pages in en locale
-    └── menu.jpg
-```
+The following file formats are supported (`BannerFormat` in `/remnashop/src/core/enums.py`):
+
+* **JPG**, **JPEG**, **PNG**, **GIF**, **WEBP**
 
 
 # `Translations`
 
-The `translations` folder contains all localization text files.
+The `translations/` folder in your **user volume** contains only `custom.ftl` files — one per locale. Bot built-in translations live inside the Docker image at `assets.default/translations/` and are always up to date with the bot version.
+
+## How it works
+
+For each locale, the bot loads two sources in priority order:
+
+1. `assets/translations/{locale}/custom.ftl` — **your overrides** (highest priority)
+2. `assets.default/translations/{locale}/*.ftl` — **bot built-ins** (fallback for all other keys)
+
+This means:
+- New keys added in a bot update are available automatically — no action needed.
+- Your overrides in `custom.ftl` are never touched by updates.
+- To override any built-in key, add it to `custom.ftl` with your translation.
 
 ## Translation configuration
 
-Supported locales are defined in environment variables:
-
-* **`APP_LOCALES`**: A list of supported locales. A full list of available locales can be found in `remnashop/src/core/enums.py` as `Locale`.
-* **`APP_DEFAULT_LOCALE`**: The default locale to be used if a user's language preference is not specified or not supported.
+* **`APP_LOCALES`**: Supported locales (e.g. `ru,en`).
+* **`APP_DEFAULT_LOCALE`**: Default locale.
 
 
 ## Key naming convention

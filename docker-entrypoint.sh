@@ -5,50 +5,57 @@ ASSETS_CONTAINER_PATH="/opt/remnashop/assets"
 ASSETS_DEFAULT_PATH="/opt/remnashop/assets.default"
 ASSETS_BACKUP_PATH="${ASSETS_CONTAINER_PATH}/.bak"
 
-RESET_FLAG="${RESET_ASSETS:-false}"
-IS_VOLUME_EMPTY=$(ls -A $ASSETS_CONTAINER_PATH 2>/dev/null)
-
 UVICORN_RELOAD_ARGS=""
 
+echo "Starting asset initialization"
 
-echo "Starting asset initialization, reset flag is '${RESET_FLAG}'"
+# --- Migration: detect legacy translation files (non-custom.ftl) ---
+LEGACY_FTL=$(find "${ASSETS_CONTAINER_PATH}/translations" -name "*.ftl" ! -name "custom.ftl" 2>/dev/null | head -1)
 
-if [ "$RESET_FLAG" = 'true' ]; then
-    echo "Reset assets flag is set to true, archiving existing data and setting default"
+if [ -n "$LEGACY_FTL" ]; then
+    echo "Legacy translation files detected — backing up and migrating to custom.ftl-only layout"
 
-    if [ -n "$IS_VOLUME_EMPTY" ]; then
-        echo "Found existing assets, creating backup"
+    TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+    BACKUP_FILENAME="translations_legacy_${TIMESTAMP}.tar.gz"
+    mkdir -p "$ASSETS_BACKUP_PATH"
 
-        TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-        BACKUP_FILENAME="assets_backup_${TIMESTAMP}.tar.gz"
+    tar -czf "$ASSETS_BACKUP_PATH/$BACKUP_FILENAME" \
+        -C "$ASSETS_CONTAINER_PATH" translations/ 2>/dev/null && \
+        echo "Backup created: ${ASSETS_BACKUP_PATH}/${BACKUP_FILENAME}" || \
+        echo "Warning: backup failed, continuing anyway"
 
-        mkdir -p $ASSETS_BACKUP_PATH
-        tar --exclude='.bak' -czf "$ASSETS_BACKUP_PATH/$BACKUP_FILENAME" -C "$ASSETS_CONTAINER_PATH" .
-        
-        if [ $? -eq 0 ]; then
-            echo "Successfully created archive at '${ASSETS_BACKUP_PATH}/${BACKUP_FILENAME}'"
-        else
-            echo "Error creating backup archive, continuing with caution"
-        fi
-
-        echo "Removing existing assets from '${ASSETS_CONTAINER_PATH}'"
-        find $ASSETS_CONTAINER_PATH -mindepth 1 -maxdepth 1 ! -name ".bak" -exec rm -rf {} +
-    else
-        echo "Assets volume is empty, no need to archive"
-    fi
-
-    echo "Copying all default assets for full reset"
-    cp -a "$ASSETS_DEFAULT_PATH/." "$ASSETS_CONTAINER_PATH"
-    echo "Assets reset complete"
-
-elif [ -z "$IS_VOLUME_EMPTY" ]; then
-    echo "Volume mounted to '${ASSETS_CONTAINER_PATH}' is empty, copying default assets for initial setup"
-    cp -a "$ASSETS_DEFAULT_PATH/." "$ASSETS_CONTAINER_PATH"
-    echo "Default assets successfully copied"
-
-else
-    echo "Volume mounted to '${ASSETS_CONTAINER_PATH}' is not empty, skipping asset initialization to preserve user data"
+    # Remove all .ftl files except custom.ftl
+    find "${ASSETS_CONTAINER_PATH}/translations" -name "*.ftl" ! -name "custom.ftl" -delete
+    echo "Legacy .ftl files removed. Move your custom keys into translations/{locale}/custom.ftl and restart."
 fi
+
+# --- First run: copy default banners if user banners dir is empty ---
+USER_BANNERS="${ASSETS_CONTAINER_PATH}/banners"
+if [ ! -d "$USER_BANNERS" ] || [ -z "$(ls -A "$USER_BANNERS" 2>/dev/null)" ]; then
+    echo "No user banners found — copying defaults"
+    cp -a "${ASSETS_DEFAULT_PATH}/banners/." "$USER_BANNERS/"
+fi
+
+# --- Bootstrap custom.ftl for each locale in assets.default ---
+if [ -d "${ASSETS_DEFAULT_PATH}/translations" ]; then
+    for locale_dir in "${ASSETS_DEFAULT_PATH}/translations"/*/; do
+        locale=$(basename "$locale_dir")
+        CUSTOM_FTL="${ASSETS_CONTAINER_PATH}/translations/${locale}/custom.ftl"
+        if [ ! -f "$CUSTOM_FTL" ]; then
+            mkdir -p "${ASSETS_CONTAINER_PATH}/translations/${locale}"
+            # Copy the template custom.ftl from defaults (contains usage comments, no overrides)
+            if [ -f "${ASSETS_DEFAULT_PATH}/translations/${locale}/custom.ftl" ]; then
+                cp "${ASSETS_DEFAULT_PATH}/translations/${locale}/custom.ftl" "$CUSTOM_FTL"
+                echo "Created custom.ftl for locale: ${locale}"
+            else
+                touch "$CUSTOM_FTL"
+                echo "Created empty custom.ftl for locale: ${locale}"
+            fi
+        fi
+    done
+fi
+
+echo "Asset initialization complete"
 
 
 echo "Migrating database"

@@ -8,6 +8,7 @@ from packaging.version import Version
 
 BASE_DIR: Final[Path] = Path(__file__).resolve().parents[2]
 ASSETS_DIR: Final[Path] = BASE_DIR / "assets"
+ASSETS_DEFAULT_DIR: Final[Path] = BASE_DIR / "assets.default"
 BACKUP_DIR: Final[Path] = BASE_DIR / "backups"
 LOG_DIR: Final[Path] = BASE_DIR / "logs"
 
