@@ -1145,7 +1145,7 @@ msg-subscription-details =
     { $description }
     }
 
-    • <b>Лимит трафика на LTE</b>: { $traffic }
+    • <b>Лимит трафика на LTE*</b>: { $traffic }
     • <b>Лимит устройств</b>: { $devices }
     { $period ->
     [0] { empty }
@@ -1173,7 +1173,6 @@ msg-subscription-duration =
     <b>⏳ Выберите длительность</b>
 
     { msg-subscription-details }
-
     <blockquote>
     <b>Покупая подписку на год, вы получаете два месяца в подарок</b>
     </blockquote>
