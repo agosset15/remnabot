@@ -68,7 +68,7 @@ from src.application.use_cases.user.commands.roles import SetUserRole, SetUserRo
 from src.application.use_cases.user.queries.plans import GetAvailablePlans
 from src.application.use_cases.user.queries.profile import GetUserDevices
 from src.core.constants import TARGET_USER_ID, USER_KEY
-from src.core.enums import Role
+from src.core.enums import PurchaseType, Role
 from src.core.utils.validators import parse_int
 from src.telegram.states import DashboardUser
 from src.telegram.utils import is_double_click
@@ -842,7 +842,7 @@ async def on_send_email_purchase(
         return
 
     try:
-        await mailer.send_success_purchase(target_user, subscription)
+        await mailer.send_success_purchase(target_user, subscription, PurchaseType.NEW)
         await notifier.notify_user(user, i18n_key="ntf-user.email-purchase-success")
     except Exception as e:
         logger.error(f"{user.log} Failed to send purchase email to user '{target_user_id}': {e}")

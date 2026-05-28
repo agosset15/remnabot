@@ -376,6 +376,7 @@ email-notification =
         </td></tr>
         <tr><td class="btns" style="padding:0 32px 28px;">
           <a href="{ $bot_url }" class="btn" style="display:block;padding:15px;background:#3B6FD4;border-radius:10px;text-align:center;text-decoration:none;font-size:15px;font-weight:700;color:#fff;">&#9992;&#65039; Подключить Telegram</a>
+          <a href="https://usekago.net/plans" class="btn" style="display:block;margin-top:10px;padding:15px;background:#fff;border:1px solid #3B6FD4;border-radius:10px;text-align:center;text-decoration:none;font-size:15px;font-weight:700;color:#3B6FD4;">&#127760; На сайт</a>
         </td></tr>
         { ftr-email-html }
 
