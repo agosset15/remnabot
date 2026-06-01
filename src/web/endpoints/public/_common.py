@@ -1,18 +1,17 @@
 import base64
-import hashlib
-import hmac
-import json
-import time
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
-from typing import Annotated, Optional, cast
+from typing import Annotated
 
+import jwt
 from dishka import FromDishka
 from dishka.integrations.fastapi import inject
-from fastapi import Depends, Header, HTTPException, status
+from fastapi import Depends, HTTPException, Request, Response, status
 
 from src.application.common.dao import UserDao
 from src.application.dto import UserDto
 from src.core.config import AppConfig
+from src.core.constants import ACCESS_TOKEN_TTL_SECONDS, REFRESH_TOKEN_TTL_SECONDS
 
 
 def _b64url_encode(data: bytes) -> str:
@@ -27,71 +26,79 @@ def _b64url_decode(data: str) -> bytes:
 def _normalize_decimal_str(value: Decimal) -> str:
     if value == value.to_integral():
         return str(int(value))
-
     normalized = value.quantize(Decimal("0.01")).normalize()
     return format(normalized, "f")
 
 
-def _decode_access_token(token: str, key: str) -> dict[str, int]:
+def generate_access_token(user_id: int, key: str) -> tuple[str, datetime]:
+    now = datetime.now(tz=timezone.utc)
+    exp = now + timedelta(seconds=ACCESS_TOKEN_TTL_SECONDS)
+    token = jwt.encode({"sub": user_id, "iat": now, "exp": exp}, key, algorithm="HS256")
+    return token, exp
+
+
+def decode_access_token(token: str, key: str) -> int:
+    payload = jwt.decode(token, key, algorithms=["HS256"], options={"verify_sub": False})
     try:
-        header_b64, payload_b64, signature_b64 = token.split(".")
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token format",
-        ) from e
-
-    expected_signature = hmac.new(
-        key.encode("utf-8"),
-        f"{header_b64}.{payload_b64}".encode("utf-8"),
-        hashlib.sha256,
-    ).digest()
-
-    if not hmac.compare_digest(expected_signature, _b64url_decode(signature_b64)):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token signature",
-        )
-
-    payload = json.loads(_b64url_decode(payload_b64).decode("utf-8"))
-    if int(payload.get("exp", 0)) < int(time.time()):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token expired",
-        )
-    return cast(dict[str, int], payload)
+        return int(payload["sub"])
+    except (KeyError, TypeError, ValueError) as e:
+        raise jwt.InvalidTokenError("Invalid 'sub' claim") from e
 
 
-async def _get_user_from_auth_header(
-    authorization: Annotated[Optional[str], Header(alias="Authorization")],
-    user_dao: UserDao,
-    config: AppConfig,
-) -> UserDto:
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authorization header must use Bearer token",
-        )
-
-    token = authorization.removeprefix("Bearer ").strip()
-    payload = _decode_access_token(token, config.crypt_key.get_secret_value())
-    user_id = int(payload["sub"])
-    user = await user_dao.get_by_id(user_id)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found",
-        )
-    return user
+def set_auth_cookies(response: Response, access_token: str, refresh_token: str) -> None:
+    response.set_cookie(
+        "access_token",
+        access_token,
+        httponly=True,
+        secure=True,
+        samesite="lax",
+        max_age=ACCESS_TOKEN_TTL_SECONDS,
+    )
+    response.set_cookie(
+        "refresh_token",
+        refresh_token,
+        httponly=True,
+        secure=True,
+        samesite="lax",
+        max_age=REFRESH_TOKEN_TTL_SECONDS,
+    )
 
 
+def clear_auth_cookies(response: Response) -> None:
+    response.delete_cookie("access_token", httponly=True, secure=True, samesite="lax")
+    response.delete_cookie("refresh_token", httponly=True, secure=True, samesite="lax")
+
+
+# NOTE: The `FromDishka[...] = None` defaults are a required workaround for the
+# dishka-fastapi integration: FastAPI inspects the signature and needs a default for
+# non-path/query params, while dishka overwrites the value at call time. The `None`
+# is never observed at runtime; the `type: ignore[assignment]` silences the mismatch.
 @inject
 async def _get_current_user(
-    authorization: Annotated[Optional[str], Header(alias="Authorization")] = None,
+    request: Request,
     user_dao: FromDishka[UserDao] = None,  # type: ignore[assignment]
     config: FromDishka[AppConfig] = None,  # type: ignore[assignment]
 ) -> UserDto:
-    return await _get_user_from_auth_header(authorization, user_dao, config)
+    token = request.cookies.get("access_token")
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
+    try:
+        if config.jwt_secret is None:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="JWT secret not configured",
+            )
+        user_id = decode_access_token(token, config.jwt_secret.get_secret_value())
+    except jwt.InvalidTokenError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired token"
+        )
+    user = await user_dao.get_by_id(user_id)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+    if user.is_blocked:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User is blocked")
+    return user
 
 
 CurrentUser = Annotated[UserDto, Depends(_get_current_user)]

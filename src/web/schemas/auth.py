@@ -51,9 +51,6 @@ class MigrateTelegramRequest(RegisterRequest):
 
 
 class AuthResponse(BaseModel):
-    access_token: str
-    refresh_token: str
-    token_type: str = "bearer"
     expires_at: datetime
     refresh_expires_at: datetime
 
@@ -133,14 +130,6 @@ class TelegramAuthRequest(BaseModel):
     photo_url: Optional[str] = None
     auth_date: int
     hash: str
-
-
-class RefreshRequest(BaseModel):
-    refresh_token: str
-
-
-class LogoutRequest(BaseModel):
-    refresh_token: str
 
 
 class LogoutResponse(BaseModel):

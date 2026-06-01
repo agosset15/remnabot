@@ -1,33 +1,33 @@
 import asyncio
 import hashlib
 import hmac
-import json
 import secrets
 import smtplib
 import time
 from datetime import datetime, timedelta, timezone
 from email.message import EmailMessage
-from typing import Any
+from typing import Any, Final
 
 from dishka import FromDishka
 from dishka.integrations.fastapi import inject
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Request, Response, status
+from loguru import logger
 from sqlalchemy.exc import IntegrityError
 
-from src.application.common import Cryptographer, EventPublisher
 from src.application.common.dao import UserDao
 from src.application.common.dao.auth import AuthSessionDao
 from src.application.common.uow import UnitOfWork
 from src.application.dto import UserDto
-from src.application.events import UserRegisteredEvent
-from src.application.use_cases.referral.commands.attachment import (
-    AttachReferral,
-    AttachReferralDto,
+from src.application.use_cases.user.commands.web_registration import (
+    RegisterWebUser,
+    RegisterWebUserDto,
 )
 from src.core.config import AppConfig
 from src.core.constants import (
-    ACCESS_TOKEN_TTL_SECONDS,
+    EMAIL_VERIFICATION_BODY_TEMPLATE,
     EMAIL_VERIFICATION_CODE_LENGTH,
+    EMAIL_VERIFICATION_RESEND_COOLDOWN_SECONDS,
+    EMAIL_VERIFICATION_SUBJECT,
     PASSWORD_SCRYPT_DKLEN,
     PASSWORD_SCRYPT_N,
     PASSWORD_SCRYPT_P,
@@ -46,19 +46,32 @@ from src.web.schemas import (
     ConfirmEmailVerificationRequest,
     ConfirmEmailVerificationResponse,
     LoginRequest,
-    LogoutRequest,
     LogoutResponse,
     MeResponse,
-    RefreshRequest,
     RegisterRequest,
     RequestEmailVerificationCodeRequest,
     RequestEmailVerificationCodeResponse,
     TelegramAuthRequest,
 )
 
-from ._common import CurrentUser, _b64url_decode, _b64url_encode
+from ._common import (
+    CurrentUser,
+    _b64url_decode,
+    _b64url_encode,
+    clear_auth_cookies,
+    generate_access_token,
+    set_auth_cookies,
+)
 
 router = APIRouter(prefix="/auth", tags=["Public - Auth"])
+
+# A syntactically valid scrypt hash produced with a throwaway password and key.
+# Used as a dummy target for _verify_password when a user/hash is absent,
+# so timing is uniform regardless of whether the email exists.
+# Any real crypt_key will produce a different digest → always returns False.
+_DUMMY_PASSWORD_HASH: Final[str] = (
+    "scrypt$16384$8$1$3iwxPRaFhgkuspbRjZ9Srg$t03rWms5Y1agfpb43HVmcZ2bAl4Fhjdv6r8WHNCxoUNbhlOBIXAwovLBu_3NS6SGUGmVDxlumdGB39NT4cZZ7w"
+)
 
 
 def _hash_password(password: str, key: str) -> str:
@@ -108,6 +121,23 @@ def _hash_email_verification_code(code: str, key: str) -> str:
     return hashlib.sha256(payload).hexdigest()
 
 
+def _check_email_resend_cooldown(
+    expires_at: "datetime | None",
+    ttl_minutes: int,
+    cooldown_seconds: int,
+    now: "datetime",
+) -> None:
+    """Raise HTTPException(429) if a code was issued less than cooldown_seconds ago."""
+    if expires_at is None:
+        return
+    last_issued_at = expires_at - timedelta(minutes=ttl_minutes)
+    if now < last_issued_at + timedelta(seconds=cooldown_seconds):
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Please wait before requesting another code",
+        )
+
+
 def _is_email_delivery_enabled(config: AppConfig) -> bool:
     return bool(
         config.email.enabled
@@ -122,19 +152,16 @@ def _send_email_verification_code_sync(
     *,
     config: AppConfig,
     target_email: str,
-    verification_code: str,
+    subject: str,
+    body: str,
 ) -> None:
     message = EmailMessage()
-    message["Subject"] = "Oldnet: подтверждение email"
+    message["Subject"] = subject
     from_name = config.email.from_name.strip()
     from_email = config.email.from_email.strip()
     message["From"] = f"{from_name} <{from_email}>" if from_name else from_email
     message["To"] = target_email
-    message.set_content(
-        "Ваш код подтверждения: "
-        f"{verification_code}\n\n"
-        f"Код действует {config.email.verification_code_ttl_minutes} минут."
-    )
+    message.set_content(body)
 
     smtp_host = config.email.host
     smtp_port = config.email.port
@@ -160,64 +187,23 @@ async def _send_email_verification_code(
     *,
     config: AppConfig,
     target_email: str,
-    verification_code: str,
+    subject: str,
+    body: str,
 ) -> None:
     try:
         await asyncio.to_thread(
             _send_email_verification_code_sync,
             config=config,
             target_email=target_email,
-            verification_code=verification_code,
+            subject=subject,
+            body=body,
         )
     except Exception as e:
+        logger.error(f"Failed to send verification email to '{target_email}': {e}")
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"Failed to send verification email: {e}",
+            detail="Failed to send verification email. Please try again later.",
         ) from e
-
-
-def _generate_access_token(subject: int, key: str) -> tuple[str, datetime]:
-    header = _b64url_encode(json.dumps({"alg": "HS256", "typ": "JWT"}).encode("utf-8"))
-    issued_at = int(time.time())
-    expires_at = issued_at + ACCESS_TOKEN_TTL_SECONDS
-    payload = _b64url_encode(
-        json.dumps({"sub": subject, "iat": issued_at, "exp": expires_at}).encode("utf-8")
-    )
-
-    signature = hmac.new(
-        key.encode("utf-8"),
-        f"{header}.{payload}".encode("utf-8"),
-        hashlib.sha256,
-    ).digest()
-    token = f"{header}.{payload}.{_b64url_encode(signature)}"
-    expires_at_dt = datetime.fromtimestamp(expires_at, tz=timezone.utc)
-    return token, expires_at_dt
-
-
-async def _build_auth_response(
-    user: UserDto,
-    config: AppConfig,
-    auth_session: AuthSessionDao,
-) -> AuthResponse:
-    access_token, expires_at = _generate_access_token(
-        subject=user.id,
-        key=config.crypt_key.get_secret_value(),
-    )
-    refresh_token = secrets.token_urlsafe(32)
-    refresh_expires_at = datetime.now(tz=timezone.utc) + timedelta(
-        seconds=REFRESH_TOKEN_TTL_SECONDS
-    )
-    await auth_session.store_refresh_token(
-        token=refresh_token,
-        user_id=user.id,
-        ttl=REFRESH_TOKEN_TTL_SECONDS,
-    )
-    return AuthResponse(
-        access_token=access_token,
-        refresh_token=refresh_token,
-        expires_at=expires_at,
-        refresh_expires_at=refresh_expires_at,
-    )
 
 
 def _verify_telegram_hash(data: dict[str, Any], bot_token: str) -> bool:
@@ -238,24 +224,49 @@ def _verify_telegram_hash(data: dict[str, Any], bot_token: str) -> bool:
     return hmac.compare_digest(expected, telegram_hash)
 
 
+async def _issue_tokens(
+    user: UserDto,
+    config: AppConfig,
+    auth_session: AuthSessionDao,
+) -> tuple[str, str, AuthResponse]:
+    if config.jwt_secret is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="JWT secret not configured"
+        )
+    access_token, expires_at = generate_access_token(user.id, config.jwt_secret.get_secret_value())
+    refresh_token = secrets.token_urlsafe(32)
+    refresh_expires_at = datetime.now(tz=timezone.utc) + timedelta(
+        seconds=REFRESH_TOKEN_TTL_SECONDS
+    )
+    await auth_session.store_refresh_token(
+        token=refresh_token,
+        user_id=user.id,
+        ttl=REFRESH_TOKEN_TTL_SECONDS,
+    )
+    return (
+        access_token,
+        refresh_token,
+        AuthResponse(
+            expires_at=expires_at,
+            refresh_expires_at=refresh_expires_at,
+        ),
+    )
+
+
 @router.post("/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
 @inject
 async def register_public_user(
     body: RegisterRequest,
+    response: Response,
     config: FromDishka[AppConfig],
-    uow: FromDishka[UnitOfWork],
     user_dao: FromDishka[UserDao],
-    cryptographer: FromDishka[Cryptographer],
-    attach_referral: FromDishka[AttachReferral],
-    event_publisher: FromDishka[EventPublisher],
+    register_web_user: FromDishka[RegisterWebUser],
     auth_session: FromDishka[AuthSessionDao],
 ) -> AuthResponse:
     if await user_dao.get_by_email(body.email):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already exists")
     if body.referral_code and not await user_dao.get_by_referral_code(body.referral_code):
         body.referral_code = None
-
-    referral_code = await cryptographer.generate_unique_code(user_dao.get_by_referral_code)
 
     new_user = UserDto(
         telegram_id=None,
@@ -264,122 +275,100 @@ async def register_public_user(
         password_hash=_hash_password(body.password, config.crypt_key.get_secret_value()),
         username=None,
         name=body.name or body.email.split("@")[0],
-        referral_code=referral_code,
         language=config.default_locale,
     )
 
-    async with uow:
-        try:
-            created = await user_dao.create(new_user)
-            await uow.commit()
-        except IntegrityError as e:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="User with this email already exists",
-            ) from e
-
-    referrer = None
-    if body.referral_code:
-        referrer = await attach_referral.system(
-            AttachReferralDto(
-                user_id=created.id,
-                referral_code=body.referral_code,
-            )
+    try:
+        created = await register_web_user.system(
+            RegisterWebUserDto(user=new_user, referral_code=body.referral_code)
         )
+    except IntegrityError as e:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="User with this email already exists",
+        ) from e
 
-    await event_publisher.publish(
-        UserRegisteredEvent(
-            user_id=created.id,
-            telegram_id=created.telegram_id,
-            username=created.username,
-            name=created.name,
-            email=created.email,
-            referrer_user_id=referrer.id if referrer else None,
-            referrer_telegram_id=referrer.telegram_id if referrer else None,
-            referrer_email=referrer.email if referrer else None,
-            referrer_username=referrer.username if referrer else None,
-            referrer_name=referrer.name if referrer else None,
+    access_token, refresh_token, auth_response = await _issue_tokens(created, config, auth_session)
+    set_auth_cookies(response, access_token, refresh_token)
+    return auth_response
+
+
+async def _login(
+    body: LoginRequest,
+    response: Response,
+    config: AppConfig,
+    user_dao: UserDao,
+    auth_session: AuthSessionDao,
+) -> AuthResponse:
+    user = await user_dao.get_by_email(body.email)
+    key = config.crypt_key.get_secret_value()
+    password_hash = user.password_hash if (user and user.password_hash) else _DUMMY_PASSWORD_HASH
+    password_ok = _verify_password(body.password, password_hash, key)
+    if not user or not user.password_hash or not password_ok:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password",
         )
-    )
+    if user.is_blocked:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User is blocked")
 
-    return await _build_auth_response(created, config, auth_session)
+    access_token, refresh_token, auth_response = await _issue_tokens(user, config, auth_session)
+    set_auth_cookies(response, access_token, refresh_token)
+    return auth_response
 
 
 @router.post("/login", response_model=AuthResponse)
 @inject
 async def login_public_user(
     body: LoginRequest,
+    response: Response,
     config: FromDishka[AppConfig],
     user_dao: FromDishka[UserDao],
     auth_session: FromDishka[AuthSessionDao],
 ) -> AuthResponse:
-    user = await user_dao.get_by_email(body.email)
-    if not user or not user.password_hash:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email or password",
-        )
-
-    if not _verify_password(body.password, user.password_hash, config.crypt_key.get_secret_value()):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email or password",
-        )
-
-    if user.is_blocked:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="User is blocked",
-        )
-
-    return await _build_auth_response(user, config, auth_session)
+    return await _login(body, response, config, user_dao, auth_session)
 
 
 @router.post("/refresh", response_model=AuthResponse)
 @inject
 async def refresh_access_token(
-    body: RefreshRequest,
+    request: Request,
+    response: Response,
     config: FromDishka[AppConfig],
     user_dao: FromDishka[UserDao],
     auth_session: FromDishka[AuthSessionDao],
 ) -> AuthResponse:
-    user_id = await auth_session.get_and_revoke_refresh_token(body.refresh_token)
+    refresh_token = request.cookies.get("refresh_token")
+    if not refresh_token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="No refresh token")
+    user_id = await auth_session.get_and_revoke_refresh_token(refresh_token)
     if user_id is None:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired refresh token",
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired refresh token"
         )
-
     user = await user_dao.get_by_id(user_id)
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found",
-        )
-
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
     if user.is_blocked:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="User is blocked",
-        )
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User is blocked")
 
-    return await _build_auth_response(user, config, auth_session)
+    access_token, new_refresh_token, auth_response = await _issue_tokens(user, config, auth_session)
+    set_auth_cookies(response, access_token, new_refresh_token)
+    return auth_response
 
 
 @router.post("/logout", response_model=LogoutResponse)
 @inject
 async def logout(
-    body: LogoutRequest,
+    request: Request,
+    response: Response,
     user: CurrentUser,
     auth_session: FromDishka[AuthSessionDao],
 ) -> LogoutResponse:
-    owner_id = await auth_session.get_user_id_by_refresh_token(body.refresh_token)
-    if owner_id is not None and owner_id != user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Token does not belong to current user",
-        )
-    await auth_session.revoke_refresh_token(body.refresh_token)
+    refresh_token = request.cookies.get("refresh_token")
+    if refresh_token:
+        await auth_session.revoke_refresh_token(refresh_token)
+    clear_auth_cookies(response)
     return LogoutResponse(success=True)
 
 
@@ -387,75 +376,57 @@ async def logout(
 @inject
 async def telegram_login(
     body: TelegramAuthRequest,
+    response: Response,
     config: FromDishka[AppConfig],
-    uow: FromDishka[UnitOfWork],
     user_dao: FromDishka[UserDao],
-    cryptographer: FromDishka[Cryptographer],
-    event_publisher: FromDishka[EventPublisher],
+    register_web_user: FromDishka[RegisterWebUser],
     auth_session: FromDishka[AuthSessionDao],
 ) -> AuthResponse:
     bot_token = config.bot.token.get_secret_value()
     payload = body.model_dump(exclude_none=True)
     if not _verify_telegram_hash(payload, bot_token):
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid Telegram auth data",
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid Telegram auth data"
         )
 
     user = await user_dao.get_by_telegram_id(body.id)
     if user:
         if user.is_blocked:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="User is blocked",
-            )
-        return await _build_auth_response(user, config, auth_session)
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User is blocked")
+        access_token, refresh_token, auth_response = await _issue_tokens(user, config, auth_session)
+        set_auth_cookies(response, access_token, refresh_token)
+        return auth_response
 
     name_parts = [body.first_name]
     if body.last_name:
         name_parts.append(body.last_name)
     name = " ".join(name_parts)
 
-    referral_code = await cryptographer.generate_unique_code(user_dao.get_by_referral_code)
-
     new_user = UserDto(
         telegram_id=body.id,
         auth_type=AuthType.TELEGRAM,
         username=body.username,
         name=name,
-        referral_code=referral_code,
         language=config.default_locale,
     )
 
-    async with uow:
-        try:
-            created = await user_dao.create(new_user)
-            await uow.commit()
-        except IntegrityError as e:
-            user = await user_dao.get_by_telegram_id(body.id)
-            if user:
-                return await _build_auth_response(user, config, auth_session)
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="User creation conflict",
-            ) from e
+    try:
+        created = await register_web_user.system(RegisterWebUserDto(user=new_user))
+    except IntegrityError as e:
+        user = await user_dao.get_by_telegram_id(body.id)
+        if user:
+            access_token, refresh_token, auth_response = await _issue_tokens(
+                user, config, auth_session
+            )
+            set_auth_cookies(response, access_token, refresh_token)
+            return auth_response
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="User creation conflict"
+        ) from e
 
-    await event_publisher.publish(
-        UserRegisteredEvent(
-            user_id=created.id,
-            telegram_id=created.telegram_id,
-            username=created.username,
-            name=created.name,
-            email=created.email,
-            referrer_user_id=None,
-            referrer_telegram_id=None,
-            referrer_email=None,
-            referrer_username=None,
-            referrer_name=None,
-        )
-    )
-
-    return await _build_auth_response(created, config, auth_session)
+    access_token, refresh_token, auth_response = await _issue_tokens(created, config, auth_session)
+    set_auth_cookies(response, access_token, refresh_token)
+    return auth_response
 
 
 @router.post("/telegram/link", response_model=MeResponse)
@@ -550,6 +521,7 @@ async def change_public_user_password(
     config: FromDishka[AppConfig],
     uow: FromDishka[UnitOfWork],
     user_dao: FromDishka[UserDao],
+    auth_session: FromDishka[AuthSessionDao],
 ) -> ChangePasswordResponse:
     key = config.crypt_key.get_secret_value()
 
@@ -575,6 +547,8 @@ async def change_public_user_password(
                 detail="User not found during password update",
             )
         await uow.commit()
+
+    await auth_session.revoke_all_user_tokens(user.id)
 
     return ChangePasswordResponse(success=True)
 
@@ -655,6 +629,13 @@ async def request_email_verification_code(
             detail="Email is required for verification",
         )
 
+    _check_email_resend_cooldown(
+        user.email_verification_expires_at,
+        config.email.verification_code_ttl_minutes,
+        EMAIL_VERIFICATION_RESEND_COOLDOWN_SECONDS,
+        datetime_now(),
+    )
+
     code = _generate_email_verification_code()
     user.email_verification_code_hash = _hash_email_verification_code(
         code,
@@ -676,7 +657,10 @@ async def request_email_verification_code(
     await _send_email_verification_code(
         config=config,
         target_email=target_email,
-        verification_code=code,
+        subject=EMAIL_VERIFICATION_SUBJECT,
+        body=EMAIL_VERIFICATION_BODY_TEMPLATE.format(
+            code=code, minutes=config.email.verification_code_ttl_minutes
+        ),
     )
 
     return RequestEmailVerificationCodeResponse(

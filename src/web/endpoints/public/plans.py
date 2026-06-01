@@ -1,39 +1,31 @@
-from datetime import datetime, timedelta
 from decimal import Decimal
-from typing import Optional
 
 from dishka import FromDishka
 from dishka.integrations.fastapi import inject
 from fastapi import APIRouter
+from redis.asyncio import Redis
 
 from src.application.common.dao import PlanDao
 from src.core.constants import PUBLIC_LANDING_PLANS_CACHE_TTL_SECONDS
 from src.core.enums import Currency, PlanAvailability
-from src.core.utils.time import datetime_now
 from src.web.schemas import PublicPlanLandingListResponse, PublicPlanLandingResponse
 
 from ._common import _normalize_decimal_str
 
 router = APIRouter(tags=["Public - Plans"])
 
-_public_landing_plans_cache: Optional[PublicPlanLandingListResponse] = None
-_public_landing_plans_cache_expires_at: Optional[datetime] = None
+_CACHE_KEY = "cache:public_landing_plans"
 
 
 @router.get("/plans/public", response_model=PublicPlanLandingListResponse)
 @inject
 async def get_public_landing_plans(
     plan_dao: FromDishka[PlanDao],
+    redis: FromDishka[Redis],
 ) -> PublicPlanLandingListResponse:
-    global _public_landing_plans_cache, _public_landing_plans_cache_expires_at
-
-    now = datetime_now()
-    if (
-        _public_landing_plans_cache is not None
-        and _public_landing_plans_cache_expires_at is not None
-        and _public_landing_plans_cache_expires_at > now
-    ):
-        return _public_landing_plans_cache
+    cached = await redis.get(_CACHE_KEY)
+    if cached is not None:
+        return PublicPlanLandingListResponse.model_validate_json(cached)
 
     plans = await plan_dao.filter_by_availability(PlanAvailability.ALL)
 
@@ -74,8 +66,5 @@ async def get_public_landing_plans(
         )
 
     payload = PublicPlanLandingListResponse(plans=result)
-    _public_landing_plans_cache = payload
-    _public_landing_plans_cache_expires_at = now + timedelta(
-        seconds=PUBLIC_LANDING_PLANS_CACHE_TTL_SECONDS
-    )
+    await redis.setex(_CACHE_KEY, PUBLIC_LANDING_PLANS_CACHE_TTL_SECONDS, payload.model_dump_json())
     return payload

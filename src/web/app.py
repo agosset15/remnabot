@@ -19,6 +19,14 @@ from .endpoints import (
 )
 
 
+def resolve_cors(origins: list[str]) -> tuple[list[str], bool]:
+    """Return (origins, allow_credentials). Wildcard origin is incompatible with credentials."""
+    if "*" in origins:
+        logger.warning("CORS origins set to '*'; disabling allow_credentials for safety")
+        return origins, False
+    return origins, True
+
+
 def get_app(config: AppConfig, dispatcher: Dispatcher) -> FastAPI:
     app: FastAPI = FastAPI(
         lifespan=lifespan,
@@ -28,10 +36,11 @@ def get_app(config: AppConfig, dispatcher: Dispatcher) -> FastAPI:
         redoc_url=None,
         openapi_url=None,
     )
+    cors_origins, allow_credentials = resolve_cors(list(config.origins))
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
-        allow_credentials=True,
+        allow_origins=cors_origins,
+        allow_credentials=allow_credentials,
         allow_methods=["*"],
         allow_headers=["*"],
     )

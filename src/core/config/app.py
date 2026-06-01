@@ -1,8 +1,8 @@
 import re
 from pathlib import Path
-from typing import Self
+from typing import Optional, Self
 
-from pydantic import Field, SecretStr, field_validator
+from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_core.core_schema import FieldValidationInfo
 
 from src.core.constants import API_V1, ASSETS_DEFAULT_DIR, ASSETS_DIR, PAYMENTS_WEBHOOK_PATH
@@ -30,6 +30,8 @@ class AppConfig(BaseConfig, env_prefix="APP_"):
     default_locale: Locale = Locale.RU  # TODO: Change to EN
 
     crypt_key: SecretStr
+    jwt_secret: Optional[SecretStr] = None
+    api_key: Optional[SecretStr] = None
     assets_dir: Path = ASSETS_DIR
     origins: StringList = StringList("")
     swagger_enabled: bool = False
@@ -72,6 +74,21 @@ class AppConfig(BaseConfig, env_prefix="APP_"):
     @classmethod
     def get(cls) -> Self:
         return cls()
+
+    @model_validator(mode="after")
+    def validate_web_secrets(self) -> "AppConfig":
+        if self.web_enabled:
+            if not self.api_key:
+                raise ValueError(
+                    "APP_API_KEY must be set when WEB_ENABLED=true; "
+                    "do not reuse APP_CRYPT_KEY for API authentication"
+                )
+            if not self.jwt_secret:
+                raise ValueError(
+                    "APP_JWT_SECRET must be set when WEB_ENABLED=true; "
+                    "do not reuse APP_CRYPT_KEY for JWT signing"
+                )
+        return self
 
     @field_validator("domain")
     @classmethod

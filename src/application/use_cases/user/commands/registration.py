@@ -65,13 +65,11 @@ class GetOrCreateUser(Interactor[GetOrCreateUserDto, Optional[UserDto]]):
 
             if data.is_chat_member_event:
                 logger.debug(
-                    f"Skipping user creation for '{data.telegram_id}' "
-                    f"due to chat member event"
+                    f"Skipping user creation for '{data.telegram_id}' due to chat member event"
                 )
                 return None
 
-            if is_owner:
-                data.role = Role.OWNER
+            role = Role.OWNER if is_owner else None
 
             settings = await self.settings_dao.get()
             is_blocked = data.telegram_id in settings.blacklist.blocked_ids
@@ -82,7 +80,11 @@ class GetOrCreateUser(Interactor[GetOrCreateUserDto, Optional[UserDto]]):
 
             ad_link_id = await self._resolve_ad_link_id(data.ad_link_code)
             user_dto = self._create_user_dto(
-                data, referral_code=new_referral_code, is_blocked=is_blocked, ad_link_id=ad_link_id
+                data,
+                referral_code=new_referral_code,
+                is_blocked=is_blocked,
+                ad_link_id=ad_link_id,
+                role=role,
             )
             user = await self.user_dao.create(user_dto)
 
@@ -159,6 +161,7 @@ class GetOrCreateUser(Interactor[GetOrCreateUserDto, Optional[UserDto]]):
         referral_code: str,
         is_blocked: bool = False,
         ad_link_id: Optional[int] = None,
+        role: Optional[Role] = None,
     ) -> UserDto:
         if data.language_code in self.config.locales:
             locale = Locale(data.language_code)
@@ -170,7 +173,7 @@ class GetOrCreateUser(Interactor[GetOrCreateUserDto, Optional[UserDto]]):
             username=data.username,
             referral_code=referral_code,
             name=data.full_name,
-            role=data.role,
+            role=role if role is not None else data.role,
             language=locale,
             is_blocked=is_blocked,
             ad_link_id=ad_link_id,

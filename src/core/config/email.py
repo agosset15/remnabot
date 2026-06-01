@@ -15,6 +15,6 @@ class EmailConfig(BaseConfig, env_prefix="EMAIL_"):
     password: SecretStr = SecretStr("")
 
     from_email: str = ""
-    from_name: str = "Oldnet"
+    from_name: str = ""
 
     verification_code_ttl_minutes: int = 15

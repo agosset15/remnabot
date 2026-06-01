@@ -235,6 +235,7 @@ async def purchase_subscription(
             ProcessPaymentDto(
                 payment_id=payment.id,
                 new_transaction_status=TransactionStatus.COMPLETED,
+                gateway_type=body.gateway_type,
             ),
         )
         tx_status = TransactionStatus.COMPLETED
@@ -314,6 +315,7 @@ async def extend_subscription(
             ProcessPaymentDto(
                 payment_id=payment.id,
                 new_transaction_status=TransactionStatus.COMPLETED,
+                gateway_type=body.gateway_type,
             ),
         )
         tx_status = TransactionStatus.COMPLETED
