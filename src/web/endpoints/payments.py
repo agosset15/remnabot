@@ -22,7 +22,6 @@ router = APIRouter(prefix=API_V1 + PAYMENTS_WEBHOOK_PATH, include_in_schema=Fals
 async def _build_response(
     gateway: Optional[BasePaymentGateway], request: Request, gateway_type: str
 ) -> Response:
-    """Try to build a gateway-specific response; fall back to plain 200."""
     if gateway is not None:
         try:
             return await gateway.build_webhook_response(request)
@@ -39,7 +38,6 @@ async def _enqueue_payment_task(
     config: AppConfig,
     event_publisher: EventPublisher,
 ) -> Optional[Response]:
-    """Enqueue the payment task. Returns a 503 Response on failure, or None on success."""
     try:
         await handle_payment_transaction_task.kiq(payment_id, payment_status, gateway_enum)  # type: ignore[call-overload]
         return None

@@ -4,11 +4,13 @@ from src.application.common import (
     BotService,
     BroadcastDispatcher,
     Cryptographer,
+    EmailSender,
     EventPublisher,
     EventSubscriber,
     FileDownloader,
     HttpClient,
     Notifier,
+    PasswordHasher,
     PaymentNotificationDispatcher,
     Redirect,
     Remnawave,
@@ -30,9 +32,11 @@ from src.infrastructure.services import (
     NotificationQueue,
     NotificationService,
     NotificationWorker,
+    PasswordHasherImpl,
     PaymentNotificationDispatcherImpl,
     RedirectImpl,
     RemnawaveImpl,
+    SmtpEmailSender,
     WebhookService,
     XuiDbReaderImpl,
 )
@@ -44,6 +48,8 @@ class ServicesProvider(Provider):
     bot = provide(source=BotServiceImpl, provides=BotService)
     health = provide(source=HealthService)
     cryptographer = provide(source=CryptographerImpl, provides=Cryptographer)
+    password_hasher = provide(source=PasswordHasherImpl, provides=PasswordHasher)
+    email_sender = provide(source=SmtpEmailSender, provides=EmailSender)
     http_client = provide(source=AiohttpClient, provides=HttpClient)
     redirect = provide(source=RedirectImpl, provides=Redirect)
     pricing = provide(source=PricingService)

@@ -1,4 +1,4 @@
-import base64
+import secrets
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from typing import Annotated
@@ -9,18 +9,11 @@ from dishka.integrations.fastapi import inject
 from fastapi import Depends, HTTPException, Request, Response, status
 
 from src.application.common.dao import UserDao
+from src.application.common.dao.auth import AuthSessionDao
 from src.application.dto import UserDto
 from src.core.config import AppConfig
 from src.core.constants import ACCESS_TOKEN_TTL_SECONDS, REFRESH_TOKEN_TTL_SECONDS
-
-
-def _b64url_encode(data: bytes) -> str:
-    return base64.urlsafe_b64encode(data).decode("ascii").rstrip("=")
-
-
-def _b64url_decode(data: str) -> bytes:
-    padding = "=" * (-len(data) % 4)
-    return base64.urlsafe_b64decode(data + padding)
+from src.web.schemas import AuthResponse
 
 
 def _normalize_decimal_str(value: Decimal) -> str:
@@ -67,6 +60,36 @@ def set_auth_cookies(response: Response, access_token: str, refresh_token: str) 
 def clear_auth_cookies(response: Response) -> None:
     response.delete_cookie("access_token", httponly=True, secure=True, samesite="lax")
     response.delete_cookie("refresh_token", httponly=True, secure=True, samesite="lax")
+
+
+async def issue_session(
+    user: UserDto,
+    config: AppConfig,
+    auth_session: AuthSessionDao,
+) -> tuple[str, str, AuthResponse]:
+    if config.jwt_secret is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="JWT secret not configured",
+        )
+    access_token, expires_at = generate_access_token(user.id, config.jwt_secret.get_secret_value())
+    refresh_token = secrets.token_urlsafe(32)
+    refresh_expires_at = datetime.now(tz=timezone.utc) + timedelta(
+        seconds=REFRESH_TOKEN_TTL_SECONDS
+    )
+    await auth_session.store_refresh_token(
+        token=refresh_token,
+        user_id=user.id,
+        ttl=REFRESH_TOKEN_TTL_SECONDS,
+    )
+    return (
+        access_token,
+        refresh_token,
+        AuthResponse(
+            expires_at=expires_at,
+            refresh_expires_at=refresh_expires_at,
+        ),
+    )
 
 
 # NOTE: The `FromDishka[...] = None` defaults are a required workaround for the

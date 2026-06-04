@@ -20,7 +20,6 @@ from .endpoints import (
 
 
 def resolve_cors(origins: list[str]) -> tuple[list[str], bool]:
-    """Return (origins, allow_credentials). Wildcard origin is incompatible with credentials."""
     if "*" in origins:
         logger.warning("CORS origins set to '*'; disabling allow_credentials for safety")
         return origins, False
