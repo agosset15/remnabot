@@ -16,6 +16,8 @@ class BotConfig(BaseConfig, env_prefix="BOT_"):
     support_username: SecretStr
     mini_app: Union[bool, SecretStr] = False
     proxy_url: Optional[SecretStr] = None
+    api_url: Optional[SecretStr] = None
+    api_file_url: Optional[SecretStr] = None
 
     notifications_chat_id: Optional[int] = None
     notifications_bot_thread_id: Optional[int] = None
