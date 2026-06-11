@@ -316,14 +316,21 @@ class ReferralDaoImpl(ReferralDao):
         )
 
     async def reassign_referred(self, from_user_id: int, to_user_id: int) -> None:
-        # Skip if the target already has a referral record as referred (unique constraint)
+        from sqlalchemy import delete  # noqa: PLC0415
+
+        # If the target already has a referral record as referred we cannot
+        # reassign (unique constraint), so delete the donor's record instead
+        # to avoid a FK violation when the donor user is deleted.
         existing = await self.session.scalar(
             select(Referral).where(Referral.referred_user_id == to_user_id)
         )
         if existing:
+            await self.session.execute(
+                delete(Referral).where(Referral.referred_user_id == from_user_id)
+            )
             logger.debug(
-                f"User id='{to_user_id}' already has a referral record as referred, "
-                f"skipping reassignment from user id='{from_user_id}'"
+                f"User id='{to_user_id}' already has a referral record as referred; "
+                f"deleted donor referral record for user id='{from_user_id}'"
             )
             return
 

@@ -59,7 +59,6 @@ class ConnectWebUser(Interactor[ConnectWebUserDto, Optional[UserDto]]):
             return web_user
 
         telegram_user = data.telegram_user
-        current_subscription = await self.subscription_dao.get_by_user_id(web_user.id)
         survivor, donor = self._pick_survivor(web_user, telegram_user)
 
         async with self.uow:
@@ -74,6 +73,7 @@ class ConnectWebUser(Interactor[ConnectWebUserDto, Optional[UserDto]]):
             f"(older={'web' if survivor is web_user else 'telegram'})"
         )
         user = await self.user_dao.get_by_id(survivor.id)  # ty: ignore[invalid-argument-type]
+        current_subscription = await self.subscription_dao.get_by_user_id(user.id)
         remna_user = await self.remnawave.update_user_metadata(
             user, current_subscription.user_remna_id
         )
@@ -140,7 +140,7 @@ class ConnectWebUser(Interactor[ConnectWebUserDto, Optional[UserDto]]):
         survivor.username = telegram_user.username
         survivor.email = web_user.email
 
-        if survivor.name == web_user.email:
+        if survivor.name == web_user.email.split("@")[0]:
             survivor.name = telegram_user.name
 
         await self._transfer_relations(survivor, donor)
@@ -183,11 +183,22 @@ class ConnectWebUser(Interactor[ConnectWebUserDto, Optional[UserDto]]):
 
         Must be called before deleting donor to avoid FK violations.
         """
+        # Fetch donor subscription before clearing the FK so we have the UUID.
+        donor_subscription = await self.subscription_dao.get_by_user_id(
+            donor.id  # ty: ignore[invalid-argument-type]
+        )
+
         # Clear current_subscription_id on donor so its FK to
         # subscriptions can be safely re-pointed to survivor.
         await self.user_dao.clear_current_subscription(
             donor.id  # ty: ignore[invalid-argument-type]
         )
+
+        if donor_subscription is not None:
+            await self.remnawave.delete_user(donor_subscription.user_remna_id)
+            logger.debug(
+                f"Deleted donor RemnaWave user uuid='{donor_subscription.user_remna_id}'"
+            )
 
         await self.subscription_dao.reassign_to_user(
             from_user_id=donor.id,  # ty: ignore[invalid-argument-type]
