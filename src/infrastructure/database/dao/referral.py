@@ -4,7 +4,7 @@ from adaptix import Retort
 from adaptix.conversion import ConversionRetort
 from loguru import logger
 from redis.asyncio import Redis
-from sqlalchemy import and_, case, func, select, update
+from sqlalchemy import and_, case, delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -316,8 +316,6 @@ class ReferralDaoImpl(ReferralDao):
         )
 
     async def reassign_referred(self, from_user_id: int, to_user_id: int) -> None:
-        from sqlalchemy import delete  # noqa: PLC0415
-
         # If the target already has a referral record as referred we cannot
         # reassign (unique constraint), so delete the donor's record instead
         # to avoid a FK violation when the donor user is deleted.
@@ -325,12 +323,28 @@ class ReferralDaoImpl(ReferralDao):
             select(Referral).where(Referral.referred_user_id == to_user_id)
         )
         if existing:
-            await self.session.execute(
-                delete(Referral).where(Referral.referred_user_id == from_user_id)
+            donor_referral_ids = list(
+                (
+                    await self.session.scalars(
+                        select(Referral.id).where(Referral.referred_user_id == from_user_id)
+                    )
+                ).all()
             )
+            if donor_referral_ids:
+                # Drop dependent reward rows first; their FK to referrals has no
+                # ON DELETE CASCADE, and bulk DELETE bypasses the ORM cascade.
+                await self.session.execute(
+                    delete(ReferralReward).where(
+                        ReferralReward.referral_id.in_(donor_referral_ids)
+                    )
+                )
+                await self.session.execute(
+                    delete(Referral).where(Referral.id.in_(donor_referral_ids))
+                )
             logger.debug(
                 f"User id='{to_user_id}' already has a referral record as referred; "
-                f"deleted donor referral record for user id='{from_user_id}'"
+                f"deleted '{len(donor_referral_ids)}' donor referral record(s) "
+                f"for user id='{from_user_id}'"
             )
             return
 
@@ -343,6 +357,19 @@ class ReferralDaoImpl(ReferralDao):
         count = result.rowcount  # ty: ignore[unresolved-attribute]
         logger.debug(
             f"Reassigned '{count}' referrals (as referred) "
+            f"from user id='{from_user_id}' to user id='{to_user_id}'"
+        )
+
+    async def reassign_rewards_user(self, from_user_id: int, to_user_id: int) -> None:
+        stmt = (
+            update(ReferralReward)
+            .where(ReferralReward.user_id == from_user_id)
+            .values(user_id=to_user_id)
+        )
+        result = await self.session.execute(stmt)
+        count = result.rowcount  # ty: ignore[unresolved-attribute]
+        logger.debug(
+            f"Reassigned '{count}' referral rewards "
             f"from user id='{from_user_id}' to user id='{to_user_id}'"
         )
 
