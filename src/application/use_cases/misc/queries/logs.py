@@ -27,7 +27,7 @@ class GetLogs(Interactor[None, GetLogsResultDto]):
 
     async def _execute(self, actor: UserDto, data: None) -> GetLogsResultDto:
         if not self.config.log.to_file:
-            logger.warning(f"User '{actor.remna_name}' requested logs, but to_file is disabled")
+            logger.warning(f"{actor.log} requested logs, but to_file is disabled")
             raise LogsToFileDisabledError()
 
         log_path = LOG_DIR / LOG_FILENAME
@@ -39,5 +39,5 @@ class GetLogs(Interactor[None, GetLogsResultDto]):
         timestamp = datetime_now().strftime(DATETIME_FILE_FORMAT)
         display_name = f"{timestamp}.log"
 
-        logger.info(f"Log file '{log_path}' prepared for user '{actor.remna_name}'")
+        logger.info(f"Log file '{log_path}' prepared for user {actor.log}")
         return GetLogsResultDto(path=log_path, display_name=display_name)

@@ -149,7 +149,7 @@ class ResetUserTraffic(Interactor[int, None]):
             )
             raise
 
-        logger.info(f"{actor.log} Reset traffic for user '{target_user.remna_name}'")
+        logger.info(f"{actor.log} Reset traffic for user '{target_user.id}'")
 
 
 class ReissueSubscription(Interactor[None, None]):
@@ -216,4 +216,4 @@ class ReissueUserSubscription(Interactor[int, None]):
 
         await self.remnawave.revoke_subscription(current_subscription.user_remna_id)
 
-        logger.info(f"{actor.log} Reissued subscription for user '{target_user.remna_name}'")
+        logger.info(f"{actor.log} Reissued subscription for user '{target_user.id}'")

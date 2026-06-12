@@ -69,7 +69,7 @@ async def on_logs_request(
         logger.error(f"{user.log} Log file not found at '{LOG_DIR}/{LOG_FILENAME}'")
         await notifier.notify_user(user, i18n_key="ntf-error.log-not-found")
     except LogsToFileDisabledError:
-        logger.debug(f"Logs request denied for '{user.remna_name}': file logging is off")
+        logger.debug(f"Logs request denied for {user.log}: file logging is off")
         await notifier.notify_user(user, i18n_key="ntf-error.logs-disabled")
     finally:
         if tmp_dir is not None:

@@ -33,7 +33,7 @@ class ThrottlingMiddleware(EventTypedMiddleware):
 
         if user.telegram_id in self.cache:
             await notifier.notify_user(user, i18n_key="ntf-common.throttling")
-            logger.warning(f"User '{user.remna_name}' throttled")
+            logger.warning(f"{user.log} throttled")
             return
 
         self.cache[user.telegram_id] = None

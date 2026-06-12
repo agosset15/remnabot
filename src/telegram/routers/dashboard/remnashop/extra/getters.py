@@ -24,4 +24,5 @@ async def extra_getter(
         "link_reset_cooldown": extra.link_reset.cooldown_hours,
         "referral_reset_enabled": extra.referral_reset.enabled,
         "referral_reset_cooldown": extra.referral_reset.cooldown_hours,
+        "trial_channel_guard_enabled": extra.trial_channel_guard,
     }

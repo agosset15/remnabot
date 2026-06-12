@@ -8,7 +8,7 @@ from src.telegram.widgets import Banner, I18nFormat, IgnoreUpdate
 from src.telegram.widgets.kbd import Button, Row, Start, SwitchTo
 
 from .getters import extra_getter
-from .handlers import on_cooldown_input, on_toggle
+from .handlers import on_cooldown_input, on_toggle, on_trial_channel_guard_toggle
 
 main = Window(
     Banner(BannerName.DASHBOARD),
@@ -51,6 +51,16 @@ main = Window(
             ),
             id="referral_reset",
             state=RemnashopExtra.REFERRAL_RESET,
+        ),
+    ),
+    Row(
+        SwitchTo(
+            text=I18nFormat(
+                "btn-remnashop-extra.trial-channel-guard",
+                enabled=F["trial_channel_guard_enabled"],
+            ),
+            id="trial_channel_guard",
+            state=RemnashopExtra.TRIAL_CHANNEL_GUARD,
         ),
     ),
     Row(
@@ -174,10 +184,39 @@ referral_reset = Window(
     getter=extra_getter,
 )
 
+trial_channel_guard = Window(
+    Banner(BannerName.DASHBOARD),
+    I18nFormat(
+        "msg-extra-trial-channel-guard",
+        enabled=F["trial_channel_guard_enabled"],
+    ),
+    Row(
+        Button(
+            text=I18nFormat(
+                "btn-remnashop-extra.toggle",
+                enabled=F["trial_channel_guard_enabled"],
+            ),
+            id="trial_channel_guard_toggle",
+            on_click=on_trial_channel_guard_toggle,
+        ),
+    ),
+    Row(
+        SwitchTo(
+            text=I18nFormat("btn-back.general"),
+            id="back",
+            state=RemnashopExtra.MAIN,
+        ),
+    ),
+    IgnoreUpdate(),
+    state=RemnashopExtra.TRIAL_CHANNEL_GUARD,
+    getter=extra_getter,
+)
+
 router = Dialog(
     main,
     device_single,
     device_all,
     link_reset,
     referral_reset,
+    trial_channel_guard,
 )

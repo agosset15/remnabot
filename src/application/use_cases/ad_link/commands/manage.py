@@ -76,8 +76,10 @@ class UpdateAdLink(Interactor[UpdateAdLinkDto, Optional[AdLinkDto]]):
         async with self.uow:
             updated = await self.ad_link_dao.update(data.link)
             await self.uow.commit()
+
         if updated:
-            logger.info(f"Ad link id={data.link.id} updated by {actor.remna_name}")
+            logger.info(f"Ad link id={data.link.id} updated by {actor.log}")
+
         return updated
 
 
@@ -92,6 +94,8 @@ class DeleteAdLink(Interactor[int, bool]):
         async with self.uow:
             deleted = await self.ad_link_dao.delete(link_id)
             await self.uow.commit()
+
         if deleted:
-            logger.info(f"Ad link id={link_id} deleted by {actor.remna_name}")
+            logger.info(f"Ad link id={link_id} deleted by {actor.log}")
+
         return deleted

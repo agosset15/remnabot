@@ -40,7 +40,7 @@ class UserDaoImpl(UserDao):
         self.session.add(db_user)
         await self.session.flush()
 
-        logger.debug(f"New user '{user.remna_name}' created in database")
+        logger.debug(f"New user {user.log} created in database")
         return self._convert_to_dto(db_user)
 
     async def get_by_id(self, user_id: int) -> Optional[UserDto]:

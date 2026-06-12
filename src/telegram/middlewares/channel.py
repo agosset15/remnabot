@@ -38,7 +38,7 @@ class ChannelMiddleware(EventTypedMiddleware):
                 await self._delete_previous_message(event)
 
             if not result.error_occurred:
-                logger.debug(f"User '{user.remna_name}' passed channel check")
+                logger.debug(f"{user.log} passed channel check")
 
             return await handler(event, data)
 
@@ -52,7 +52,7 @@ class ChannelMiddleware(EventTypedMiddleware):
                 else "ntf-requirement.channel-join-required"
             )
 
-        logger.debug(f"User '{user.remna_name}' failed channel check with status '{result.status}'")
+        logger.debug(f"{user.log} failed channel check with status '{result.status}'")
 
         await notifier.notify_user(
             user=user,

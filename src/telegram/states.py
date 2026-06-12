@@ -133,6 +133,7 @@ class RemnashopExtra(StatesGroup):
     DEVICE_ALL = State()
     LINK_RESET = State()
     REFERRAL_RESET = State()
+    TRIAL_CHANNEL_GUARD = State()
 
 
 class RemnashopReferral(StatesGroup):

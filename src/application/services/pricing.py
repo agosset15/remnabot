@@ -38,7 +38,7 @@ class PricingService:
         discount_percent = self.get_effective_discount(user)
 
         if discount_percent >= 100:
-            logger.info(f"100% discount applied, price is free for user '{user.remna_name}'")
+            logger.info(f"100% discount applied, price is free for user {user.log}")
             return PriceDetailsDto(
                 original_amount=price,
                 discount_percent=100,

@@ -101,12 +101,12 @@ async def send_broadcast_task(  # noqa: C901
 
                 except TelegramRetryAfter as error:
                     wait_time = error.retry_after + BATCH_DELAY
-                    logger.warning(f"Flood wait {error.retry_after}s for user '{user.remna_name}'")
+                    logger.warning(f"Flood wait {error.retry_after}s for user {user.log}")
                     await asyncio.sleep(wait_time)
                     retry_time_for_user += wait_time
                     total_retry_time += wait_time
                 except Exception:
-                    logger.exception(f"Failed to send to '{user.remna_name}'")
+                    logger.exception(f"Failed to send to {user.log}")
                     return user.id, user.telegram_id, status, msg_id, retry_time_for_user
 
         for i, batch in enumerate(chunked(users, BATCH_SIZE_20), start=1):

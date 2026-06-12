@@ -4,12 +4,13 @@ from typing import Optional
 from uuid import UUID
 
 from loguru import logger
+from remnapy import RemnawaveSDK
 
 from src.application.common import Interactor, Remnawave
 from src.application.common.dao import SettingsDao, SubscriptionDao, UserDao
 from src.application.common.policy import Permission
 from src.application.common.uow import UnitOfWork
-from src.application.dto import UserDto
+from src.application.dto import RequirementSettingsDto, SettingsDto, UserDto
 from src.core.enums import SubscriptionStatus
 from src.core.utils.time import datetime_now
 
@@ -92,7 +93,7 @@ class DeleteSubscription(Interactor[int, None]):
             try:
                 await self.remnawave.delete_user(subscription.user_remna_id)
             except Exception as e:
-                logger.error(f"Failed to delete user '{target_user.remna_name}' from remnapy: {e}")
+                logger.error(f"Failed to delete user {target_user.log} from remnapy: {e}")
                 raise
 
             await self.user_dao.clear_current_subscription(target_user.id)
@@ -357,12 +358,7 @@ class ChannelMemberEventDto:
 
 
 class DisableTrialSubscription(Interactor[ChannelMemberEventDto, Optional[UserDto]]):
-    """Disables an active trial subscription when the user leaves the required channel.
-
-    Returns the affected UserDto if the trial was disabled, None otherwise.
-    """
-
-    required_permission = None  # system-only
+    required_permission = None
 
     def __init__(
         self,
@@ -378,23 +374,17 @@ class DisableTrialSubscription(Interactor[ChannelMemberEventDto, Optional[UserDt
         self.subscription_dao = subscription_dao
         self.remnawave_sdk = remnawave_sdk
 
-    async def _execute(
-        self, actor: UserDto, data: ChannelMemberEventDto
-    ) -> Optional[UserDto]:
+    async def _execute(self, actor: UserDto, data: ChannelMemberEventDto) -> Optional[UserDto]:
         settings = await self.settings_dao.get()
-        req = settings.requirements
 
-        if not req.channel_required:
-            return None
-
-        if not self._is_our_channel(req, data):
+        if not self._guard_targets_channel(settings, data):
             return None
 
         user = await self.user_dao.get_by_telegram_id(data.telegram_id)
         if not user:
             return None
 
-        subscription = await self.subscription_dao.get_current(data.telegram_id)
+        subscription = await self.subscription_dao.get_current(user.id)
         if not subscription:
             return None
 
@@ -425,25 +415,27 @@ class DisableTrialSubscription(Interactor[ChannelMemberEventDto, Optional[UserDt
         return user
 
     @staticmethod
-    def _is_our_channel(req: object, data: "ChannelMemberEventDto") -> bool:
-        channel_link: str = req.channel_link.get_secret_value()  # type: ignore[attr-defined]
-        if req.channel_has_username:  # type: ignore[attr-defined]
+    def _guard_targets_channel(settings: SettingsDto, data: ChannelMemberEventDto) -> bool:
+        req = settings.requirements
+        return (
+            settings.extra.trial_channel_guard
+            and req.channel_required
+            and DisableTrialSubscription._is_our_channel(req, data)
+        )
+
+    @staticmethod
+    def _is_our_channel(req: RequirementSettingsDto, data: ChannelMemberEventDto) -> bool:
+        channel_link = req.channel_link.get_secret_value()
+        if req.channel_has_username:
             username = channel_link.lstrip("@")
             return data.chat_username == username
-        if req.channel_id:  # type: ignore[attr-defined]
+        if req.channel_id:
             return data.chat_id == req.channel_id
         return False
 
 
 class EnableTrialSubscription(Interactor[ChannelMemberEventDto, Optional[UserDto]]):
-    """Re-enables a trial subscription when the user rejoins the required channel,
-    but only if it was disabled by this system (disabled_by_channel_leave=True)
-    and has not yet expired.
-
-    Returns the affected UserDto if the trial was re-enabled, None otherwise.
-    """
-
-    required_permission = None  # system-only
+    required_permission = None
 
     def __init__(
         self,
@@ -459,23 +451,17 @@ class EnableTrialSubscription(Interactor[ChannelMemberEventDto, Optional[UserDto
         self.subscription_dao = subscription_dao
         self.remnawave_sdk = remnawave_sdk
 
-    async def _execute(
-        self, actor: UserDto, data: ChannelMemberEventDto
-    ) -> Optional[UserDto]:
+    async def _execute(self, actor: UserDto, data: ChannelMemberEventDto) -> Optional[UserDto]:
         settings = await self.settings_dao.get()
-        req = settings.requirements
 
-        if not req.channel_required:
-            return None
-
-        if not DisableTrialSubscription._is_our_channel(req, data):
+        if not DisableTrialSubscription._guard_targets_channel(settings, data):
             return None
 
         user = await self.user_dao.get_by_telegram_id(data.telegram_id)
         if not user:
             return None
 
-        subscription = await self.subscription_dao.get_current(data.telegram_id)
+        subscription = await self.subscription_dao.get_current(user.id)
         if not subscription:
             return None
 
@@ -492,7 +478,8 @@ class EnableTrialSubscription(Interactor[ChannelMemberEventDto, Optional[UserDto
 
         if datetime_now() > subscription.expire_at:
             logger.debug(
-                f"Trial for user '{data.telegram_id}' expired while channel-disabled, skipping restore"
+                f"Trial for user '{data.telegram_id}' expired while channel-disabled, "
+                f"skipping restore"
             )
             return None
 

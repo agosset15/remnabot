@@ -10,6 +10,7 @@ from src.application.dto import TelegramUserDto
 from src.application.use_cases.settings.commands.extra import (
     ToggleResetFeature,
     ToggleResetFeatureDto,
+    ToggleTrialChannelGuard,
     UpdateResetCooldown,
     UpdateResetCooldownDto,
 )
@@ -34,6 +35,17 @@ async def on_toggle(
     user: TelegramUserDto = dialog_manager.middleware_data[USER_KEY]
     feature = _STATE_TO_FEATURE.get(dialog_manager.current_context().state, "")
     await toggle_reset_feature(user, ToggleResetFeatureDto(feature=feature))
+
+
+@inject
+async def on_trial_channel_guard_toggle(
+    callback: CallbackQuery,
+    widget: Button,
+    dialog_manager: DialogManager,
+    toggle_trial_channel_guard: FromDishka[ToggleTrialChannelGuard],
+) -> None:
+    user: TelegramUserDto = dialog_manager.middleware_data[USER_KEY]
+    await toggle_trial_channel_guard(user)
 
 
 @inject

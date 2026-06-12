@@ -323,27 +323,32 @@ btn-remnashop-transaction = { $status ->
 
 btn-remnashop-extra =
     .device-single = { $enabled -> 
-        [1] ✅
-        *[0] ❌
+        [1] 🟢
+        *[0] 🔴
     } Удаление устройства
 
     .device-all = { $enabled -> 
-        [1] ✅
-        *[0] ❌
+        [1] 🟢
+        *[0] 🔴
     } Удаление всех устройств
 
     .link-reset = { $enabled -> 
-        [1] ✅
-        *[0] ❌
+        [1] 🟢
+        *[0] 🔴
     } Перевыпуск подписки
     .referral-reset = { $enabled -> 
-        [1] ✅
-        *[0] ❌
+        [1] 🟢
+        *[0] 🔴
     } Сброс реф. ссылки
 
+    .trial-channel-guard = { $enabled ->
+        [1] 🟢
+        *[0] 🔴
+    } Авто отключение пробника
+
     .toggle = { $enabled ->
-        [1] ✅ Включено
-        *[0] ❌ Выключено
+        [1] 🟢 Включено
+        *[0] 🔴 Выключено
     }
 
 btn-menu-editor =

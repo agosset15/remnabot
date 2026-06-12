@@ -22,6 +22,10 @@ class TempUserDto:
     def remna_name(self) -> str:
         return f"{REMNASHOP_PREFIX}{self.telegram_id}"
 
+    @property
+    def log(self) -> str:
+        return f"[{self.role}:{self.remna_name} ({self.name})]"
+
     @classmethod
     def from_aiogram(cls, aiogram_user: AiogramUser) -> Self:
         return cls(
@@ -81,7 +85,7 @@ class UserDto(BaseDto, TrackableMixin, TimestampMixin):
 
     @property
     def log(self) -> str:
-        return f"[{self.role}:{self.remna_name} ({self.name})]"
+        return f"[{self.role}:{self.id}:{self.remna_name} ({self.name})]"
 
     @property
     def remna_name(self) -> str:  # NOTE: DONT USE FOR GET USER!

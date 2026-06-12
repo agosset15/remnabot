@@ -123,7 +123,7 @@ class GiveReferrerReward(Interactor[GiveReferrerRewardDto, None]):
             reward_type=reward.type,
         )
         await self.event_publisher.publish(event_reward)
-        logger.info(f"{actor.log} Finished applying reward to user '{user.remna_name}'")
+        logger.info(f"{actor.log} Finished applying reward to user '{user.id}'")
 
 
 @dataclass(frozen=True)
@@ -171,7 +171,7 @@ class AssignReferralRewards(Interactor[AssignReferralRewardsDto, None]):
         referral, parent = await self.referral_dao.get_referral_chain(data.user.id)
 
         if not referral:
-            logger.info(f"User '{data.user.remna_name}' not referred; reward assignment skipped")
+            logger.info(f"{data.user.log} not referred; reward assignment skipped")
             return
 
         reward_type = settings.referral.reward.type

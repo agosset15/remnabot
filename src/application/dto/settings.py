@@ -213,6 +213,7 @@ class ExtraSettingsDto(TrackableMixin):
     device_all_reset: ResetFeatureSettingsDto = field(default_factory=ResetFeatureSettingsDto)
     link_reset: ResetFeatureSettingsDto = field(default_factory=ResetFeatureSettingsDto)
     referral_reset: ResetFeatureSettingsDto = field(default_factory=ResetFeatureSettingsDto)
+    trial_channel_guard: bool = False
 
 
 @dataclass(kw_only=True)

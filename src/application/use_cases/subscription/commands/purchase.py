@@ -51,7 +51,7 @@ class ActivateTrialSubscription(Interactor[ActivateTrialSubscriptionDto, None]):
         if not user.is_trial_available:
             raise TrialNotAvailableError(f"Trial not available for user '{user.remna_name}'")
 
-        logger.info(f"{actor.log} Started trial for user '{user.remna_name}'")
+        logger.info(f"{actor.log} Started trial for user '{user.id}'")
 
         created_user = await self.remnawave.create_user(user, plan=plan)
 
@@ -78,7 +78,7 @@ class ActivateTrialSubscription(Interactor[ActivateTrialSubscriptionDto, None]):
             await self.user_dao.set_trial_available(user.id, False)
             await self.uow.commit()
 
-        logger.debug(f"{actor.log} Created new trial subscription for user '{user.remna_name}'")
+        logger.debug(f"{actor.log} Created new trial subscription for user '{user.id}'")
 
         event = TrialActivatedEvent(
             telegram_id=user.telegram_id,
@@ -151,7 +151,7 @@ class PurchaseSubscription(Interactor[PurchaseSubscriptionDto, None]):
                     await self.user_dao.update(user)
                 await self.uow.commit()
 
-                logger.debug(f"{actor.log} Created new subscription for user '{user.remna_name}'")
+                logger.debug(f"{actor.log} Created new subscription for user '{user.id}'")
 
             # 2. RENEW (NOT TRIAL)
             elif purchase_type == PurchaseType.RENEW and not has_trial:
@@ -189,7 +189,7 @@ class PurchaseSubscription(Interactor[PurchaseSubscriptionDto, None]):
                     user.purchase_discount = 0
                     await self.user_dao.update(user)
                 await self.uow.commit()
-                logger.debug(f"{actor.log} Renewed subscription for user '{user.remna_name}'")
+                logger.debug(f"{actor.log} Renewed subscription for user '{user.id}'")
 
             # 3. CHANGE OR CONVERT FROM TRIAL
             elif purchase_type == PurchaseType.CHANGE or has_trial:
@@ -220,14 +220,14 @@ class PurchaseSubscription(Interactor[PurchaseSubscriptionDto, None]):
                     user.purchase_discount = 0
                     await self.user_dao.update(user)
                 await self.uow.commit()
-                logger.debug(f"{actor.log} Changed subscription for user '{user.remna_name}'")
+                logger.debug(f"{actor.log} Changed subscription for user '{user.id}'")
 
             else:
                 raise ValueError(
                     f"Unknown purchase type '{purchase_type}' for user '{user.remna_name}'"
                 )
 
-        logger.info(f"{actor.log} Purchase subscription completed for user '{user.remna_name}'")
+        logger.info(f"{actor.log} Purchase subscription completed for user '{user.id}'")
 
     def _build_subscription_dto(
         self,

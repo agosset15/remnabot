@@ -74,7 +74,7 @@ async def menu_getter(
         }
 
         if not menu_data.current_subscription:
-            logger.debug(f"User {user.remna_name} has no active subscription")
+            logger.debug(f"{user.log} has no active subscription")
             data["trial_available"] = menu_data.is_trial_available and menu_data.available_trial
             return data
 
@@ -107,7 +107,7 @@ async def menu_getter(
                 else subscription.url,
             }
         )
-        logger.debug(f"Menu data for user {user.remna_name}: {data}")
+        logger.debug(f"Menu data for user {user.log}: {data}")
         return data
 
     except Exception as e:

@@ -83,7 +83,7 @@ class SyncRemnaUser(Interactor[SyncRemnaUserDto, bool]):
                 logger.info(f"Sync completed for user '{remna_user.telegram_id}'")
                 return False
             else:
-                logger.info(f"Synchronizing existing subscription for user '{user.remna_name}'")
+                logger.info(f"Synchronizing existing subscription for user {user.log}")
                 changed = await self._update_subscription(subscription, remna_subscription)
                 await self.uow.commit()
                 logger.info(f"Sync completed for user '{remna_user.telegram_id}'")
@@ -210,7 +210,7 @@ class SyncAllUsersFromBot(Interactor[None, dict[str, int]]):
                     recreated += 1
 
             except Exception as exception:
-                logger.exception(f"Error reverse-syncing bot user '{user.remna_name}': {exception}")
+                logger.exception(f"Error reverse-syncing bot user {user.log}: {exception}")
                 errors += 1
 
         result = {

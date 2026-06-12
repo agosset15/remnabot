@@ -72,7 +72,7 @@ class RevokeRole(Interactor[int, None]):
                 raise UserNotFoundError(user_id)
 
             if actor.id == target_user.id:
-                logger.warning(f"User '{actor.remna_name}' tried to revoke their own role")
+                logger.warning(f"{actor.log} tried to revoke their own role")
                 raise PermissionDeniedError()
 
             if not actor.role > target_user.role:

@@ -6,12 +6,12 @@ from dishka import FromDishka
 from src.application.common import Notifier
 from src.application.common.dao import SettingsDao
 from src.application.dto import MessagePayloadDto
-from src.application.use_cases.subscription import (
+from src.application.use_cases.subscription.commands.management import (
     ChannelMemberEventDto,
     DisableTrialSubscription,
     EnableTrialSubscription,
 )
-from src.telegram.keyboards import CALLBACK_CHANNEL_CONFIRM, get_channel_keyboard
+from src.telegram.keyboards import get_channel_keyboard
 
 router = Router(name=__name__)
 

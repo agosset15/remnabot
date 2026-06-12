@@ -67,13 +67,18 @@ class SearchUsers(Interactor[SearchUsersDto, list[UserDto]]):
             query = data.query.strip().removeprefix("@")
 
             if query.isdigit():
-                telegram_id = int(query)
-                user = await self.user_dao.get_by_telegram_id(telegram_id)
+                numeric_id = int(query)
+                user = await self.user_dao.get_by_telegram_id(numeric_id)
                 if user:
                     found_users.append(user)
-                    logger.info(f"Searched by Telegram ID '{telegram_id}', user found")
+                    logger.info(f"Searched by Telegram ID '{numeric_id}', user found")
                 else:
-                    logger.warning(f"Searched by Telegram ID '{telegram_id}', user not found")
+                    logger.warning(f"Searched by Telegram ID '{numeric_id}', user not found")
+
+                user_by_id = await self.user_dao.get_by_id(numeric_id)
+                if user_by_id and user_by_id.id not in {u.id for u in found_users}:
+                    found_users.append(user_by_id)
+                    logger.info(f"Searched by internal ID '{numeric_id}', user found")
 
             elif query.startswith(REMNASHOP_PREFIX):
                 remainder = query[len(REMNASHOP_PREFIX) :]

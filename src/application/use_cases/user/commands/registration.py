@@ -110,7 +110,7 @@ class GetOrCreateUser(Interactor[GetOrCreateUserDto, Optional[UserDto]]):
             await self.uow.commit()
 
         if is_blocked:
-            logger.warning(f"New user '{user.remna_name}' created as blocked (found in blacklist)")
+            logger.warning(f"New user {user.log} created as blocked (found in blacklist)")
             await self.event_publisher.publish(
                 BlacklistRegistrationAttemptEvent(
                     user_id=user.id,
@@ -146,7 +146,7 @@ class GetOrCreateUser(Interactor[GetOrCreateUserDto, Optional[UserDto]]):
             )
         )
 
-        logger.info(f"New user '{user.remna_name}' created")
+        logger.info(f"New user {user.log} created")
         return user
 
     async def _resolve_ad_link(self, ad_link_code: Optional[str]) -> Optional[AdLinkDto]:
@@ -250,7 +250,7 @@ class UpdateUserProfile(Interactor[UpdateUserProfileDto, UserDto]):
         async with self.uow:
             updated_user = await self.user_dao.update(user)
             if updated_user:
-                logger.info(f"User '{user.remna_name}' profile updated from Telegram data")
+                logger.info(f"{user.log} profile updated from Telegram data")
             await self.uow.commit()
 
         return updated_user or user

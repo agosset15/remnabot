@@ -207,7 +207,7 @@ class CreatePayment(Interactor[CreatePaymentDto, PaymentResultDto]):
             await self.transaction_dao.create(transaction)
             await self.uow.commit()
 
-        logger.info(f"Created transaction '{payment.id}' for user '{actor.remna_name}'")
+        logger.info(f"Created transaction '{payment.id}' for user {actor.log}")
         return payment
 
 
@@ -255,7 +255,7 @@ class CreateTestPayment(Interactor[PaymentGatewayType, PaymentResultDto]):
             await self.transaction_dao.create(transaction)
             await self.uow.commit()
 
-        logger.info(f"Created test transaction '{payment.id}' for user '{actor.remna_name}'")
+        logger.info(f"Created test transaction '{payment.id}' for user {actor.log}")
         return payment
 
 
@@ -330,7 +330,7 @@ class ProcessPayment(Interactor[ProcessPaymentDto, None]):
                     )
                     return
                 await self.uow.commit()
-                logger.info(f"Payment canceled '{payment_id}' for user '{user.remna_name}'")
+                logger.info(f"Payment canceled '{payment_id}' for user {user.log}")
                 return
 
             elif new_status == TransactionStatus.COMPLETED:
@@ -360,7 +360,7 @@ class ProcessPayment(Interactor[ProcessPaymentDto, None]):
                     )
                     return
                 await self.uow.commit()
-                logger.warning(f"Payment refunded '{payment_id}' for user '{user.remna_name}'")
+                logger.warning(f"Payment refunded '{payment_id}' for user {user.log}")
                 await self.notifier.notify_admins(
                     MessagePayloadDto(
                         i18n_key="event-payment.refunded",
@@ -390,7 +390,7 @@ class ProcessPayment(Interactor[ProcessPaymentDto, None]):
 
         # UoW closed cleanly; purchase_subscription will open its own UoW
         await self._handle_success(user, transaction)
-        logger.info(f"Payment succeeded '{payment_id}' for user '{user.remna_name}'")
+        logger.info(f"Payment succeeded '{payment_id}' for user {user.log}")
 
     async def _handle_success(self, user: UserDto, transaction: TransactionDto) -> None:
         if transaction.is_test:

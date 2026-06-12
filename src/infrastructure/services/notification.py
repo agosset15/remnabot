@@ -338,7 +338,7 @@ class NotificationService(Notifier):
 
         for user, result in zip(users, results):
             if isinstance(result, Exception):
-                logger.error(f"Broadcast failed for user '{user.remna_name}': {result}")
+                logger.error(f"Broadcast failed for user {user.log}: {result}")
 
     async def _send_message(
         self,
@@ -346,7 +346,7 @@ class NotificationService(Notifier):
         payload: MessagePayloadDto,
     ) -> Optional[Message]:
         if user.telegram_id is None:
-            logger.debug(f"Skipping notification for web-only user '{user.remna_name}'")
+            logger.debug(f"Skipping notification for web-only user {user.log}")
             return None
 
         render_kwargs = payload.i18n_kwargs.copy()
@@ -393,7 +393,7 @@ class NotificationService(Notifier):
 
                 message = await method(user.telegram_id, media, caption=text, **kwargs)
             else:
-                logger.error(f"Payload must contain text or media for user '{user.remna_name}'")
+                logger.error(f"Payload must contain text or media for user {user.log}")
                 return None
 
             if message and payload.delete_after:
@@ -408,10 +408,10 @@ class NotificationService(Notifier):
             return message
 
         except TelegramForbiddenError:
-            logger.warning(f"Bot was blocked by user '{user.remna_name}'")
+            logger.warning(f"Bot was blocked by user {user.log}")
             return None
         except Exception as e:
-            logger.exception(f"Failed to send notification to '{user.remna_name}': {e}")
+            logger.exception(f"Failed to send notification to {user.log}: {e}")
             raise
 
     def _get_media_method(self, payload: MessagePayloadDto) -> Optional[Callable[..., Any]]:
