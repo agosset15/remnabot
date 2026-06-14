@@ -401,6 +401,26 @@ class NodeTrafficReachedEvent(NodeEvent):
 
 
 @dataclass(frozen=True, kw_only=True)
+class TorrentBlockerReportEvent(UserEvent):
+    notification_type: NotificationType = field(
+        default=SystemNotificationType.TORRENT_BLOCKER,
+        init=False,
+    )
+
+    node_name: str
+    blocked_ip: str
+    block_duration: Any
+    will_unblock_at: str
+    protocol: str
+    source: str
+    destination: str
+
+    @property
+    def event_key(self) -> str:
+        return "event-torrent-blocker.report"
+
+
+@dataclass(frozen=True, kw_only=True)
 class NodeStatusChangedEvent(NodeEvent):
     notification_type: NotificationType = field(
         default=SystemNotificationType.NODE_STATUS_CHANGED,

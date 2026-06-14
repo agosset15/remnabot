@@ -254,6 +254,7 @@ class SystemNotificationType(UpperStrEnum):
     #
     NODE_STATUS_CHANGED = auto()
     NODE_TRAFFIC_REACHED = auto()
+    TORRENT_BLOCKER = auto()
     #
     USER_FIRST_CONNECTION = auto()
     USER_DEVICES_UPDATED = auto()
@@ -269,6 +270,7 @@ class UserNotificationType(UpperStrEnum):
     EXPIRED_1_DAY_AGO = auto()
     LIMITED = auto()
     NOT_CONNECTED = auto()
+    TORRENT_BLOCKED = auto()
     #
     REFERRAL_ATTACHED = auto()
     REFERRAL_REWARD_RECEIVED = auto()

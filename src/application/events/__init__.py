@@ -13,6 +13,7 @@ from .system import (
     NotificationErrorEvent,
     RemnawaveErrorEvent,
     RemnawaveVersionWarningEvent,
+    TorrentBlockerReportEvent,
     TrialActivatedEvent,
     UserDeviceAddedEvent,
     UserDeviceDeletedEvent,
@@ -28,6 +29,7 @@ from .user import (
     SubscriptionExpiredEvent,
     SubscriptionExpiresEvent,
     SubscriptionLimitedEvent,
+    TorrentBlockedEvent,
     UserNotConnectedEvent,
 )
 
@@ -50,6 +52,7 @@ __all__ = [
     "NodeConnectionLostEvent",
     "NodeConnectionRestoredEvent",
     "NodeTrafficReachedEvent",
+    "TorrentBlockerReportEvent",
     #
     "UserDeviceAddedEvent",
     "UserDeviceDeletedEvent",
@@ -63,8 +66,9 @@ __all__ = [
     "ReferralRewardReceivedEvent",
     #
     "TrialActivatedEvent",
+    "UserNotConnectedEvent",
     "SubscriptionExpiredEvent",
     "SubscriptionExpiresEvent",
     "SubscriptionLimitedEvent",
-    "UserNotConnectedEvent",
+    "TorrentBlockedEvent",
 ]

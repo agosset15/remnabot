@@ -1,10 +1,12 @@
-from datetime import timedelta
+from datetime import datetime, timedelta
 from enum import StrEnum
+from typing import Any
 
 from loguru import logger
+from redis.asyncio import Redis
 from remnapy.models.webhook import HwidUserDeviceDto, NodeDto
 
-from src.application.common import EventPublisher
+from src.application.common import BotService, EventPublisher
 from src.application.common.dao import SubscriptionDao, UserDao
 from src.application.common.uow import UnitOfWork
 from src.application.dto import SubscriptionDto, UserDto
@@ -15,19 +17,20 @@ from src.application.events import (
     SubscriptionExpiredEvent,
     SubscriptionExpiresEvent,
     SubscriptionLimitedEvent,
+    TorrentBlockedEvent,
     UserDeviceAddedEvent,
     UserDeviceDeletedEvent,
     UserFirstConnectionEvent,
     UserNotConnectedEvent,
 )
-from src.application.events.system import SubscriptionRevokedEvent
+from src.application.events.system import SubscriptionRevokedEvent, TorrentBlockerReportEvent
 from src.application.events.user import SubscriptionExpiredAgoEvent
 from src.application.use_cases.remnawave.commands.synchronization import (
     SyncRemnaUser,
     SyncRemnaUserDto,
 )
 from src.core.config import AppConfig
-from src.core.constants import DATETIME_VIEW_FORMAT, IMPORTED_TAG, T_ME
+from src.core.constants import DATETIME_VIEW_FORMAT, IMPORTED_TAG, T_ME, TIME_1H
 from src.core.enums import SubscriptionStatus
 from src.core.types import RemnaUserDto
 from src.core.utils.converters import country_code_to_flag
@@ -35,6 +38,7 @@ from src.core.utils.i18n_helpers import (
     i18n_format_bytes_to_unit,
     i18n_format_device_limit,
     i18n_format_expire_time,
+    i18n_format_seconds,
 )
 from src.core.utils.i18n_keys import ByteUnitKey
 from src.core.utils.time import datetime_now, get_traffic_reset_delta
@@ -48,6 +52,8 @@ class RemnaWebhookService:
         user_dao: UserDao,
         subscription_dao: SubscriptionDao,
         event_bus: EventPublisher,
+        redis: Redis,
+        bot_service: BotService,
         #
         sync_user: SyncRemnaUser,
     ) -> None:
@@ -56,6 +62,8 @@ class RemnaWebhookService:
         self.user_dao = user_dao
         self.subscription_dao = subscription_dao
         self.event_bus = event_bus
+        self.redis = redis
+        self.bot_service = bot_service
         #
         self.sync_user = sync_user
 
@@ -271,6 +279,103 @@ class RemnaWebhookService:
         support_url = f"{T_ME}{self.config.bot.support_username.get_secret_value()}"
         await self.event_bus.publish(UserNotConnectedEvent(user=user, support_url=support_url))
 
+    async def handle_torrent_blocker_event(self, payload: dict[str, Any]) -> None:
+        logger.info("Received torrent blocker webhook event")
+
+        data = payload.get("data")
+        if not isinstance(data, dict):
+            logger.warning("Torrent blocker payload is missing 'data' object")
+            return
+
+        user_data = data.get("user")
+        node_data = data.get("node")
+        report = data.get("report")
+
+        if not isinstance(user_data, dict) or not isinstance(node_data, dict):
+            logger.warning("Torrent blocker payload is missing 'user' or 'node' object")
+            return
+
+        if not isinstance(report, dict):
+            logger.warning("Torrent blocker payload is missing 'report' object")
+            return
+
+        action_report = report.get("actionReport")
+        xray_report = report.get("xrayReport")
+
+        if not isinstance(action_report, dict) or not isinstance(xray_report, dict):
+            logger.warning("Torrent blocker payload is missing action/xray report details")
+            return
+
+        if not action_report.get("blocked"):
+            logger.debug("Torrent blocker report did not result in a block, skipping")
+            return
+
+        telegram_id = self._parse_int(user_data.get("telegramId"))
+        user_identifier = (
+            self._parse_optional_str(user_data.get("telegramId"))
+            or self._parse_optional_str(action_report.get("userId"))
+            or self._parse_optional_str(user_data.get("uuid"))
+            or "unknown"
+        )
+        node_name = self._parse_optional_str(node_data.get("name")) or "Unknown"
+        blocked_ip = self._parse_optional_str(action_report.get("ip")) or "unknown"
+        block_duration_seconds = self._parse_int(action_report.get("blockDuration")) or TIME_1H
+
+        dedupe_key = self._build_torrent_blocker_key(
+            user_identifier=user_identifier,
+            node_name=node_name,
+            blocked_ip=blocked_ip,
+        )
+        if await self.redis.exists(dedupe_key):
+            logger.debug(f"Torrent blocker notification already processed for key '{dedupe_key}'")
+            return
+
+        await self.redis.set(dedupe_key, value="1", ex=block_duration_seconds)
+
+        user = await self.user_dao.get_by_telegram_id(telegram_id) if telegram_id else None
+
+        username = user.username if user else self._parse_optional_str(user_data.get("username"))
+        name = user.name if user else (username or f"ID {user_identifier}")
+        block_duration = i18n_format_seconds(block_duration_seconds)
+        will_unblock_at = self._format_torrent_unblock_time(
+            action_report.get("willUnblockAt"),
+            block_duration_seconds,
+        )
+        protocol = self._parse_optional_str(xray_report.get("protocol")) or "unknown"
+        source = self._parse_optional_str(xray_report.get("source")) or "unknown"
+        destination = self._parse_optional_str(xray_report.get("destination")) or "unknown"
+
+        await self.event_bus.publish(
+            TorrentBlockerReportEvent(
+                user_id=user.id if user else 0,
+                telegram_id=telegram_id or 0,
+                username=username,
+                name=name,
+                node_name=node_name,
+                blocked_ip=blocked_ip,
+                block_duration=block_duration,
+                will_unblock_at=will_unblock_at,
+                protocol=protocol,
+                source=source,
+                destination=destination,
+            )
+        )
+
+        if not user:
+            logger.warning(
+                f"Local user not found for torrent blocker notification '{user_identifier}'"
+            )
+            return
+
+        await self.event_bus.publish(
+            TorrentBlockedEvent(
+                user=user,
+                node_name=node_name,
+                block_duration=block_duration,
+                support_url=self.bot_service.get_support_url(),
+            )
+        )
+
     async def _process_sync(self, event: str, remna_user: RemnaUserDto) -> None:
         if event == RemnaUserEvent.CREATED and remna_user.tag != IMPORTED_TAG:
             logger.debug(
@@ -370,6 +475,44 @@ class RemnaWebhookService:
                 )
             )
 
+    @staticmethod
+    def _build_torrent_blocker_key(
+        user_identifier: str,
+        node_name: str,
+        blocked_ip: str,
+    ) -> str:
+        return f"torrent_blocker_lock:{user_identifier}:{node_name}:{blocked_ip}"
+
+    @staticmethod
+    def _parse_int(value: Any) -> int | None:
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return None
+
+    @staticmethod
+    def _parse_optional_str(value: Any) -> str | None:
+        if value is None:
+            return None
+
+        normalized = str(value).strip()
+        return normalized or None
+
+    @staticmethod
+    def _format_torrent_unblock_time(value: Any, block_duration_seconds: int) -> str:
+        raw_timestamp = RemnaWebhookService._parse_optional_str(value)
+        if raw_timestamp:
+            try:
+                return datetime.fromisoformat(raw_timestamp.replace("Z", "+00:00")).strftime(
+                    DATETIME_VIEW_FORMAT
+                )
+            except ValueError:
+                return raw_timestamp
+
+        return (datetime_now() + timedelta(seconds=block_duration_seconds)).strftime(
+            DATETIME_VIEW_FORMAT
+        )
+
 
 class RemnaUserEvent(StrEnum):
     CREATED = "user.created"
@@ -406,6 +549,10 @@ class RemnaNodeEvent(StrEnum):
     CONNECTION_LOST = "node.connection_lost"
     CONNECTION_RESTORED = "node.connection_restored"
     TRAFFIC_NOTIFY = "node.traffic_notify"
+
+
+class RemnaTorrentBlockerEvent(StrEnum):
+    REPORT = "torrent_blocker.report"
 
 
 class RemnaServiceEvent(StrEnum):

@@ -56,6 +56,7 @@ async def _process_remnawave_webhook(
             node = cast(NodeDto, WebhookUtility.get_typed_data(payload))
             await remna_webhook_service.handle_node_event(payload.event, node)
 
+        # TODO: route torrent_blocker via WebhookUtility.is_torrent_blocker once remnapy supports it
         else:
             logger.warning(f"Unhandled Remnawave event type '{payload.event}'")
 

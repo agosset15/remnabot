@@ -358,6 +358,34 @@ event-node =
     { frg-node-info }
 
 
+event-torrent-blocker =
+    .user-blocked =
+    <b>⛔ Доступ на сервере временно ограничен.</b>
+
+    На ноде <b>{ $node_name }</b> зафиксирован BitTorrent трафик.
+    Ограничение будет действовать еще <b>{ $block_duration }</b>.
+
+    Если нужна помощь с настройкой подключения, обратитесь в поддержку.
+
+    .report =
+    #TorrentBlockedEvent
+
+    <b>⚠️ Событие: Обнаружен BitTorrent трафик!</b>
+
+    { hdr-user }
+    { frg-user-info }
+
+    <blockquote>
+    • <b>Нода</b>: { $node_name }
+    • <b>IP</b>: <code>{ $blocked_ip }</code>
+    • <b>Длительность блока</b>: { $block_duration }
+    • <b>Разблокировка</b>: { $will_unblock_at }
+    • <b>Протокол</b>: <code>{ $protocol }</code>
+    • <b>Источник</b>: <code>{ $source }</code>
+    • <b>Назначение</b>: <code>{ $destination }</code>
+    </blockquote>
+
+
 event-referral =
     .attached =
     <b>🎉 Вы пригласили друга!</b>

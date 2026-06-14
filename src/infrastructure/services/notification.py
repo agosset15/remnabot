@@ -44,6 +44,7 @@ from src.application.events.system import (
     PromocodeActivatedEvent,
     RemnashopWelcomeEvent,
     SubscriptionRevokedEvent,
+    TorrentBlockerReportEvent,
     TrialActivatedEvent,
     UserDevicesUpdatedEvent,
     UserFirstConnectionEvent,
@@ -55,6 +56,7 @@ from src.application.events.user import (
     SubscriptionExpiredEvent,
     SubscriptionExpiresEvent,
     SubscriptionLimitedEvent,
+    TorrentBlockedEvent,
     UserNotConnectedEvent,
 )
 from src.core.config import AppConfig
@@ -128,6 +130,10 @@ class NotificationService(Notifier):
             return get_buy_keyboard() if event.is_trial else get_renew_keyboard()
         if isinstance(event, UserNotConnectedEvent):
             return get_contact_support_keyboard(event.support_url)
+        if isinstance(event, TorrentBlockedEvent):
+            return get_contact_support_keyboard(event.support_url)
+        if isinstance(event, TorrentBlockerReportEvent):
+            return get_user_keyboard(event.user_id)
         if isinstance(event, RemnashopWelcomeEvent):
             return get_remnashop_keyboard()
         if isinstance(event, BotUpdateEvent):
