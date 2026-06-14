@@ -15,6 +15,7 @@ __all__ = [
     "broadcast",
     "dialog",
     "importer",
+    "promocodes",
     "remnashop",
     "remnawave",
     "statistics",
