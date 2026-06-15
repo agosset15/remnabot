@@ -5,7 +5,12 @@ from dishka.integrations.fastapi import inject
 from fastapi import APIRouter, HTTPException, Request, Response, status
 from loguru import logger
 from remnapy.controllers import WebhookUtility
-from remnapy.models.webhook import NodeDto, UserDto, UserHwidDeviceEventDto
+from remnapy.models.webhook import (
+    NodeDto,
+    TorrentBlockerReportDto,
+    UserDto,
+    UserHwidDeviceEventDto,
+)
 
 from src.application.common import EventPublisher
 from src.application.events import ErrorEvent
@@ -56,7 +61,10 @@ async def _process_remnawave_webhook(
             node = cast(NodeDto, WebhookUtility.get_typed_data(payload))
             await remna_webhook_service.handle_node_event(payload.event, node)
 
-        # TODO: route torrent_blocker via WebhookUtility.is_torrent_blocker once remnapy supports it
+        elif WebhookUtility.is_torrent_blocker_event(payload.event):
+            report = cast(TorrentBlockerReportDto, WebhookUtility.get_typed_data(payload))
+            await remna_webhook_service.handle_torrent_blocker_event(report)
+
         else:
             logger.warning(f"Unhandled Remnawave event type '{payload.event}'")
 

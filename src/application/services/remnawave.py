@@ -1,10 +1,9 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 from enum import StrEnum
-from typing import Any
 
 from loguru import logger
 from redis.asyncio import Redis
-from remnapy.models.webhook import HwidUserDeviceDto, NodeDto
+from remnapy.models.webhook import HwidUserDeviceDto, NodeDto, TorrentBlockerReportDto
 
 from src.application.common import BotService, EventPublisher
 from src.application.common.dao import SubscriptionDao, UserDao
@@ -279,47 +278,24 @@ class RemnaWebhookService:
         support_url = f"{T_ME}{self.config.bot.support_username.get_secret_value()}"
         await self.event_bus.publish(UserNotConnectedEvent(user=user, support_url=support_url))
 
-    async def handle_torrent_blocker_event(self, payload: dict[str, Any]) -> None:
+    async def handle_torrent_blocker_event(self, report: TorrentBlockerReportDto) -> None:
         logger.info("Received torrent blocker webhook event")
 
-        data = payload.get("data")
-        if not isinstance(data, dict):
-            logger.warning("Torrent blocker payload is missing 'data' object")
-            return
+        action_report = report.report.action_report
+        xray_report = report.report.xray_report
 
-        user_data = data.get("user")
-        node_data = data.get("node")
-        report = data.get("report")
-
-        if not isinstance(user_data, dict) or not isinstance(node_data, dict):
-            logger.warning("Torrent blocker payload is missing 'user' or 'node' object")
-            return
-
-        if not isinstance(report, dict):
-            logger.warning("Torrent blocker payload is missing 'report' object")
-            return
-
-        action_report = report.get("actionReport")
-        xray_report = report.get("xrayReport")
-
-        if not isinstance(action_report, dict) or not isinstance(xray_report, dict):
-            logger.warning("Torrent blocker payload is missing action/xray report details")
-            return
-
-        if not action_report.get("blocked"):
+        if not action_report.blocked:
             logger.debug("Torrent blocker report did not result in a block, skipping")
             return
 
-        telegram_id = self._parse_int(user_data.get("telegramId"))
+        remna_user = report.user
+        telegram_id = remna_user.telegram_id
         user_identifier = (
-            self._parse_optional_str(user_data.get("telegramId"))
-            or self._parse_optional_str(action_report.get("userId"))
-            or self._parse_optional_str(user_data.get("uuid"))
-            or "unknown"
+            str(telegram_id) if telegram_id else (action_report.user_id or str(remna_user.uuid))
         )
-        node_name = self._parse_optional_str(node_data.get("name")) or "Unknown"
-        blocked_ip = self._parse_optional_str(action_report.get("ip")) or "unknown"
-        block_duration_seconds = self._parse_int(action_report.get("blockDuration")) or TIME_1H
+        node_name = report.node.name
+        blocked_ip = action_report.ip
+        block_duration_seconds = int(action_report.block_duration) or TIME_1H
 
         dedupe_key = self._build_torrent_blocker_key(
             user_identifier=user_identifier,
@@ -334,16 +310,13 @@ class RemnaWebhookService:
 
         user = await self.user_dao.get_by_telegram_id(telegram_id) if telegram_id else None
 
-        username = user.username if user else self._parse_optional_str(user_data.get("username"))
+        username = user.username if user else remna_user.username
         name = user.name if user else (username or f"ID {user_identifier}")
         block_duration = i18n_format_seconds(block_duration_seconds)
-        will_unblock_at = self._format_torrent_unblock_time(
-            action_report.get("willUnblockAt"),
-            block_duration_seconds,
-        )
-        protocol = self._parse_optional_str(xray_report.get("protocol")) or "unknown"
-        source = self._parse_optional_str(xray_report.get("source")) or "unknown"
-        destination = self._parse_optional_str(xray_report.get("destination")) or "unknown"
+        will_unblock_at = action_report.will_unblock_at.strftime(DATETIME_VIEW_FORMAT)
+        protocol = xray_report.protocol or "unknown"
+        source = xray_report.source or "unknown"
+        destination = xray_report.destination or "unknown"
 
         await self.event_bus.publish(
             TorrentBlockerReportEvent(
@@ -482,36 +455,6 @@ class RemnaWebhookService:
         blocked_ip: str,
     ) -> str:
         return f"torrent_blocker_lock:{user_identifier}:{node_name}:{blocked_ip}"
-
-    @staticmethod
-    def _parse_int(value: Any) -> int | None:
-        try:
-            return int(value)
-        except (TypeError, ValueError):
-            return None
-
-    @staticmethod
-    def _parse_optional_str(value: Any) -> str | None:
-        if value is None:
-            return None
-
-        normalized = str(value).strip()
-        return normalized or None
-
-    @staticmethod
-    def _format_torrent_unblock_time(value: Any, block_duration_seconds: int) -> str:
-        raw_timestamp = RemnaWebhookService._parse_optional_str(value)
-        if raw_timestamp:
-            try:
-                return datetime.fromisoformat(raw_timestamp.replace("Z", "+00:00")).strftime(
-                    DATETIME_VIEW_FORMAT
-                )
-            except ValueError:
-                return raw_timestamp
-
-        return (datetime_now() + timedelta(seconds=block_duration_seconds)).strftime(
-            DATETIME_VIEW_FORMAT
-        )
 
 
 class RemnaUserEvent(StrEnum):
