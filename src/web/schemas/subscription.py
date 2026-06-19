@@ -44,6 +44,15 @@ class DevicesDeleteAllResponse(BaseModel):
     success: bool
 
 
+class PromocodeActivateRequest(BaseModel):
+    code: str
+
+
+class PromocodeActivateResponse(BaseModel):
+    success: bool
+    reward_type: str
+
+
 class ReissueResponse(BaseModel):
     success: bool
 

@@ -19,6 +19,10 @@ from src.application.use_cases.gateways.commands.payment import (
     ProcessPaymentDto,
 )
 from src.application.use_cases.plan.queries.match import MatchPlan, MatchPlanDto
+from src.application.use_cases.promocode.commands.activate import (
+    ActivatePromocode,
+    ActivatePromocodeDto,
+)
 from src.application.use_cases.remnawave.commands.management import (
     DeleteUserAllDevices,
     DeleteUserDevice,
@@ -31,7 +35,13 @@ from src.core.enums import (
     PurchaseType,
     TransactionStatus,
 )
-from src.core.exceptions import CooldownError
+from src.core.exceptions import (
+    CooldownError,
+    PromocodeAlreadyActivatedError,
+    PromocodeExpiredError,
+    PromocodeNotAvailableError,
+    PromocodeNotFoundError,
+)
 from src.web.schemas import (
     DeviceDeleteResponse,
     DeviceResponse,
@@ -43,6 +53,8 @@ from src.web.schemas import (
     GatewayOfferResponse,
     PaymentInitResponse,
     PlanOfferResponse,
+    PromocodeActivateRequest,
+    PromocodeActivateResponse,
     PurchaseRequest,
     ReissueResponse,
     SubscriptionInfoResponse,
@@ -202,6 +214,27 @@ async def reissue_current_subscription(
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e)) from e
     return ReissueResponse(success=True)
+
+
+@router.post("/promocode", response_model=PromocodeActivateResponse)
+@inject
+async def activate_promocode_web(
+    body: PromocodeActivateRequest,
+    user: CurrentUser,
+    activate_promocode: FromDishka[ActivatePromocode],
+) -> PromocodeActivateResponse:
+    _assert_web_purchase_email_verified(user)
+    try:
+        promo = await activate_promocode(user, ActivatePromocodeDto(code=body.code, user=user))
+    except PromocodeNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
+    except (
+        PromocodeExpiredError,
+        PromocodeAlreadyActivatedError,
+        PromocodeNotAvailableError,
+    ) as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e)) from e
+    return PromocodeActivateResponse(success=True, reward_type=promo.reward_type.value)
 
 
 @router.post("/purchase", response_model=PaymentInitResponse)
