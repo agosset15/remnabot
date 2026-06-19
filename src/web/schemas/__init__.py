@@ -14,6 +14,7 @@ from .auth import (
     RequestEmailVerificationCodeRequest,
     RequestEmailVerificationCodeResponse,
     TelegramAuthRequest,
+    TelegramWebAppAuthRequest,
 )
 from .health import (
     DatabaseStatusSchema,
@@ -67,6 +68,7 @@ __all__ = [
     "RequestEmailVerificationCodeRequest",
     "RequestEmailVerificationCodeResponse",
     "TelegramAuthRequest",
+    "TelegramWebAppAuthRequest",
     # plans
     "PublicPlanLandingListResponse",
     "PublicPlanLandingResponse",
