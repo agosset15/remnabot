@@ -1,10 +1,11 @@
 from dataclasses import dataclass
 from typing import Optional
+from uuid import UUID
 
 from loguru import logger
 
 from src.application.common import Interactor
-from src.application.common.dao import UserDao
+from src.application.common.dao import TransactionDao, UserDao
 from src.application.common.policy import Permission
 from src.application.dto import UserDto
 from src.core.constants import REMNASHOP_PREFIX
@@ -21,8 +22,9 @@ class SearchUsersDto:
 class SearchUsers(Interactor[SearchUsersDto, list[UserDto]]):
     required_permission = Permission.USER_SEARCH
 
-    def __init__(self, user_dao: UserDao):
+    def __init__(self, user_dao: UserDao, transaction_dao: TransactionDao):
         self.user_dao = user_dao
+        self.transaction_dao = transaction_dao
 
     async def _execute(self, actor: UserDto, data: SearchUsersDto) -> list[UserDto]:
         if self._is_forwarded_from_real_user(data):
@@ -56,6 +58,10 @@ class SearchUsers(Interactor[SearchUsersDto, list[UserDto]]):
         return []
 
     async def _search_by_query(self, query: str) -> list[UserDto]:
+        payment_id = self._parse_uuid(query)
+        if payment_id is not None:
+            return await self._search_by_payment_id(payment_id)
+
         if query.isdigit():
             return await self._search_by_numeric_id(int(query))
 
@@ -63,6 +69,33 @@ class SearchUsers(Interactor[SearchUsersDto, list[UserDto]]):
             return await self._search_by_remnashop_id(query)
 
         return await self._search_by_name_or_email(query)
+
+    @staticmethod
+    def _parse_uuid(query: str) -> Optional[UUID]:
+        try:
+            return UUID(query)
+        except ValueError:
+            return None
+
+    async def _search_by_payment_id(self, payment_id: UUID) -> list[UserDto]:
+        transaction = await self.transaction_dao.get_by_payment_id(payment_id)
+        if not transaction:
+            logger.warning(f"Search by payment UUID '{payment_id}', transaction not found")
+            return []
+
+        user = await self.user_dao.get_by_id(transaction.user_id)
+        if user:
+            logger.info(
+                f"Search by payment UUID '{payment_id}', "
+                f"found user '{transaction.user_id}'"
+            )
+            return [user]
+
+        logger.warning(
+            f"Search by payment UUID '{payment_id}', "
+            f"user '{transaction.user_id}' not found"
+        )
+        return []
 
     async def _search_by_numeric_id(self, numeric_id: int) -> list[UserDto]:
         results = []
