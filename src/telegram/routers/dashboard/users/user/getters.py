@@ -705,3 +705,39 @@ async def sync_getter(  # noqa: C901
         "bot_subscription": format_subscription(bot_sub),
         "remna_subscription": format_subscription(remna_sub),
     }
+
+
+@inject
+async def email_getter(
+    dialog_manager: DialogManager,
+    user_dao: FromDishka[UserDao],
+    **kwargs: Any,
+) -> dict[str, Any]:
+    target_user_id = dialog_manager.dialog_data[TARGET_USER_ID]
+    target_user = await user_dao.get_by_id(target_user_id)
+
+    if not target_user:
+        raise ValueError(f"User '{target_user_id}' not found")
+
+    return {
+        "email": target_user.email or False,
+        "has_telegram_id": target_user.telegram_id is not None,
+    }
+
+
+@inject
+async def email_custom_getter(
+    dialog_manager: DialogManager,
+    user_dao: FromDishka[UserDao],
+    **kwargs: Any,
+) -> dict[str, Any]:
+    target_user_id = dialog_manager.dialog_data[TARGET_USER_ID]
+    target_user = await user_dao.get_by_id(target_user_id)
+
+    if not target_user:
+        raise ValueError(f"User '{target_user_id}' not found")
+
+    return {
+        "email": target_user.email or False,
+        "has_draft": bool(dialog_manager.dialog_data.get("email_custom_body")),
+    }

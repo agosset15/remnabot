@@ -27,6 +27,8 @@ from .getters import (
     device_limit_getter,
     devices_getter,
     discount_getter,
+    email_custom_getter,
+    email_getter,
     expire_time_getter,
     external_squads_getter,
     give_access_getter,
@@ -57,6 +59,10 @@ from .handlers import (
     on_devices,
     on_duration_input,
     on_duration_select,
+    on_email_clear,
+    on_email_custom_input,
+    on_email_custom_preview,
+    on_email_input,
     on_external_squad_select,
     on_give_access,
     on_give_subscription,
@@ -74,6 +80,9 @@ from .handlers import (
     on_reset_traffic,
     on_role_select,
     on_send,
+    on_send_email_connect,
+    on_send_email_custom,
+    on_send_email_purchase,
     on_subscription_delete,
     on_subscription_duration_select,
     on_subscription_select,
@@ -140,6 +149,13 @@ user = Window(
             text=I18nFormat("btn-user.give-access"),
             id="give_access",
             on_click=on_give_access,
+        ),
+    ),
+    Row(
+        SwitchTo(
+            text=I18nFormat("btn-user.email"),
+            id="email_menu",
+            state=DashboardUser.EMAIL_OPTIONS,
         ),
     ),
     Row(
@@ -879,6 +895,101 @@ role = Window(
     getter=role_getter,
 )
 
+email_set = Window(
+    Banner(BannerName.DASHBOARD),
+    I18nFormat("msg-user-email-set", email=F["email"]),
+    Row(
+        SwitchTo(
+            text=I18nFormat("btn-back.general"),
+            id="back",
+            state=DashboardUser.EMAIL_OPTIONS,
+        ),
+    ),
+    MessageInput(func=on_email_input),
+    IgnoreUpdate(),
+    state=DashboardUser.EMAIL_SET,
+    getter=email_getter,
+)
+
+email_options = Window(
+    Banner(BannerName.DASHBOARD),
+    I18nFormat("msg-user-email-options", email=F["email"]),
+    Row(
+        Button(
+            text=I18nFormat("btn-user.email-purchase"),
+            id="email_purchase",
+            on_click=on_send_email_purchase,
+        ),
+        Button(
+            text=I18nFormat("btn-user.email-connect"),
+            id="email_connect",
+            on_click=on_send_email_connect,
+        ),
+        when=F["email"],
+    ),
+    Row(
+        SwitchTo(
+            text=I18nFormat("btn-user.email-custom"),
+            id="email_custom",
+            state=DashboardUser.EMAIL_CUSTOM,
+            when=F["email"],
+        ),
+    ),
+    Row(
+        SwitchTo(
+            text=I18nFormat("btn-user.email-set", has_email=F["email"]),
+            id="email_set",
+            state=DashboardUser.EMAIL_SET,
+        ),
+        Button(
+            text=I18nFormat("btn-user.email-clear"),
+            id="email_clear",
+            on_click=on_email_clear,
+            when=F["email"] & F["has_telegram_id"],
+        ),
+    ),
+    Row(
+        SwitchTo(
+            text=I18nFormat("btn-back.general"),
+            id="back",
+            state=DashboardUser.MAIN,
+        ),
+    ),
+    IgnoreUpdate(),
+    state=DashboardUser.EMAIL_OPTIONS,
+    getter=email_getter,
+)
+
+email_custom = Window(
+    Banner(BannerName.DASHBOARD),
+    I18nFormat("msg-user-email-custom", email=F["email"]),
+    Row(
+        Button(
+            text=I18nFormat("btn-user.message-preview"),
+            id="preview",
+            on_click=on_email_custom_preview,
+        ),
+    ),
+    Row(
+        Button(
+            text=I18nFormat("btn-user.message-confirm"),
+            id="confirm",
+            on_click=on_send_email_custom,
+        ),
+    ),
+    Row(
+        SwitchTo(
+            text=I18nFormat("btn-back.general"),
+            id="back",
+            state=DashboardUser.EMAIL_OPTIONS,
+        ),
+    ),
+    MessageInput(func=on_email_custom_input),
+    IgnoreUpdate(),
+    state=DashboardUser.EMAIL_CUSTOM,
+    getter=email_custom_getter,
+)
+
 router = Dialog(
     user,
     subscription,
@@ -904,4 +1015,7 @@ router = Dialog(
     points,
     give_access,
     role,
+    email_set,
+    email_options,
+    email_custom,
 )

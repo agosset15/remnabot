@@ -1,3 +1,4 @@
+import html
 from typing import Optional
 from uuid import UUID
 
@@ -10,7 +11,7 @@ from dishka import FromDishka
 from dishka.integrations.aiogram_dialog import inject
 from loguru import logger
 
-from src.application.common import BotService, Notifier, Redirect, TranslatorRunner
+from src.application.common import BotService, Mailer, Notifier, Redirect, TranslatorRunner
 from src.application.common.dao import PlanDao, SubscriptionDao, TransactionDao, UserDao
 from src.application.dto import MessagePayloadDto, TelegramUserDto
 from src.application.use_cases.plan.commands.access import (
@@ -55,6 +56,8 @@ from src.application.use_cases.user.commands.profile_edit import (
     ChangeUserPoints,
     ChangeUserPointsDto,
     ResetUserReferralCode,
+    SetUserEmail,
+    SetUserEmailDto,
     SetUserPersonalDiscount,
     SetUserPersonalDiscountDto,
     SetUserPurchaseDiscount,
@@ -72,7 +75,7 @@ from src.core.constants import (
     USER_LIST_ORIGIN,
     USER_LIST_PAYLOAD,
 )
-from src.core.enums import Role
+from src.core.enums import PurchaseType, Role
 from src.core.utils.validators import is_positive_int, parse_int
 from src.telegram.keyboards import get_contact_support_keyboard
 from src.telegram.states import DashboardUser, DashboardUsers
@@ -887,3 +890,203 @@ async def on_subscription_duration_select(
         SetUserSubscriptionDto(target_user_id, plan_id, selected_duration),
     )
     await dialog_manager.switch_to(state=DashboardUser.MAIN)
+
+
+@inject
+async def on_email_input(
+    message: Message,
+    widget: MessageInput,
+    dialog_manager: DialogManager,
+    notifier: FromDishka[Notifier],
+    set_user_email: FromDishka[SetUserEmail],
+) -> None:
+    dialog_manager.show_mode = ShowMode.EDIT
+    user: TelegramUserDto = dialog_manager.middleware_data[USER_KEY]
+    target_user_id = dialog_manager.dialog_data[TARGET_USER_ID]
+
+    if not message.text:
+        await notifier.notify_user(user, i18n_key="ntf-common.invalid-value")
+        return
+
+    try:
+        await set_user_email(user, SetUserEmailDto(target_user_id, message.text))
+        await notifier.notify_user(user, i18n_key="ntf-user.email-set-success")
+        await dialog_manager.switch_to(state=DashboardUser.EMAIL_OPTIONS)
+    except ValueError as e:
+        logger.warning(f"{user.log} Failed to set email for '{target_user_id}': {e}")
+        if "already used" in str(e):
+            await notifier.notify_user(user, i18n_key="ntf-user.email-duplicate")
+        else:
+            await notifier.notify_user(user, i18n_key="ntf-common.invalid-value")
+
+
+@inject
+async def on_email_clear(
+    callback: CallbackQuery,
+    widget: Button,
+    dialog_manager: DialogManager,
+    notifier: FromDishka[Notifier],
+    set_user_email: FromDishka[SetUserEmail],
+) -> None:
+    user: TelegramUserDto = dialog_manager.middleware_data[USER_KEY]
+    target_user_id = dialog_manager.dialog_data[TARGET_USER_ID]
+
+    try:
+        await set_user_email(user, SetUserEmailDto(target_user_id, None))
+        await notifier.notify_user(user, i18n_key="ntf-user.email-cleared")
+        await dialog_manager.switch_to(state=DashboardUser.EMAIL_OPTIONS)
+    except ValueError as e:
+        logger.warning(f"{user.log} Failed to clear email for '{target_user_id}': {e}")
+        if "no telegram_id" in str(e):
+            await notifier.notify_user(user, i18n_key="ntf-user.email-required")
+        else:
+            await notifier.notify_user(user, i18n_key="ntf-common.invalid-value")
+
+
+@inject
+async def on_send_email_purchase(
+    callback: CallbackQuery,
+    widget: Button,
+    dialog_manager: DialogManager,
+    user_dao: FromDishka[UserDao],
+    subscription_dao: FromDishka[SubscriptionDao],
+    mailer: FromDishka[Mailer],
+    notifier: FromDishka[Notifier],
+) -> None:
+    user: TelegramUserDto = dialog_manager.middleware_data[USER_KEY]
+    target_user_id = dialog_manager.dialog_data[TARGET_USER_ID]
+
+    target_user = await user_dao.get_by_id(target_user_id)
+    if not target_user:
+        await notifier.notify_user(user, i18n_key="ntf-user.not-found")
+        return
+
+    subscription = await subscription_dao.get_current(target_user_id)
+    if not subscription:
+        await notifier.notify_user(user, i18n_key="ntf-user.subscription-empty")
+        return
+
+    try:
+        await mailer.send_success_purchase(target_user, subscription, PurchaseType.NEW)
+        await notifier.notify_user(user, i18n_key="ntf-user.email-purchase-success")
+    except Exception as e:
+        logger.error(f"{user.log} Failed to send purchase email to '{target_user_id}': {e}")
+        await notifier.notify_user(user, i18n_key="ntf-user.email-purchase-failed")
+
+
+@inject
+async def on_send_email_connect(
+    callback: CallbackQuery,
+    widget: Button,
+    dialog_manager: DialogManager,
+    user_dao: FromDishka[UserDao],
+    mailer: FromDishka[Mailer],
+    notifier: FromDishka[Notifier],
+) -> None:
+    user: TelegramUserDto = dialog_manager.middleware_data[USER_KEY]
+    target_user_id = dialog_manager.dialog_data[TARGET_USER_ID]
+
+    target_user = await user_dao.get_by_id(target_user_id)
+    if not target_user:
+        await notifier.notify_user(user, i18n_key="ntf-user.not-found")
+        return
+
+    try:
+        await mailer.send_connect_telegram(target_user)
+        await notifier.notify_user(user, i18n_key="ntf-user.email-connect-success")
+    except Exception as e:
+        logger.error(f"{user.log} Failed to send connect email to '{target_user_id}': {e}")
+        await notifier.notify_user(user, i18n_key="ntf-user.email-connect-failed")
+
+
+@inject
+async def on_email_custom_input(
+    message: Message,
+    widget: MessageInput,
+    dialog_manager: DialogManager,
+    notifier: FromDishka[Notifier],
+) -> None:
+    dialog_manager.show_mode = ShowMode.EDIT
+    user: TelegramUserDto = dialog_manager.middleware_data[USER_KEY]
+
+    if not message.html_text:
+        await notifier.notify_user(user, i18n_key="ntf-common.invalid-value")
+        return
+
+    if len(message.html_text) > 4096:
+        await notifier.notify_user(
+            user,
+            payload=MessagePayloadDto(
+                i18n_key="ntf-broadcast.text-too-long",
+                i18n_kwargs={"max_limit": 4096},
+            ),
+        )
+        return
+
+    dialog_manager.dialog_data["email_custom_body"] = html.unescape(message.html_text)
+    await notifier.notify_user(user, i18n_key="ntf-broadcast.content-saved")
+
+
+@inject
+async def on_email_custom_preview(
+    callback: CallbackQuery,
+    widget: Button,
+    dialog_manager: DialogManager,
+    notifier: FromDishka[Notifier],
+) -> None:
+    user: TelegramUserDto = dialog_manager.middleware_data[USER_KEY]
+    body = dialog_manager.dialog_data.get("email_custom_body")
+
+    if not body:
+        await notifier.notify_user(user, i18n_key="ntf-user.email-custom-empty")
+        return
+
+    await notifier.notify_user(
+        user,
+        payload=MessagePayloadDto(
+            i18n_key="ntf-user.email-custom-preview",
+            i18n_kwargs={"body": body},
+            disable_default_markup=False,
+        ),
+    )
+
+
+@inject
+async def on_send_email_custom(
+    callback: CallbackQuery,
+    widget: Button,
+    dialog_manager: DialogManager,
+    user_dao: FromDishka[UserDao],
+    mailer: FromDishka[Mailer],
+    notifier: FromDishka[Notifier],
+) -> None:
+    user: TelegramUserDto = dialog_manager.middleware_data[USER_KEY]
+    target_user_id = dialog_manager.dialog_data[TARGET_USER_ID]
+    body = dialog_manager.dialog_data.get("email_custom_body")
+
+    if not body:
+        await notifier.notify_user(user, i18n_key="ntf-user.email-custom-empty")
+        return
+
+    target_user = await user_dao.get_by_id(target_user_id)
+    if not target_user:
+        await notifier.notify_user(user, i18n_key="ntf-user.not-found")
+        return
+
+    if not target_user.email:
+        await notifier.notify_user(user, i18n_key="ntf-user.email-custom-no-email")
+        return
+
+    if not is_double_click(dialog_manager, key="email_custom_confirm", cooldown=5):
+        await notifier.notify_user(user, i18n_key="ntf-common.double-click-confirm")
+        logger.debug(f"{user.log} Awaiting confirmation for custom email to '{target_user_id}'")
+        return
+
+    try:
+        await mailer.send_custom_message(target_user, body)
+        await notifier.notify_user(user, i18n_key="ntf-user.email-custom-success")
+        dialog_manager.dialog_data.pop("email_custom_body", None)
+        await dialog_manager.switch_to(state=DashboardUser.EMAIL_OPTIONS)
+    except Exception as e:
+        logger.error(f"{user.log} Failed to send custom email to '{target_user_id}': {e}")
+        await notifier.notify_user(user, i18n_key="ntf-user.email-custom-failed")
