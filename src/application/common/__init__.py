@@ -6,6 +6,7 @@ from .event_bus import EventPublisher, EventSubscriber
 from .file_downloader import FileDownloader
 from .http_client import HttpClient
 from .interactor import Interactor
+from .mailer import Mailer
 from .notifier import Notifier
 from .password_hasher import PasswordHasher
 from .redirect import Redirect
@@ -22,6 +23,7 @@ __all__ = [
     "FileDownloader",
     "HttpClient",
     "Interactor",
+    "Mailer",
     "Notifier",
     "BroadcastDispatcher",
     "PasswordHasher",

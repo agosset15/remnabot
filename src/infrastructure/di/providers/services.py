@@ -9,6 +9,7 @@ from src.application.common import (
     EventSubscriber,
     FileDownloader,
     HttpClient,
+    Mailer,
     Notifier,
     PasswordHasher,
     PaymentNotificationDispatcher,
@@ -37,6 +38,7 @@ from src.infrastructure.services import (
     RedirectImpl,
     RemnawaveImpl,
     SmtpEmailSender,
+    SmtpMailerImpl,
     WebhookService,
     XuiDbReaderImpl,
 )
@@ -50,6 +52,7 @@ class ServicesProvider(Provider):
     cryptographer = provide(source=CryptographerImpl, provides=Cryptographer)
     password_hasher = provide(source=PasswordHasherImpl, provides=PasswordHasher)
     email_sender = provide(source=SmtpEmailSender, provides=EmailSender)
+    mailer = provide(source=SmtpMailerImpl, provides=Mailer)
     http_client = provide(source=AiohttpClient, provides=HttpClient)
     redirect = provide(source=RedirectImpl, provides=Redirect)
     pricing = provide(source=PricingService)

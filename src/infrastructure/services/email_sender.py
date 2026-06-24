@@ -1,6 +1,7 @@
 import asyncio
 import smtplib
 from email.message import EmailMessage
+from typing import Optional
 
 from loguru import logger
 
@@ -24,16 +25,16 @@ class SmtpEmailSender(EmailSender):
             and email.password.get_secret_value()
         )
 
-    async def send(self, *, to: str, subject: str, body: str) -> None:
+    async def send(self, *, to: str, subject: str, body: str, html: Optional[str] = None) -> None:
         try:
-            await asyncio.to_thread(self._send_sync, to=to, subject=subject, body=body)
+            await asyncio.to_thread(self._send_sync, to=to, subject=subject, body=body, html=html)
         except Exception as e:
             logger.error(f"Failed to send email to '{to}': {e}")
             raise EmailDeliveryError(
                 "Failed to send verification email. Please try again later."
             ) from e
 
-    def _send_sync(self, *, to: str, subject: str, body: str) -> None:
+    def _send_sync(self, *, to: str, subject: str, body: str, html: Optional[str] = None) -> None:
         email = self._config.email
         message = EmailMessage()
         message["Subject"] = subject
@@ -42,6 +43,8 @@ class SmtpEmailSender(EmailSender):
         message["From"] = f"{from_name} <{from_email}>" if from_name else from_email
         message["To"] = to
         message.set_content(body)
+        if html:
+            message.add_alternative(html, subtype="html")
 
         smtp_user = email.username.get_secret_value()
         smtp_password = email.password.get_secret_value()
