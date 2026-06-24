@@ -155,15 +155,7 @@ async def telegram_login(
     authenticate_telegram: FromDishka[AuthenticateTelegram],
     auth_session: FromDishka[AuthSessionDao],
 ) -> AuthResponse:
-    user = await authenticate_telegram.system(
-        TelegramAuthData(
-            id=body.id,
-            first_name=body.first_name,
-            last_name=body.last_name,
-            username=body.username,
-            payload=body.model_dump(exclude_none=True),
-        )
-    )
+    user = await authenticate_telegram.system(TelegramAuthData(id_token=body.id_token))
     return await _issue_and_set(user, response, config, auth_session)
 
 
@@ -189,11 +181,7 @@ async def link_telegram_account(
 ) -> MeResponse:
     updated = await link_telegram(
         user,
-        LinkTelegramData(
-            id=body.id,
-            username=body.username,
-            payload=body.model_dump(exclude_none=True),
-        ),
+        LinkTelegramData(id_token=body.id_token),
     )
     return _to_me_response(updated)
 

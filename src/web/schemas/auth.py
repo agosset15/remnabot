@@ -123,13 +123,12 @@ class ConfirmEmailVerificationResponse(BaseModel):
 
 
 class TelegramAuthRequest(BaseModel):
-    id: int
-    first_name: str
-    last_name: Optional[str] = None
-    username: Optional[str] = None
-    photo_url: Optional[str] = None
-    auth_date: int
-    hash: str
+    """Telegram Login (OIDC) callback payload.
+
+    ``id_token`` is the signed JWT issued by https://oauth.telegram.org.
+    """
+
+    id_token: str = Field(min_length=1)
 
 
 class TelegramWebAppAuthRequest(BaseModel):

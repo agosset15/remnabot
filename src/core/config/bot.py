@@ -31,6 +31,14 @@ class BotConfig(BaseConfig, env_prefix="BOT_"):
     use_banners: bool = True
 
     @property
+    def id(self) -> int:
+        """Bot/client id — the integer part of the token before ``:``.
+
+        Used as the OIDC ``aud`` claim when validating Telegram Login id_tokens.
+        """
+        return int(self.token.get_secret_value().split(":", 1)[0])
+
+    @property
     def webhook_path(self) -> str:
         return f"{API_V1}{BOT_WEBHOOK_PATH}"
 
