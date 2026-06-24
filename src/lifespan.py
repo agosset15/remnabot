@@ -22,7 +22,10 @@ from src.application.events import (
 )
 from src.application.events.system import RemnashopWelcomeEvent
 from src.application.use_cases.gateways.commands.payment import CreateDefaultPaymentGateway
-from src.application.use_cases.settings.commands.defaults import CreateDefaultSettings
+from src.application.use_cases.settings.commands.defaults import (
+    ApplyConfigNotificationRoutes,
+    CreateDefaultSettings,
+)
 from src.core.config import AppConfig
 from src.core.constants import REMNAWAVE_MAX_VERSION
 from src.core.utils.i18n_helpers import i18n_format_seconds
@@ -59,6 +62,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         remnawave_service = await startup_container.get(Remnawave)
         create_default_payment_gateway = await startup_container.get(CreateDefaultPaymentGateway)
         create_default_settings = await startup_container.get(CreateDefaultSettings)
+        apply_config_routes = await startup_container.get(ApplyConfigNotificationRoutes)
         redis = await startup_container.get(Redis)
         retort = await startup_container.get(Retort)
 
@@ -75,6 +79,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         # request can read it, so `get()` never has to lazily create — and cache —
         # an uncommitted row whose id would later fail to match on update().
         await create_default_settings.system()
+        # Seed notification routes from BOT_notifications_* config (no-op unless
+        # notifications_chat_id is set), so default_route is configured automatically.
+        await apply_config_routes.system()
         settings = await settings_dao.get()
         allowed_updates = dispatcher.resolve_used_update_types()
         webhook_info: WebhookInfo = await webhook_service.setup_webhook(allowed_updates)

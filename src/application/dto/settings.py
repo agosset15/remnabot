@@ -33,6 +33,31 @@ def get_default_notifications_routes() -> dict[str, "SystemNotificationRouteDto"
     return {ntf.value: SystemNotificationRouteDto() for ntf in SystemNotificationType}
 
 
+# Maps each system notification type to its semantic category. Used to apply the
+# per-category thread ids from BOT_* config onto the per-type routes at startup.
+SYSTEM_NOTIFICATION_CATEGORIES: dict[str, set[SystemNotificationType]] = {
+    "user": {
+        SystemNotificationType.USER_REGISTERED,
+        SystemNotificationType.BLACKLIST_ATTEMPT,
+        SystemNotificationType.SUBSCRIPTION,
+        SystemNotificationType.PROMOCODE_ACTIVATED,
+        SystemNotificationType.TRIAL_ACTIVATED,
+        SystemNotificationType.TORRENT_BLOCKER,
+        SystemNotificationType.USER_FIRST_CONNECTION,
+        SystemNotificationType.USER_DEVICES_UPDATED,
+        SystemNotificationType.USER_REVOKED_SUBSCRIPTION,
+    },
+    "node": {
+        SystemNotificationType.NODE_STATUS_CHANGED,
+        SystemNotificationType.NODE_TRAFFIC_REACHED,
+    },
+    "bot": {
+        SystemNotificationType.BOT_LIFECYCLE,
+        SystemNotificationType.BOT_UPDATE,
+    },
+}
+
+
 @dataclass(kw_only=True)
 class AccessSettingsDto(TrackableMixin):
     mode: AccessMode = AccessMode.PUBLIC
@@ -113,6 +138,48 @@ class NotificationsSettingsDto(TrackableMixin):
 
     def set_default_route(self, chat_id: Optional[int], thread_id: Optional[int]) -> None:
         self.default_route = SystemNotificationRouteDto(chat_id=chat_id, thread_id=thread_id)
+
+    def apply_config_routes(
+        self,
+        chat_id: Optional[int],
+        *,
+        user_thread_id: Optional[int],
+        node_thread_id: Optional[int],
+        bot_thread_id: Optional[int],
+    ) -> bool:
+        """Seed default_route and per-type routes from BOT_* config.
+
+        ``chat_id`` is the shared notifications chat; each system notification type
+        gets its category thread id (user/node/bot), while uncategorized types
+        (e.g. SYSTEM) fall back to the threadless default_route.
+
+        Returns True when anything changed (idempotent across restarts).
+        """
+        thread_by_type = {
+            "user": user_thread_id,
+            "node": node_thread_id,
+            "bot": bot_thread_id,
+        }
+
+        new_routes: dict[str, SystemNotificationRouteDto] = {}
+        for ntf in SystemNotificationType:
+            thread_id = None
+            for category, members in SYSTEM_NOTIFICATION_CATEGORIES.items():
+                if ntf in members:
+                    thread_id = thread_by_type[category]
+                    break
+            new_routes[ntf.value] = SystemNotificationRouteDto(
+                chat_id=chat_id, thread_id=thread_id
+            )
+
+        new_default = SystemNotificationRouteDto(chat_id=chat_id, thread_id=None)
+
+        if new_routes == self.routes and new_default == self.default_route:
+            return False
+
+        self.routes = new_routes
+        self.default_route = new_default
+        return True
 
     def set_route(
         self,

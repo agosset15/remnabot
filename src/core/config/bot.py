@@ -20,6 +20,11 @@ class BotConfig(BaseConfig, env_prefix="BOT_"):
     api_url: Optional[SecretStr] = None
     api_file_url: Optional[SecretStr] = None
 
+    notifications_chat_id: Optional[int] = None
+    notifications_bot_thread_id: Optional[int] = None
+    notifications_user_thread_id: Optional[int] = None
+    notifications_node_thread_id: Optional[int] = None
+
     reset_webhook: bool = False
     drop_pending_updates: bool = False
     setup_commands: bool = True
@@ -78,4 +83,19 @@ class BotConfig(BaseConfig, env_prefix="BOT_"):
             if is_valid_url(value):
                 return SecretStr(value)
             raise ValueError("BOT_MINI_APP must be empty, True, False or a valid URL")
+        return field
+
+    @field_validator(
+        "notifications_bot_thread_id",
+        "notifications_user_thread_id",
+        "notifications_node_thread_id",
+    )
+    @classmethod
+    def validate_thread_requires_chat(
+        cls,
+        field: Optional[int],
+        info: FieldValidationInfo,
+    ) -> Optional[int]:
+        if field is not None and not info.data.get("notifications_chat_id"):
+            raise ValueError(f"{info.field_name} cannot be set without notifications_chat_id")
         return field

@@ -10,7 +10,7 @@ from .commands.backup import (
     UpdateBackupMaxFiles,
 )
 from .commands.currency import UpdateDefaultCurrency
-from .commands.defaults import CreateDefaultSettings
+from .commands.defaults import ApplyConfigNotificationRoutes, CreateDefaultSettings
 from .commands.extra import (
     ToggleMiniAppReserve,
     ToggleResetFeature,
@@ -38,6 +38,7 @@ from .commands.requirements import (
 
 SETTINGS_USE_CASES: Final[tuple[type[Interactor], ...]] = (
     CreateDefaultSettings,
+    ApplyConfigNotificationRoutes,
     ChangeAccessMode,
     ToggleConditionRequirement,
     ToggleNotification,
