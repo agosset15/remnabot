@@ -145,6 +145,15 @@ btn-users =
     .blacklist-source = 🔗 { $source }
 
 btn-user =
+    .email = ✉️ Почта
+    .email-purchase = 📧 Письмо: покупка
+    .email-connect = 📧 Письмо: подключить Telegram
+    .email-custom = 📨 Письмо: произвольный текст
+    .email-set = { $has_email ->
+        [0] ✉️ Задать почту
+        *[other] ✉️ Изменить почту
+    }
+    .email-clear = 🗑 Удалить почту
     .discount = 💸 Скидка
     .discount-personal = 👤 Персональная скидка
     .discount-purchase = 🎟 На следующую покупку
