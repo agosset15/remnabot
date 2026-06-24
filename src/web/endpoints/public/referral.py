@@ -2,10 +2,11 @@ from dishka import FromDishka
 from dishka.integrations.fastapi import inject
 from fastapi import APIRouter, HTTPException, status
 
-from src.application.common.dao import ReferralDao, SettingsDao, SubscriptionDao
+from src.application.common.dao import ReferralDao, SettingsDao, SubscriptionDao, UserDao
 from src.core.enums import SubscriptionStatus
 from src.web.schemas import ReferralProgramResponse, ReferralRewardLevelResponse
 
+from ...schemas.referral import ReferralNameResponse
 from ._common import CurrentUser
 
 router = APIRouter(prefix="/referral", tags=["Public - Referral"])
@@ -63,3 +64,15 @@ async def get_referral_program(
         max_level=settings.referral.level.value,
         reward_levels=reward_levels,
     )
+
+
+@router.get("/{code}")
+@inject
+async def get_referral_name(
+    code: str,
+    user_dao: FromDishka[UserDao],
+) -> ReferralNameResponse:
+    user = await user_dao.get_by_referral_code(code)
+    if not user:
+        raise HTTPException(status_code=404, detail="Referral not found")
+    return ReferralNameResponse(name=user.name)

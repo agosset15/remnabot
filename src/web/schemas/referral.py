@@ -16,3 +16,7 @@ class ReferralProgramResponse(BaseModel):
     accrual_strategy: str
     max_level: int
     reward_levels: list[ReferralRewardLevelResponse]
+
+
+class ReferralNameResponse(BaseModel):
+    name: str
