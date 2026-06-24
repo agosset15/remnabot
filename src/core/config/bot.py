@@ -17,6 +17,8 @@ class BotConfig(BaseConfig, env_prefix="BOT_"):
     support_username: SecretStr
     mini_app: Union[bool, SecretStr] = False
     proxy_url: Optional[SecretStr] = None
+    api_url: Optional[SecretStr] = None
+    api_file_url: Optional[SecretStr] = None
 
     reset_webhook: bool = False
     drop_pending_updates: bool = False
