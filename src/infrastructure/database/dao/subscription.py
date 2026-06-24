@@ -207,6 +207,23 @@ class SubscriptionDaoImpl(SubscriptionDao, BaseDaoImpl):
         )
         return squads
 
+    async def get_active_excluded_from_squad(self, squad_uuid: UUID) -> list[SubscriptionDto]:
+        stmt = (
+            select(Subscription)
+            .join(User, User.current_subscription_id == Subscription.id)
+            .where(
+                Subscription.status == SubscriptionStatus.ACTIVE,
+                ~Subscription.internal_squads.contains([squad_uuid]),
+            )
+        )
+        result = await self.session.scalars(stmt)
+        db_subscriptions = cast(list, result.all())
+        logger.debug(
+            f"Found '{len(db_subscriptions)}' active subscriptions excluded from "
+            f"squad '{squad_uuid}'"
+        )
+        return self._convert_to_dto_list(db_subscriptions)
+
     async def count_total_trials(self) -> int:
         stmt = select(func.count(func.distinct(Subscription.user_id))).where(
             Subscription.is_trial.is_(True),

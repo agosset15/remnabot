@@ -7,6 +7,7 @@ from uuid import UUID
 from loguru import logger
 from packaging.version import Version
 from remnapy import RemnawaveSDK
+from remnapy.enums import UserStatus
 from remnapy.exceptions import AuthenticationError, ConflictError, NotFoundError
 from remnapy.models import (
     CreateUserRequestDto,
@@ -237,6 +238,21 @@ class RemnawaveImpl(Remnawave):
             logger.info(f"Subscription for RemnaUser '{uuid}' revoked successfully")
         except NotFoundError:
             logger.debug(f"RemnaUser '{uuid}' not found in panel")
+
+    async def update_user_internal_squads(self, user_uuid: UUID, squads: list[UUID]) -> None:
+        request_dto = UpdateUserRequestDto(
+            uuid=user_uuid, active_internal_squads=squads, status=UserStatus.ACTIVE
+        )
+
+        try:
+            remna_user = await self.sdk.users.update_user(request_dto)
+            logger.info(
+                f"RemnaUser '{remna_user.username}' internal squads updated. "
+                f"UUID: '{remna_user.uuid}', telegram_id: '{remna_user.telegram_id}'"
+            )
+        except NotFoundError:
+            logger.warning(f"RemnaUser with UUID '{user_uuid}' not found, squad update skipped")
+            raise
 
     async def get_squads_available(self) -> bool:
         result = await self.sdk.internal_squads.get_internal_squads()

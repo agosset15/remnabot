@@ -1,5 +1,8 @@
+from typing import Optional
+from uuid import UUID
+
 from httpx import Cookies
-from pydantic import SecretStr, field_validator
+from pydantic import Field, SecretStr, field_validator
 from pydantic_core.core_schema import FieldValidationInfo
 
 from src.core.utils.validators import is_valid_domain
@@ -16,6 +19,7 @@ class RemnawaveConfig(BaseConfig, env_prefix="REMNAWAVE_"):
     cf_client_secret: SecretStr = SecretStr("")
     webhook_secret: SecretStr
     cookie: SecretStr = SecretStr("")
+    lte_squad_uuid: Optional[UUID] = Field(None)
 
     @property
     def is_external(self) -> bool:
