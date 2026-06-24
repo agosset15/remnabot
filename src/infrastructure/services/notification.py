@@ -25,7 +25,7 @@ from aiogram.utils.formatting import Text
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from loguru import logger
 
-from src.application.common import EventPublisher, Notifier, TranslatorHub
+from src.application.common import EventPublisher, Mailer, Notifier, TranslatorHub
 from src.application.common.dao import SettingsDao, UserDao
 from src.application.dto import (
     MediaDescriptorDto,
@@ -86,6 +86,7 @@ class NotificationService(Notifier):
         settings_dao: SettingsDao,
         worker: NotificationWorker,
         event_publisher: EventPublisher,
+        mailer: Mailer,
     ) -> None:
         self.bot = bot
         self.config = config
@@ -94,6 +95,7 @@ class NotificationService(Notifier):
         self.settings_dao = settings_dao
         self.worker = worker
         self.event_publisher = event_publisher
+        self.mailer = mailer
 
     async def notify_user(
         self,
@@ -353,14 +355,11 @@ class NotificationService(Notifier):
         payload: MessagePayloadDto,
     ) -> Optional[Message]:
         if user.telegram_id is None:
-            logger.debug(f"Skipping notification for web-only user {user.log}")
+            if isinstance(user, UserDto) and user.has_only_email:
+                await self._send_email_notification(user, payload)
+            else:
+                logger.debug(f"Skipping notification for web-only user {user.log}")
             return None
-
-        render_kwargs = payload.i18n_kwargs.copy()
-
-        if isinstance(user, UserDto) and payload.i18n_key == "raw-message":
-            user_data = asdict(user)
-            render_kwargs = {**user_data, **payload.i18n_kwargs}
 
         reply_markup = self._prepare_reply_markup(
             payload.reply_markup,
@@ -370,11 +369,7 @@ class NotificationService(Notifier):
             user.telegram_id,
         )
 
-        text = self._get_translated_text(
-            locale=user.language,
-            i18n_key=payload.i18n_key,
-            i18n_kwargs=render_kwargs,
-        )
+        text = self._render_payload_text(user, payload)
 
         kwargs: dict[str, Any] = {
             "disable_notification": payload.disable_notification,
@@ -454,6 +449,34 @@ class NotificationService(Notifier):
                 return template.safe_substitute(i18n_kwargs)
 
         return translated_text
+
+    def _render_payload_text(
+        self,
+        user: Union[TempUserDto, UserDto],
+        payload: MessagePayloadDto,
+    ) -> str:
+        render_kwargs = payload.i18n_kwargs.copy()
+
+        if isinstance(user, UserDto) and payload.i18n_key == "raw-message":
+            render_kwargs = {**asdict(user), **payload.i18n_kwargs}
+
+        return self._get_translated_text(
+            locale=user.language,
+            i18n_key=payload.i18n_key,
+            i18n_kwargs=render_kwargs,
+        )
+
+    async def _send_email_notification(self, user: UserDto, payload: MessagePayloadDto) -> None:
+        text = self._render_payload_text(user, payload)
+        if not text:
+            logger.debug(f"Skip email notification for user '{user.log}': empty text")
+            return
+
+        try:
+            await self.mailer.send_notification(user, text)
+            logger.info(f"Email notification sent to user '{user.log}'")
+        except Exception as e:
+            logger.error(f"Failed to send email notification to '{user.log}': {e}")
 
     def _prepare_reply_markup(
         self,

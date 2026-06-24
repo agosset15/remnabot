@@ -77,6 +77,10 @@ class UserDto(BaseDto, TrackableMixin, TimestampMixin):
         return self.email or str(self.id)
 
     @property
+    def has_only_email(self) -> bool:
+        return self.email is not None and self.telegram_id is None
+
+    @property
     def is_privileged(self) -> bool:
         return self.role.includes(Role.ADMIN)
 
