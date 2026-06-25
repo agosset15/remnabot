@@ -3,6 +3,7 @@ from dishka.integrations.fastapi import inject
 from fastapi import APIRouter, Response, Security, status
 
 from src.core.config import AppConfig
+from src.core.constants import API_V1
 from src.infrastructure.services import HealthService
 from src.infrastructure.services.health import DatabaseStatus, PoolMetrics
 from src.web.dependencies import require_api_key
@@ -14,7 +15,7 @@ from src.web.schemas import (
     PoolMetricsSchema,
 )
 
-router = APIRouter()
+router = APIRouter(prefix=API_V1)
 
 
 def _map_pool(pool: PoolMetrics) -> PoolMetricsSchema:

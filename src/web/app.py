@@ -10,6 +10,7 @@ from src.__version__ import __version__
 from src.core.config import AppConfig
 from src.lifespan import lifespan
 
+from ..core.constants import API_V1
 from .endpoints import (
     TelegramWebhookEndpoint,
     health_router,
@@ -52,7 +53,7 @@ def get_app(config: AppConfig, dispatcher: Dispatcher) -> FastAPI:
 
     if config.swagger_enabled:
 
-        @app.get("/docs", include_in_schema=False)
+        @app.get(API_V1+"/docs", include_in_schema=False)
         async def swagger_ui() -> HTMLResponse:
             return get_swagger_ui_html(
                 openapi_url="/openapi.json",
@@ -60,14 +61,14 @@ def get_app(config: AppConfig, dispatcher: Dispatcher) -> FastAPI:
                 swagger_ui_parameters={"persistAuthorization": True},
             )
 
-        @app.get("/redoc", include_in_schema=False)
+        @app.get(API_V1+"/redoc", include_in_schema=False)
         async def redoc_ui() -> HTMLResponse:
             return get_redoc_html(
                 openapi_url="/openapi.json",
                 title=f"{app.title} - ReDoc",
             )
 
-        @app.get("/openapi.json", include_in_schema=False)
+        @app.get(API_V1+"/openapi.json", include_in_schema=False)
         async def openapi_schema() -> dict:
             api_routes = [r for r in app.routes if getattr(r, "include_in_schema", True)]
             return get_openapi(title=app.title, version=app.version, routes=api_routes)
