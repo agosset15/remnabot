@@ -53,22 +53,22 @@ def get_app(config: AppConfig, dispatcher: Dispatcher) -> FastAPI:
 
     if config.swagger_enabled:
 
-        @app.get(API_V1+"/docs", include_in_schema=False)
+        @app.get(API_V1 + "/docs", include_in_schema=False)
         async def swagger_ui() -> HTMLResponse:
             return get_swagger_ui_html(
-                openapi_url="/openapi.json",
+                openapi_url=API_V1 + "/openapi.json",
                 title=f"{app.title} - Swagger UI",
                 swagger_ui_parameters={"persistAuthorization": True},
             )
 
-        @app.get(API_V1+"/redoc", include_in_schema=False)
+        @app.get(API_V1 + "/redoc", include_in_schema=False)
         async def redoc_ui() -> HTMLResponse:
             return get_redoc_html(
-                openapi_url="/openapi.json",
+                openapi_url=API_V1 + "/openapi.json",
                 title=f"{app.title} - ReDoc",
             )
 
-        @app.get(API_V1+"/openapi.json", include_in_schema=False)
+        @app.get(API_V1 + "/openapi.json", include_in_schema=False)
         async def openapi_schema() -> dict:
             api_routes = [r for r in app.routes if getattr(r, "include_in_schema", True)]
             return get_openapi(title=app.title, version=app.version, routes=api_routes)
