@@ -20,7 +20,7 @@ async def get_referral_program(
     referral_dao: FromDishka[ReferralDao],
     subscription_dao: FromDishka[SubscriptionDao],
 ) -> ReferralProgramResponse:
-    if not user.is_email_verified:
+    if user.telegram_id is None and not user.is_email_verified:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Referral program is available only for users with verified email",

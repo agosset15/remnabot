@@ -93,7 +93,7 @@ def _assert_web_gateway(gateway_type: PaymentGatewayType) -> None:
 
 
 def _assert_web_purchase_email_verified(user: UserDto) -> None:
-    if user.is_email_verified:
+    if user.telegram_id is not None or user.is_email_verified:
         return
 
     raise HTTPException(
