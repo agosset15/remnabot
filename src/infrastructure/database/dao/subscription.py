@@ -89,6 +89,18 @@ class SubscriptionDaoImpl(SubscriptionDao, BaseDaoImpl):
         logger.debug(f"Retrieved '{len(db_subscriptions)}' subscriptions for user_id='{user_id}'")
         return self._convert_to_dto_list(db_subscriptions)
 
+    async def reassign_to_user(self, from_user_id: int, to_user_id: int) -> None:
+        stmt = (
+            update(Subscription)
+            .where(Subscription.user_id == from_user_id)
+            .values(user_id=to_user_id)
+        )
+        result = await self.session.execute(stmt)
+        logger.debug(
+            f"Reassigned '{result.rowcount}' subscriptions "
+            f"from user_id='{from_user_id}' to user_id='{to_user_id}'"
+        )
+
     async def get_current(self, user_id: int) -> Optional[SubscriptionDto]:
         stmt = (
             select(Subscription)

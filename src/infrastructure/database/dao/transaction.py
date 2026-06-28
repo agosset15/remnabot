@@ -92,6 +92,18 @@ class TransactionDaoImpl(TransactionDao):
         logger.debug(f"Retrieved '{len(db_transactions)}' transactions for user_id '{user_id}'")
         return self._convert_to_dto_list(db_transactions)
 
+    async def reassign_to_user(self, from_user_id: int, to_user_id: int) -> None:
+        stmt = (
+            update(Transaction)
+            .where(Transaction.user_id == from_user_id)
+            .values(user_id=to_user_id)
+        )
+        result = await self.session.execute(stmt)
+        logger.debug(
+            f"Reassigned '{result.rowcount}' transactions "
+            f"from user_id='{from_user_id}' to user_id='{to_user_id}'"
+        )
+
     async def get_all(self, limit: int = 100, offset: int = 0) -> list[TransactionDto]:
         stmt = (
             select(Transaction).limit(limit).offset(offset).order_by(Transaction.created_at.desc())

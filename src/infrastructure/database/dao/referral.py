@@ -79,6 +79,36 @@ class ReferralDaoImpl(ReferralDao):
         logger.debug(f"Referrer for user_id '{referred_id}' not found")
         return None
 
+    async def reassign_user(self, from_user_id: int, to_user_id: int) -> None:
+        # Re-point referrals where the donor is the referrer (no unique constraint).
+        await self.session.execute(
+            update(Referral)
+            .where(Referral.referrer_id == from_user_id)
+            .values(referrer_id=to_user_id)
+        )
+
+        # referred_id is unique, so the donor's "referred by" row can only move
+        # if the survivor isn't referred yet; otherwise it stays and gets
+        # cascade-deleted with the donor.
+        target_is_referred = await self.session.scalar(
+            select(select(Referral.id).where(Referral.referred_id == to_user_id).exists())
+        )
+        if not target_is_referred:
+            await self.session.execute(
+                update(Referral)
+                .where(Referral.referred_id == from_user_id)
+                .values(referred_id=to_user_id)
+            )
+
+        # Re-point reward ownership.
+        await self.session.execute(
+            update(ReferralReward)
+            .where(ReferralReward.user_id == from_user_id)
+            .values(user_id=to_user_id)
+        )
+
+        logger.debug(f"Reassigned referrals from user_id='{from_user_id}' to user_id='{to_user_id}'")
+
     async def get_referrals_count(self, referrer_id: int) -> int:
         stmt = select(func.count()).select_from(Referral).where(Referral.referrer_id == referrer_id)
         count = await self.session.scalar(stmt) or 0

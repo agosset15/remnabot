@@ -6,10 +6,11 @@ import httpx
 from fastapi import HTTPException, status
 from loguru import logger
 from redis.asyncio import Redis
+from remnapy.exceptions import NotFoundError
 from sqlalchemy.exc import IntegrityError
 
-from src.application.common import Interactor
-from src.application.common.dao import UserDao
+from src.application.common import Interactor, Remnawave
+from src.application.common.dao import ReferralDao, SubscriptionDao, TransactionDao, UserDao
 from src.application.common.policy import Permission
 from src.application.common.uow import UnitOfWork
 from src.application.dto import UserDto
@@ -198,11 +199,23 @@ class LinkTelegram(Interactor[LinkTelegramData, UserDto]):
     required_permission = Permission.PUBLIC
 
     def __init__(
-        self, config: AppConfig, uow: UnitOfWork, user_dao: UserDao, redis: Redis
+        self,
+        config: AppConfig,
+        uow: UnitOfWork,
+        user_dao: UserDao,
+        subscription_dao: SubscriptionDao,
+        transaction_dao: TransactionDao,
+        referral_dao: ReferralDao,
+        remnawave: Remnawave,
+        redis: Redis,
     ) -> None:
         self.config = config
         self.uow = uow
         self.user_dao = user_dao
+        self.subscription_dao = subscription_dao
+        self.transaction_dao = transaction_dao
+        self.referral_dao = referral_dao
+        self.remnawave = remnawave
         self.redis = redis
 
     async def _execute(self, actor: UserDto, data: LinkTelegramData) -> UserDto:
@@ -218,11 +231,13 @@ class LinkTelegram(Interactor[LinkTelegramData, UserDto]):
             )
 
         existing = await self.user_dao.get_by_telegram_id(identity.id)
-        if existing and existing.id != actor.id:
+        if existing and existing.email:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail="Telegram account already linked to another user",
+                detail="Already linked to a different Telegram account",
             )
+        if existing and existing.id != actor.id:
+            return await self._merge(actor, existing, identity)
 
         actor.telegram_id = identity.id
         if identity.username is not None:
@@ -236,4 +251,54 @@ class LinkTelegram(Interactor[LinkTelegramData, UserDto]):
                     detail="User not found during Telegram link",
                 )
             await self.uow.commit()
+        return updated
+
+    async def _merge(
+        self, actor: UserDto, donor: UserDto, identity: _TelegramIdentity
+    ) -> UserDto:
+        """
+        Merge a Telegram-only account (donor) into the current web account (actor).
+
+        The web account survives because the session is bound to it. The donor's
+        subscriptions, transactions and referrals are re-pointed to the survivor
+        before the donor is deleted (otherwise its subscriptions would cascade
+        away with it), and the subscription that expires latest across both
+        accounts becomes the survivor's current one.
+        """
+        async with self.uow:
+            await self.subscription_dao.reassign_to_user(donor.id, actor.id)
+            await self.transaction_dao.reassign_to_user(donor.id, actor.id)
+            await self.referral_dao.reassign_user(donor.id, actor.id)
+
+            await self.user_dao.delete(donor.id)
+
+            actor.telegram_id = identity.id
+            if identity.username is not None:
+                actor.username = identity.username
+            await self.user_dao.update(actor)
+
+            subscriptions = await self.subscription_dao.get_all_by_user(actor.id)
+            surviving = (
+                max(subscriptions, key=lambda sub: sub.expire_at) if subscriptions else None
+            )
+            if surviving is not None:
+                await self.user_dao.set_current_subscription_by_id(actor.id, surviving.id)
+
+            await self.uow.commit()
+
+        logger.info(f"Telegram link merge: donor id='{donor.id}' merged into survivor id='{actor.id}'")
+
+        updated = await self.user_dao.get_by_id(actor.id) or actor
+
+        # Best-effort: sync the surviving subscription's RemnaWave user with the
+        # merged identity. The merge is already committed, so a missing panel
+        # user must not fail the link.
+        if surviving is not None:
+            try:
+                await self.remnawave.update_user(updated, surviving.user_remna_id)
+            except NotFoundError:
+                logger.warning(
+                    f"RemnaWave user '{surviving.user_remna_id}' not found while syncing merge"
+                )
+
         return updated
