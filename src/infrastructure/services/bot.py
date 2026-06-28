@@ -4,15 +4,17 @@ from urllib.parse import quote
 from aiogram import Bot
 from aiogram.utils.chat_member import ChatMemberUnion
 
+from src.application.services import WebService
 from src.core.config import AppConfig
 from src.core.constants import T_ME
 from src.core.enums import Deeplink
 
 
 class BotService:
-    def __init__(self, bot: Bot, config: AppConfig):
+    def __init__(self, bot: Bot, config: AppConfig, web_service: WebService):
         self.bot = bot
         self.config = config
+        self.web_service = web_service
         self._bot_username: Optional[str] = None
         self._can_join_groups: Optional[bool] = None
         self._can_read_all_group_messages: Optional[bool] = None
@@ -54,6 +56,11 @@ class BotService:
         return result.name
 
     async def get_referral_url(self, referral_code: str) -> str:
+        if self.config.web.referral_via_domain:
+            web_url = self.web_service.referral(referral_code)
+            if web_url:
+                return web_url
+
         base_url = await self._get_bot_redirect_url()
         return Deeplink.REFERRAL.build_url(base_url, referral_code)
 

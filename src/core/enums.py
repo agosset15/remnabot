@@ -1,5 +1,6 @@
 from enum import Enum, IntEnum, StrEnum, auto
 from typing import Optional, Self, Union
+from urllib.parse import urlencode
 
 from aiogram.types import BotCommand, ContentType
 
@@ -31,6 +32,38 @@ class Deeplink(StrEnum):
     @property
     def with_underscore(self) -> str:
         return f"{self.value}_"
+
+
+class FaqSection(StrEnum):
+    # TODO: placeholder sections — replace with the real FAQ anchors used by
+    # the web cabinet. Only referenced by WebService.faq(), which is not wired
+    # anywhere yet, so wrong values are currently harmless.
+    GENERAL = "general"
+    PAYMENT = "payment"
+    CONNECTION = "connection"
+    DEVICES = "devices"
+
+
+class WebPage(StrEnum):
+    HOME = "/"
+    PLANS = "/plans"
+    DOWNLOAD = "/download"
+    FAQ = "/faq"
+    HELP = "/help"
+    PURCHASE = "/purchase"
+    SUCCESS = "/success"
+    REFERRAL = "/ref"
+    #
+    TERMS = "/terms"
+    PRIVACY = "/privacy"
+
+    def build_url(self, base_url: str, *path_params: str, **query_params: str) -> str:
+        url = f"{base_url}{self.value}"
+        if path_params:
+            url = f"{url}/{'/'.join(path_params)}"
+        if query_params:
+            url = f"{url}?{urlencode(query_params)}"
+        return url
 
 
 class ButtonType(UpperStrEnum):

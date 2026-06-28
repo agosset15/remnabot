@@ -20,6 +20,7 @@ from src.application.common import (
 from src.application.services import (
     PricingService,
     RemnaWebhookService,
+    WebService,
 )
 from src.infrastructure.services import (
     AiogramFileDownloader,
@@ -47,6 +48,7 @@ from src.infrastructure.services import (
 class ServicesProvider(Provider):
     scope = Scope.APP
 
+    web = provide(source=WebService)
     bot = provide(source=BotServiceImpl, provides=BotService)
     health = provide(source=HealthService)
     cryptographer = provide(source=CryptographerImpl, provides=Cryptographer)

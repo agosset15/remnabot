@@ -19,6 +19,7 @@ from .log import LogConfig
 from .redis import RedisConfig
 from .remnawave import RemnawaveConfig
 from .validators import validate_not_change_me
+from .web import WebConfig
 
 
 class AppConfig(BaseConfig, env_prefix="APP_"):
@@ -35,9 +36,6 @@ class AppConfig(BaseConfig, env_prefix="APP_"):
     assets_dir: Path = ASSETS_DIR
     origins: StringList = StringList("")
     swagger_enabled: bool = False
-    web_enabled: bool = Field(default=False, validation_alias="WEB_ENABLED")
-    web_cabinet_url: str = Field(default="", validation_alias="WEB_CABINET_URL")
-
     bot: BotConfig = Field(default_factory=BotConfig)
     remnawave: RemnawaveConfig = Field(default_factory=RemnawaveConfig)
     database: DatabaseConfig = Field(default_factory=DatabaseConfig)
@@ -45,6 +43,7 @@ class AppConfig(BaseConfig, env_prefix="APP_"):
     email: EmailConfig = Field(default_factory=EmailConfig)
     build: BuildConfig = Field(default_factory=BuildConfig)
     log: LogConfig = Field(default_factory=LogConfig)
+    web: WebConfig = Field(default_factory=WebConfig)
 
     @property
     def default_assets_dir(self) -> Path:
@@ -77,7 +76,7 @@ class AppConfig(BaseConfig, env_prefix="APP_"):
 
     @model_validator(mode="after")
     def validate_web_secrets(self) -> "AppConfig":
-        if self.web_enabled:
+        if self.web.enabled:
             if not self.api_key:
                 raise ValueError(
                     "APP_API_KEY must be set when WEB_ENABLED=true; "

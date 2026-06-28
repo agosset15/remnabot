@@ -53,8 +53,8 @@ async def menu_getter(
             "is_mini_app": config.bot.is_mini_app,
             "is_mini_app_reserve": config.bot.is_mini_app and settings.extra.mini_app_reserve,
             "support_url": support_url,
-            "web_enabled": config.web_enabled,
-            "web_cabinet_url": config.web_cabinet_url.strip(),
+            "web_enabled": config.web.enabled,
+            "web_cabinet_url": config.web.cabinet_url.strip(),
             # referral
             "referral_enabled": menu_data.is_referral_enabled,
             # defaults

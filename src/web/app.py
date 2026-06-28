@@ -48,7 +48,7 @@ def get_app(config: AppConfig, dispatcher: Dispatcher) -> FastAPI:
     app.include_router(health_router)
     app.include_router(payments_router)
     app.include_router(remnawave_router)
-    if config.web_enabled:
+    if config.web.enabled:
         app.include_router(public_router)
 
     if config.swagger_enabled:
