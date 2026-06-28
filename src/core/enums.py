@@ -35,13 +35,23 @@ class Deeplink(StrEnum):
 
 
 class FaqSection(StrEnum):
-    # TODO: placeholder sections — replace with the real FAQ anchors used by
-    # the web cabinet. Only referenced by WebService.faq(), which is not wired
-    # anywhere yet, so wrong values are currently harmless.
-    GENERAL = "general"
-    PAYMENT = "payment"
-    CONNECTION = "connection"
+    # FAQ items
+    RUSSIA = "russia"
     DEVICES = "devices"
+    AFTER_PAYMENT = "after-payment"
+    NOTHING_HAPPENED = "nothing-happened"
+    TRAFFIC = "traffic"
+    APPS = "apps"
+    TRIAL = "trial"
+    YEAR_GIFT = "year-gift"
+    CANCEL = "cancel"
+    NOT_WORKING = "not-working"
+    PRIVACY = "privacy"
+    # Guides
+    GUIDES = "guides"
+    CONNECT_DEVICE = "connect-device"
+    XRAY_ERROR = "xray-error"
+    NO_CONFIG = "no-config"
 
 
 class WebPage(StrEnum):
