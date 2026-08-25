@@ -3,7 +3,8 @@ from typing import Optional, Union
 from pydantic import SecretStr, field_validator
 from pydantic_core.core_schema import FieldValidationInfo
 
-from src.core.constants import API_V1, BOT_WEBHOOK_PATH, URL_PATTERN
+from src.core.constants import API_V1, BOT_WEBHOOK_PATH
+from src.core.utils.validators import is_valid_url
 
 from .base import BaseConfig
 from .validators import validate_not_change_me, validate_username
@@ -30,6 +31,14 @@ class BotConfig(BaseConfig, env_prefix="BOT_"):
     use_banners: bool = True
 
     @property
+    def id(self) -> int:
+        """Bot/client id — the integer part of the token before ``:``.
+
+        Used as the OIDC ``aud`` claim when validating Telegram Login id_tokens.
+        """
+        return int(self.token.get_secret_value().split(":", 1)[0])
+
+    @property
     def webhook_path(self) -> str:
         return f"{API_V1}{BOT_WEBHOOK_PATH}"
 
@@ -43,7 +52,7 @@ class BotConfig(BaseConfig, env_prefix="BOT_"):
     def mini_app_url(self) -> Union[bool, str]:
         if isinstance(self.mini_app, SecretStr):
             value = self.mini_app.get_secret_value().strip()
-            if value and URL_PATTERN.match(value):
+            if value and is_valid_url(value):
                 return value
         return False
 
@@ -79,7 +88,7 @@ class BotConfig(BaseConfig, env_prefix="BOT_"):
                 return True
             if value.lower() == "false" or not value:
                 return False
-            if URL_PATTERN.match(value):
+            if is_valid_url(value):
                 return SecretStr(value)
             raise ValueError("BOT_MINI_APP must be empty, True, False or a valid URL")
         return field

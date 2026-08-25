@@ -10,7 +10,6 @@ from src.application.common import Interactor, Remnawave
 from src.application.common.dao import SettingsDao, SubscriptionDao, UserDao
 from src.application.common.policy import Permission
 from src.application.dto import SubscriptionDto, UserDto
-from src.application.services import BotService, WebService
 from src.core.config import AppConfig
 from src.core.types import RemnaUserDto
 
@@ -19,7 +18,6 @@ from src.core.types import RemnaUserDto
 class GetUserProfileResultDto:
     target_user: UserDto
     subscription: Optional[SubscriptionDto]
-    web_connect_url: Optional[str]
     show_points: bool
     is_not_self: bool
     can_edit: bool
@@ -30,13 +28,11 @@ class GetUserProfile(Interactor[int, GetUserProfileResultDto]):
 
     def __init__(
         self,
-        bot_service: BotService,
         user_dao: UserDao,
         settings_dao: SettingsDao,
         subscription_dao: SubscriptionDao,
         config: AppConfig,
-    ):
-        self.bot_service = bot_service
+    ) -> None:
         self.user_dao = user_dao
         self.settings_dao = settings_dao
         self.subscription_dao = subscription_dao
@@ -49,18 +45,13 @@ class GetUserProfile(Interactor[int, GetUserProfileResultDto]):
             raise ValueError(f"User '{user_id}' not found")
 
         settings = await self.settings_dao.get()
-        subscription = await self.subscription_dao.get_current(user_id)
-
-        web_connect_url = None
-        if target_user.has_only_email:
-            web_connect_url = await self.bot_service.get_connect_web_url(target_user.referral_code)
+        subscription = await self.subscription_dao.get_current(target_user.id)
 
         logger.info(f"{actor.log} Viewed details for user '{user_id}'")
 
         return GetUserProfileResultDto(
             target_user=target_user,
             subscription=subscription,
-            web_connect_url=web_connect_url,
             show_points=settings.referral.reward.is_points,
             is_not_self=target_user.id != actor.id,
             can_edit=actor.role > target_user.role,
@@ -96,10 +87,12 @@ class GetUserProfileSubscription(Interactor[int, GetUserProfileSubscriptionResul
 
     def __init__(
         self,
+        user_dao: UserDao,
         subscription_dao: SubscriptionDao,
         remnawave: Remnawave,
         remnawave_sdk: RemnawaveSDK,
-    ):
+    ) -> None:
+        self.user_dao = user_dao
         self.subscription_dao = subscription_dao
         self.remnawave = remnawave
         self.remnawave_sdk = remnawave_sdk
@@ -109,7 +102,10 @@ class GetUserProfileSubscription(Interactor[int, GetUserProfileSubscriptionResul
         actor: UserDto,
         user_id: int,
     ) -> GetUserProfileSubscriptionResultDto:
-        subscription = await self.subscription_dao.get_current(user_id)
+        target_user = await self.user_dao.get_by_id(user_id)
+        if not target_user:
+            raise ValueError(f"User '{user_id}' not found")
+        subscription = await self.subscription_dao.get_current(target_user.id)
         if not subscription:
             raise ValueError(f"Current subscription for user '{user_id}' not found")
 
@@ -158,7 +154,7 @@ class GetUserDevices(Interactor[int, GetUserDevicesResultDto]):
         user_dao: UserDao,
         subscription_dao: SubscriptionDao,
         remnawave: Remnawave,
-    ):
+    ) -> None:
         self.user_dao = user_dao
         self.subscription_dao = subscription_dao
         self.remnawave = remnawave
@@ -168,7 +164,7 @@ class GetUserDevices(Interactor[int, GetUserDevicesResultDto]):
         if not target_user:
             raise ValueError(f"User '{user_id}' not found")
 
-        subscription = await self.subscription_dao.get_current(user_id)
+        subscription = await self.subscription_dao.get_current(target_user.id)
         if not subscription:
             raise ValueError(f"Subscription for '{user_id}' not found")
 

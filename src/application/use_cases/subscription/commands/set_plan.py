@@ -27,7 +27,7 @@ class SetUserSubscription(Interactor[SetUserSubscriptionDto, None]):
         plan_dao: PlanDao,
         subscription_dao: SubscriptionDao,
         remnawave: Remnawave,
-    ):
+    ) -> None:
         self.uow = uow
         self.user_dao = user_dao
         self.plan_dao = plan_dao
@@ -45,7 +45,7 @@ class SetUserSubscription(Interactor[SetUserSubscriptionDto, None]):
                 raise ValueError(f"Plan '{data.plan_id}' not found")
 
             plan_snapshot = PlanSnapshotDto.from_plan(plan, data.duration)
-            subscription = await self.subscription_dao.get_current(data.user_id)
+            subscription = await self.subscription_dao.get_current(target_user.id)
 
             if subscription:
                 remna_user = await self.remnawave.update_user(
@@ -53,6 +53,10 @@ class SetUserSubscription(Interactor[SetUserSubscriptionDto, None]):
                     uuid=subscription.user_remna_id,
                     plan=plan_snapshot,
                     reset_traffic=True,
+                )
+                await self.subscription_dao.update_status(
+                    subscription_id=subscription.id,
+                    status=SubscriptionStatus.DELETED,
                 )
             else:
                 remna_user = await self.remnawave.create_user(user=target_user, plan=plan_snapshot)
@@ -71,15 +75,15 @@ class SetUserSubscription(Interactor[SetUserSubscriptionDto, None]):
                 plan_snapshot=plan_snapshot,
             )
 
-            await self.subscription_dao.create(
+            new_subscription = await self.subscription_dao.create(
                 new_subscription,
-                target_user.id,  # ty: ignore[invalid-argument-type]
+                target_user.id,
             )
 
-            await self.user_dao.set_trial_available(target_user.id, False)  # ty: ignore[invalid-argument-type]
+            await self.user_dao.set_trial_available(target_user.id, False)
             await self.uow.commit()
 
         logger.info(
             f"{actor.log} Set subscription with plan '{data.plan_id}' duration "
-            f"'{data.duration}' for '{data.user_id}'"
+            f"'{data.duration}' for user '{data.user_id}'"
         )

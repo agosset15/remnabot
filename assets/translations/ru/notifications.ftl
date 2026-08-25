@@ -18,9 +18,9 @@ ntf-common =
 
     .invalid-value = ❌ <i>Некорректное значение.</i>
     .value-updated = ✅ <i>Параметр успешно обновлен.</i>
+    .cooldown-active = ⏳ <i>Временно недоступно. Попробуйте снова через { $available_at }.</i>
 
     .plan-not-found = ❌ <i>План не найден или недоступен.</i>
-
     .connect-not-available =
     ⚠️ { $status ->
     [LIMITED]
@@ -52,23 +52,10 @@ ntf-requirement =
     .channel-join-required-left = ⚠️ Вы отписались от канала. Подпишитесь, чтобы продолжить пользоваться ботом.
     .rules-accept-required = ⚠️ <b>Перед использованием сервиса ознакомьтесь и примите <a href="{ $url }">Условия использования</a>.</b>
     .channel-join-error = ⚠️ Мы не видим вашу подписку на канал. Проверьте подписку и попробуйте снова.
+    .trial-paused = ⚠️ Пробный период приостановлен — вы отписались от канала. Подпишитесь снова, чтобы возобновить доступ.
+    .trial-restored = ✅ Пробный период возобновлен.
     
 ntf-user =
-    .not-found = <i>❌ Пользователь не найден.</i>
-    .transactions-empty = ❌ <i>Список транзакций пуст.</i>
-    .subscription-empty = ❌ <i>Активная подписка не найдена.</i>
-    .subscription-deleted = ✅ <i>Подписка успешно удалена.</i>
-    .plans-empty = ❌ <i>Нет доступных планов.</i>
-    .devices-empty = ❌ <i>Список устройств пуст.</i>
-    .allowed-plans-empty = ❌ <i>Нет доступных планов для предоставления доступа.</i>
-    .message-success = ✅ <i>Сообщение успешно отправлено.</i>
-    .message-failed =
-        ❌ <i>Не удалось отправить сообщение.</i>
-        { $error ->
-            [0] { empty }
-            *[HAS] <blockquote>{ $error }</blockquote>
-        }
-
     .email-purchase-success = ✅ <i>Письмо о покупке успешно отправлено.</i>
     .email-purchase-failed = ❌ <i>Не удалось отправить письмо о покупке.</i>
     .email-connect-success = ✅ <i>Письмо с приглашением в Telegram успешно отправлено.</i>
@@ -85,6 +72,17 @@ ntf-user =
     .email-cleared = ✅ <i>Почта пользователя удалена.</i>
     .email-duplicate = ❌ <i>Эта почта уже используется другим пользователем.</i>
     .email-required = ❌ <i>Нельзя удалить почту: у пользователя нет Telegram ID.</i>
+    .not-found = <i>❌ Пользователь не найден.</i>
+    .transaction-not-found = ❌ <i>Транзакция не найдена.</i>
+    .transactions-empty = ❌ <i>Список транзакций пуст.</i>
+    .subscription-empty = ❌ <i>Активная подписка не найдена.</i>
+    .subscription-deleted = ✅ <i>Подписка успешно удалена.</i>
+    .plans-empty = ❌ <i>Нет доступных планов.</i>
+    .devices-empty = ❌ <i>Список устройств пуст.</i>
+    .allowed-plans-empty = ❌ <i>Нет доступных планов для предоставления доступа.</i>
+    .referral-reset = ✅ <i>Реферальная ссылка успешно сброшена.</i>
+    .message-success = ✅ <i>Сообщение успешно отправлено.</i>
+    .message-failed = ❌ <i>Не удалось отправить сообщение.</i>
 
     .sync-already = ✅ <i>Данные подписки идентичны.</i>
     .sync-missing-data = ⚠️ <i>Синхронизация невозможна. Данные подписки отсутствуют в панели и в боте.</i>
@@ -105,19 +103,19 @@ ntf-access =
     .registration-disabled = ❌ <i>Регистрация новых пользователей отключена.</i>
     .registration-invite-only = ❌ <i>Регистрация доступна только по приглашению.</i>
     .payments-disabled = 🚧 <i>Платежи временно недоступны! Вы получите уведомление после восстановления.</i>
-    .payments-restored = ❇️ <i>Платежи восстановленны! Теперь вы можете купить или продлить подписку. Спасибо за ожидание.</i>
+    .payments-restored = ❇️ <i>Платежи восстановлены! Теперь вы можете купить или продлить подписку. Спасибо за ожидание.</i>
 
 ntf-plan =
     .not-file = ⚠️ <i>Отправьте планы в виде json файла.</i>
     .import-failed = ❌ <i>Не удалось импортировать.</i>
-    .import-success = ✅ <i>Успешно импотированно.</i>
-    .export-plans_not_selected =  ❌ <i>Выберите хотя бы один план для экспорта.</i>
+    .import-success = ✅ <i>Успешно импортировано.</i>
+    .export-plans-not-selected = ❌ <i>Выберите хотя бы один план для экспорта.</i>
     .export-failed = ❌ <i>Не удалось экспортировать.</i>
     .export-success = ✅ <i>Выбранные планы экспортированы.</i>
     .trial-single-duration = ❌ <i>Пробный план может иметь только одну длительность.</i>
     .duration-already-exists = ❌ <i>Такая длительность уже существует.</i>
     .name-already-exists = ❌ <i>План с таким именем уже существует.</i>
-    .user-already-allowed = ❌ <i>Индентификтор пользователя уже добавлен.</i>
+    .user-already-allowed = ❌ <i>Идентификатор пользователя уже добавлен.</i>
 
     .updated = ✅ <i>План успешно обновлен.</i>
     .created = ✅ <i>План успешно создан.</i>
@@ -126,19 +124,19 @@ ntf-plan =
 ntf-gateway =
     .not-configured = ❌ <i>Платежный шлюз не настроен.</i>
     .not-configurable = ❌ <i>У платежного шлюза отсутствуют настройки.</i>
-
     .test-payment-created = ✅ <i><a href="{ $url }">Тестовый платеж</a> успешно создан.</i>
     .test-payment-error = ❌ <i>Ошибка при создании тестового платежа.</i>
     .test-payment-confirmed = ✅ <i>Тестовый платеж успешно обработан.</i>
+    .field-reset = ✅ <i>Значение поля очищено.</i>
+    .field-reset-deactivated = ✅ <i>Значение поля очищено. Шлюз отключён: не хватает обязательных настроек.</i>
 
 ntf-subscription =
     .plans-unavailable = ❌ <i>В данный момент нет доступных планов.</i>
     .gateways-unavailable = ❌ <i>В данный момент нет доступных платежных систем.</i>
-    .renew-plan-unavailable = ❌ <i>Текущий план устарел и недоступен для продления.</i> Нажите на кнопку <b>"Измененить"</b>.
+    .renew-plan-unavailable = ❌ <i>Текущий план устарел и недоступен для продления.</i>
     .payment-creation-failed = ❌ <i>Ошибка при создании платежа. Попробуйте позже.</i>
 
 ntf-broadcast =
-    .message = { $content }
     .text-too-long = ❌ Превышено максимальное кол-во символов ({ $max_limit }).
     .list-empty = ❌ <i>Список рассылок пуст.</i>
     .plans-unavailable = ❌ <i>Нет доступных планов.</i>
@@ -152,7 +150,7 @@ ntf-broadcast =
     .already-deleted = ❌ <i>Рассылка уже удалена или находится в процессе удаления.</i>
 
     .deleted-success =
-        ✅ Рассылка <code>{ $task_id }</code> успешно удалена.
+        ℹ️ Результат удаления рассылки <code>{ $task_id }</code>.
 
         <blockquote>
         • <b>Всего сообщений</b>: { $total_count }
@@ -169,36 +167,81 @@ ntf-importer =
     .already-running = ⚠️ <i>Импорт уже выполняется. Пожалуйста, подождите.</i>
 
 ntf-sync =
-    .started = ✅ <i>Синхронизация запущена. Дождитесь завершения...</i>
+    .from-panel-started = ✅ <i>Синхронизация панель → бот запущена. Дождитесь завершения...</i>
+    .from-bot-started = ✅ <i>Синхронизация бот → панель запущена. Дождитесь завершения...</i>
     .users-not-found = ❌ <i>Пользователи для синхронизации не найдены.</i>
     .already-running = ⚠️ <i>Синхронизация уже выполняется. Пожалуйста, подождите.</i>
 
 ntf-menu-editor =
     .button-saved = ✅ <i>Кнопка успешно сохранена.</i>
-    .invalid-payload = ❌ <i>Недопустимый формат URL для payload.</i>
+    .invalid-payload = ❌ <i>Недопустимый формат URL.</i>
 
 ntf-devices =
     .deleted = ✅ <i>Устройство удалено.</i>
     .all-deleted = ✅ <i>Все устройства удалены.</i>
     .reissued = ✅ <i>Подписка успешно перевыпущена.</i>
 
-ntf-connect-web =
-    .not-found = Ссылка неверная, или истекла.
-    .already-connected = Акаунты уже связаны.
-    .success = Акаунты успешно связаны.
+ntf-backup =
+    .assets-started = ⏳ <i>Создание бэкапа ассетов...</i>
+    .db-started = ⏳ <i>Создание бэкапа базы данных...</i>
+    .error = ❌ <i>Ошибка при создании бэкапа</i>
 
-email-otp =
-    .title = Код подтверждения
-    .message =
-        Ваш код подтверждения: { $code }
-        Код действует в течение 10 минут. Не передавайте его никому.
+ntf-blacklist =
+    .list-empty = ❌ <i>Список заблокированных пуст.</i>
+    .no-ids-found = ❌ <i>По ссылке не найдено ни одного ID.</i>
+    .source-removed = ✅ <i>Список удален.</i>
+    .blocked-ids-empty = ❌ <i>Список заблокированных ID пуст.</i>
+    .blocked-ids-cleared = ✅ <i>Очищено { $count } ID.</i>
+    
+    .block-result =
+    ℹ️ Результат блокировки.
 
-    .message-html =
-        <span style="display:none; max-height:0; overflow:hidden; mso-hide:all;">Ваш код подтверждения — введите его в течение 10 минут. Никому не сообщайте этот код.</span>
-        <span style="display:none; max-height:0; overflow:hidden; mso-hide:all;">&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;</span>
-        <p>Your verification code is:</p>
-        <h2 style='letter-spacing:4px'>{ $code }</h2>
-        <p>The code is valid for <strong>10 minutes</strong>. Do not share it with anyone.</p>
+    <blockquote>
+    • <b>Всего ID</b>: { $total }
+    • <b>Заблокировано пользователей</b>: { $blocked_users }
+    • <b>Заблокировано ID</b>: { $blocked_ids }
+    • <b>Уже заблокированные</b>: { $already_blocked }
+    </blockquote>
+
+ntf-invite =
+    .referral-reset = ✅ <i>Реферальная ссылка обновлена.</i>
+
+ntf-promocode =
+    .not-found = ❌ <i>Промокод не найден или недействителен.</i>
+    .not-available = ❌ <i>Промокод недоступен.</i>
+    .expired = ❌ <i>Срок действия промокода истек.</i>
+    .already-activated = ❌ <i>Вы уже активировали данный промокод.</i>
+    .activated = ✅ <i>Промокод успешно активирован!</i>
+    .activation-failed = ❌ <i>Не удалось активировать промокод. Попробуйте позже.</i>
+    .code-exists = ❌ <i>Промокод с таким кодом уже существует.</i>
+    .created = ✅ <i>Промокод создан.</i>
+    .deleted = ✅ <i>Промокод удален.</i>
+    .fields-required = ❌ <i>Заполните значение награды.</i>
+    .invalid-code = ❌ <i>Код может содержать только латинские буквы, цифры, дефис и подчёркивание.</i>
+    .plans-empty = ❌ <i>Нет доступных планов.</i>
+    .updated = ✅ <i>Промокод обновлен.</i>
+
+ntf-ad-link =
+    .created = ✅ <i>Рекламная ссылка создана.</i>
+    .updated = ✅ <i>Рекламная ссылка обновлена.</i>
+    .deleted = ✅ <i>Рекламная ссылка удалена.</i>
+
+sc-open = { "{" }
+sc-close = { "}" }
+
+hdr-email-html =
+    <!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>KAGO VPN</title>
+    <style>
+    @media(max-width:600px){ sc-open }.wrap{ sc-open }padding:16px 8px!important{ sc-close }.card{ sc-open }border-radius:12px!important;border-left:none!important;border-right:none!important;width:100%!important{ sc-close }.hd{ sc-open }padding:28px 20px 24px!important;border-radius:12px 12px 0 0!important{ sc-close }.hd h1{ sc-open }font-size:22px!important{ sc-close }.body,.btns,.foot{ sc-open }padding-left:20px!important;padding-right:20px!important{ sc-close }.btn{ sc-open }padding:14px!important;font-size:14px!important{ sc-close }{ sc-close }
+    </style>
+    </head><body style="margin:0;padding:0;background:#EEF3FB;font-family:Arial,sans-serif;">
+
+ftr-email-html =
+    <tr><td class="foot" align="center" style="background:#F8FAFF;border-top:1px solid #EEF2FF;padding:20px 32px;border-radius:0 0 16px 16px;">
+      <p style="margin:0 0 10px;font-size:12px;"><a href="https://usekago.net/help" style="color:#94A3B8;text-decoration:none;margin:0 8px;">Поддержка</a><a href="https://usekago.net/faq" style="color:#94A3B8;text-decoration:none;margin:0 8px;">FAQ</a><a href="https://usekago.net/terms" style="color:#94A3B8;text-decoration:none;margin:0 8px;">Условия</a></p>
+      <p style="margin:0;font-size:11px;color:#CBD5E1;line-height:1.7;">© 2026 KAGO VPN · Письмо отправлено автоматически. Не отвечайте на него.</p>
+    </td></tr>
+    </table></td></tr></table></body></html>
 
 email-success-purchase =
     .title = { $purchase_type ->
@@ -379,4 +422,3 @@ email-notification =
           <a href="https://usekago.net/plans" class="btn" style="display:block;margin-top:10px;padding:15px;background:#fff;border:1px solid #3B6FD4;border-radius:10px;text-align:center;text-decoration:none;font-size:15px;font-weight:700;color:#3B6FD4;">&#127760; На сайт</a>
         </td></tr>
         { ftr-email-html }
-

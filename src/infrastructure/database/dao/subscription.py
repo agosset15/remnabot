@@ -40,12 +40,14 @@ class SubscriptionDaoImpl(SubscriptionDao, BaseDaoImpl):
 
     async def create(self, subscription: SubscriptionDto, user_id: int) -> SubscriptionDto:
         subscription_data = self.retort.dump(subscription)
+        subscription_data.pop("id", None)
+        subscription_data.pop("user_id", None)
         db_subscription = Subscription(**subscription_data, user_id=user_id)
 
         self.session.add(db_subscription)
         await self.session.flush()
 
-        await self.user_dao.set_current_subscription(user_id, db_subscription.id)
+        await self.user_dao.set_current_subscription_by_id(user_id, db_subscription.id)
 
         logger.debug(
             f"Created new subscription '{db_subscription.id}' "
@@ -64,31 +66,15 @@ class SubscriptionDaoImpl(SubscriptionDao, BaseDaoImpl):
         logger.debug(f"Subscription '{subscription_id}' not found")
         return None
 
-    async def get_by_remna_id(self, remna_id: UUID) -> Optional[SubscriptionDto]:
-        stmt = select(Subscription).where(Subscription.user_remna_id == remna_id)
+    async def get_by_remna_id(self, user_remna_id: UUID) -> Optional[SubscriptionDto]:
+        stmt = select(Subscription).where(Subscription.user_remna_id == user_remna_id)
         db_subscription = await self.session.scalar(stmt)
 
         if db_subscription:
-            logger.debug(f"Subscription found by remna ID '{remna_id}'")
+            logger.debug(f"Subscription found by remna ID '{user_remna_id}'")
             return self._convert_to_dto(db_subscription)
 
-        logger.debug(f"Subscription with remna ID '{remna_id}' not found")
-        return None
-
-    async def get_by_user_id(self, user_id: int) -> Optional[SubscriptionDto]:
-        stmt = (
-            select(Subscription)
-            .where(Subscription.user_id == user_id)
-            .order_by(Subscription.created_at.desc())
-            .limit(1)
-        )
-        db_subscription = await self.session.scalar(stmt)
-
-        if db_subscription:
-            logger.debug(f"Last subscription for user '{user_id}' retrieved")
-            return self._convert_to_dto(db_subscription)
-
-        logger.debug(f"No subscriptions found for user '{user_id}'")
+        logger.debug(f"Subscription with remna ID '{user_remna_id}' not found")
         return None
 
     async def get_all_by_user(self, user_id: int) -> list[SubscriptionDto]:
@@ -100,8 +86,20 @@ class SubscriptionDaoImpl(SubscriptionDao, BaseDaoImpl):
         result = await self.session.scalars(stmt)
         db_subscriptions = cast(list, result.all())
 
-        logger.debug(f"Retrieved '{len(db_subscriptions)}' subscriptions for user '{user_id}'")
+        logger.debug(f"Retrieved '{len(db_subscriptions)}' subscriptions for user_id='{user_id}'")
         return self._convert_to_dto_list(db_subscriptions)
+
+    async def reassign_to_user(self, from_user_id: int, to_user_id: int) -> None:
+        stmt = (
+            update(Subscription)
+            .where(Subscription.user_id == from_user_id)
+            .values(user_id=to_user_id)
+        )
+        result = await self.session.execute(stmt)
+        logger.debug(
+            f"Reassigned '{result.rowcount}' subscriptions "
+            f"from user_id='{from_user_id}' to user_id='{to_user_id}'"
+        )
 
     async def get_current(self, user_id: int) -> Optional[SubscriptionDto]:
         stmt = (
@@ -113,10 +111,10 @@ class SubscriptionDaoImpl(SubscriptionDao, BaseDaoImpl):
         db_subscription = await self.session.scalar(stmt)
 
         if db_subscription:
-            logger.debug(f"Current active subscription found for user '{user_id}'")
+            logger.debug(f"Current active subscription found for user_id '{user_id}'")
             return self._convert_to_dto(db_subscription)
 
-        logger.debug(f"Active subscription not found for user '{user_id}'")
+        logger.debug(f"Active subscription not found for user_id '{user_id}'")
         return None
 
     async def update(self, subscription: SubscriptionDto) -> Optional[SubscriptionDto]:
@@ -170,11 +168,15 @@ class SubscriptionDaoImpl(SubscriptionDao, BaseDaoImpl):
         logger.warning(f"Failed to update subscription '{subscription_id}': not found")
         return None
 
-    async def exists(self, remna_id: UUID) -> bool:
-        stmt = select(select(Subscription).where(Subscription.user_remna_id == remna_id).exists())
+    async def exists(self, user_remna_id: UUID) -> bool:
+        stmt = select(
+            select(Subscription).where(Subscription.user_remna_id == user_remna_id).exists()
+        )
         is_exists = await self.session.scalar(stmt) or False
 
-        logger.debug(f"Subscription existence status for remna ID '{remna_id}' is '{is_exists}'")
+        logger.debug(
+            f"Subscription existence status for remna ID '{user_remna_id}' is '{is_exists}'"
+        )
         return is_exists
 
     async def count_active_by_plan(self, plan_id: int) -> int:
@@ -229,7 +231,8 @@ class SubscriptionDaoImpl(SubscriptionDao, BaseDaoImpl):
         result = await self.session.scalars(stmt)
         db_subscriptions = cast(list, result.all())
         logger.debug(
-            f"Found '{len(db_subscriptions)}' active subscriptions excluded from squad '{squad_uuid}'"
+            f"Found '{len(db_subscriptions)}' active subscriptions excluded from "
+            f"squad '{squad_uuid}'"
         )
         return self._convert_to_dto_list(db_subscriptions)
 
@@ -310,19 +313,6 @@ class SubscriptionDaoImpl(SubscriptionDao, BaseDaoImpl):
             total_limited=int(row["total_limited"] or 0),
             total_traffic=int(row["total_traffic"] or 0),
             total_devices=int(row["total_devices"] or 0),
-        )
-
-    async def reassign_to_user(self, from_user_id: int, to_user_id: int) -> None:
-        stmt = (
-            update(Subscription)
-            .where(Subscription.user_id == from_user_id)
-            .values(user_id=to_user_id)
-        )
-        result = await self.session.execute(stmt)
-        count = result.rowcount  # ty: ignore[unresolved-attribute]
-        logger.debug(
-            f"Reassigned '{count}' subscriptions "
-            f"from user id='{from_user_id}' to user id='{to_user_id}'"
         )
 
     async def get_plan_sub_stats(self) -> list[PlanSubStatsDto]:

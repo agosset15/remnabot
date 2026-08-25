@@ -6,9 +6,7 @@ from loguru import logger
 
 from src.application.common import Notifier
 from src.application.common.dao import UserDao
-from src.application.common.uow import UnitOfWork
 from src.application.dto import MessagePayloadDto
-from src.application.use_cases.user import NotifyNotConnectedWebUsers
 from src.core.constants import BATCH_DELAY, BATCH_SIZE_20
 from src.core.utils.iterables import chunked
 from src.infrastructure.taskiq.broker import broker
@@ -18,7 +16,6 @@ from src.infrastructure.taskiq.broker import broker
 @inject(patch_module=True)
 async def notify_payments_restored(
     waiting_user_ids: list[int],
-    uow: FromDishka[UnitOfWork],
     user_dao: FromDishka[UserDao],
     notifier: FromDishka[Notifier],
 ) -> None:
@@ -71,11 +68,3 @@ async def notify_payments_restored(
         f"Access broadcast for '{total_users}' users completed in '{total_duration:.2f}'s: "
         f"'{total_users - total_errors}' success, '{total_errors}' errors"
     )
-
-
-@broker.task(schedule=[{"cron": "0 11 */2 * *"}])  # Every 2 days at 11:00 UTC
-@inject(patch_module=True)
-async def notify_not_connected_web_users_task(
-    notify_not_connected_web_users: FromDishka[NotifyNotConnectedWebUsers],
-) -> None:
-    await notify_not_connected_web_users.system()

@@ -1,25 +1,18 @@
 from datetime import datetime, timedelta, timezone
 from typing import Optional, cast
+from uuid import UUID
 
 from adaptix import Retort
 from adaptix.conversion import ConversionRetort
 from loguru import logger
 from redis.asyncio import Redis
-from sqlalchemy import Integer, delete, func, or_, select, update
+from sqlalchemy import delete, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.application.common.dao import UserDao
 from src.application.dto import UserDto
-from src.core.constants import TTL_1H, TTL_6H
 from src.core.enums import Role, SubscriptionStatus
-from src.infrastructure.database.models import Referral, Subscription, Transaction, User
-from src.infrastructure.redis.cache import invalidate_cache, provide_cache
-from src.infrastructure.redis.keys import (
-    USER_COUNT_PREFIX,
-    USER_LIST_PREFIX,
-    RoleKey,
-    UserCacheKey,
-)
+from src.infrastructure.database.models import Referral, Subscription, User
 
 
 class UserDaoImpl(UserDao):
@@ -38,44 +31,27 @@ class UserDaoImpl(UserDao):
         self._convert_to_dto = self.conversion_retort.get_converter(User, UserDto)
         self._convert_to_dto_list = self.conversion_retort.get_converter(list[User], list[UserDto])
 
-    # @invalidate_cache(key_builder=[USER_COUNT_PREFIX, USER_LIST_PREFIX])
-    # @invalidate_cache(key_builder=UserCacheKey)
     async def create(self, user: UserDto) -> UserDto:
         user_data = self.retort.dump(user)
+        user_data.pop("id", None)
         db_user = User(**user_data)
 
         self.session.add(db_user)
         await self.session.flush()
 
-        logger.debug(f"New user '{user.telegram_id}' created in database")
+        logger.debug(f"New user {user.log} created in database")
         return self._convert_to_dto(db_user)
 
     async def get_by_id(self, user_id: int) -> Optional[UserDto]:
-        if user_id > 2_147_483_647:
-            return None
-
         stmt = select(User).where(User.id == user_id)
         db_user = await self.session.scalar(stmt)
 
         if db_user:
-            logger.debug(f"User id='{user_id}' found in database")
             return self._convert_to_dto(db_user)
 
         logger.debug(f"User id='{user_id}' not found")
         return None
 
-    async def get_by_email(self, email: str) -> Optional[UserDto]:
-        stmt = select(User).where(User.email == email)
-        db_user = await self.session.scalar(stmt)
-
-        if db_user:
-            logger.debug(f"User email='{email}' found in database")
-            return self._convert_to_dto(db_user)
-
-        logger.debug(f"User email='{email}' not found")
-        return None
-
-    # @provide_cache(ttl=TTL_1H, key_builder=UserCacheKey)
     async def get_by_telegram_id(self, telegram_id: int) -> Optional[UserDto]:
         stmt = select(User).where(User.telegram_id == telegram_id)
         db_user = await self.session.scalar(stmt)
@@ -87,28 +63,30 @@ class UserDaoImpl(UserDao):
         logger.debug(f"User '{telegram_id}' not found")
         return None
 
-    async def get_by_telegram_id_or_email(
-        self, telegram_id: Optional[int], email: Optional[str]
-    ) -> Optional[UserDto]:
-        conditions = []
-
-        if telegram_id is not None:
-            conditions.append(User.telegram_id == int(telegram_id))
-        if email is not None:
-            conditions.append(User.email == email)
-
-        if not conditions:
-            logger.debug("No search criteria provided (both telegram_id and email are None)")
-            return None
-
-        stmt = select(User).where(or_(*conditions))
+    async def get_by_remna_uuid(self, remna_uuid: UUID) -> Optional[UserDto]:
+        stmt = (
+            select(User)
+            .join(Subscription, User.current_subscription_id == Subscription.id)
+            .where(Subscription.user_remna_id == remna_uuid)
+        )
         db_user = await self.session.scalar(stmt)
 
         if db_user:
-            logger.debug(f"User '{telegram_id}' or '{email}' found in database")
+            logger.debug(f"User with remna_uuid '{remna_uuid}' found in database")
             return self._convert_to_dto(db_user)
 
-        logger.debug(f"User '{telegram_id}' or '{email}' not found")
+        logger.debug(f"User with remna_uuid '{remna_uuid}' not found")
+        return None
+
+    async def get_by_email(self, email: str) -> Optional[UserDto]:
+        stmt = select(User).where(User.email == email)
+        db_user = await self.session.scalar(stmt)
+
+        if db_user:
+            logger.debug(f"User with email '{email}' found in database")
+            return self._convert_to_dto(db_user)
+
+        logger.debug(f"User with email '{email}' not found")
         return None
 
     async def get_by_telegram_ids(self, telegram_ids: list[int]) -> list[UserDto]:
@@ -122,8 +100,8 @@ class UserDaoImpl(UserDao):
         logger.debug(f"Retrieved '{len(db_users)}' users by telegram ID list")
         return self._convert_to_dto_list(db_users)
 
-    async def get_by_partial_name(self, query: str) -> list[UserDto]:
-        search_pattern = f"%{query}%"
+    async def get_by_partial_name(self, query_name: str) -> list[UserDto]:
+        search_pattern = f"%{query_name}%"
         stmt = select(User).where(
             or_(
                 User.name.ilike(search_pattern),
@@ -133,7 +111,7 @@ class UserDaoImpl(UserDao):
         result = await self.session.scalars(stmt)
         db_users = cast(list, result.all())
 
-        logger.debug(f"Found '{len(db_users)}' users matching query '{query}'")
+        logger.debug(f"Found '{len(db_users)}' users matching query '{query_name}'")
         return self._convert_to_dto_list(db_users)
 
     async def get_by_referral_code(self, referral_code: str) -> Optional[UserDto]:
@@ -147,7 +125,6 @@ class UserDaoImpl(UserDao):
         logger.debug(f"User with referral code '{referral_code}' not found")
         return None
 
-    # @provide_cache(prefix=USER_LIST_PREFIX, ttl=TTL_1H)
     async def get_all(self, limit: Optional[int] = None, offset: int = 0) -> list[UserDto]:
         stmt = select(User).limit(limit).offset(offset) if limit else select(User).offset(offset)
         result = await self.session.scalars(stmt)
@@ -159,40 +136,22 @@ class UserDaoImpl(UserDao):
         )
         return self._convert_to_dto_list(db_users)
 
-    # @invalidate_cache(key_builder=[USER_COUNT_PREFIX, USER_LIST_PREFIX])
-    # @invalidate_cache(key_builder=UserCacheKey)
     async def update(self, user: UserDto) -> Optional[UserDto]:
         if not user.changed_data:
-            logger.debug(f"No changes detected for user '{user.telegram_id}', skipping update")
-            return await self.get_by_id(user.id)  # ty: ignore[invalid-argument-type]
+            logger.debug(f"No changes detected for user '{user.id}', skipping update")
+            return await self.get_by_id(user.id)
 
         stmt = update(User).where(User.id == user.id).values(**user.changed_data).returning(User)
         db_user = await self.session.scalar(stmt)
 
         if db_user:
-            logger.debug(
-                f"User '{user.telegram_id}' updated successfully with data '{user.changed_data}'"
-            )
+            logger.debug(f"User '{user.id}' updated successfully with data '{user.changed_data}'")
             return self._convert_to_dto(db_user)
 
-        logger.warning(f"Failed to update user '{user.telegram_id}'")
+        logger.warning(f"Failed to update user '{user.id}'")
         return None
 
-    # @invalidate_cache(key_builder=[USER_COUNT_PREFIX, USER_LIST_PREFIX])
-    # @invalidate_cache(key_builder=UserCacheKey)
-    async def delete(self, telegram_id: int) -> bool:
-        stmt = delete(User).where(User.telegram_id == telegram_id).returning(User.id)
-        result = await self.session.execute(stmt)
-        deleted_id = result.scalar_one_or_none()
-
-        if deleted_id:
-            logger.debug(f"User '{telegram_id}' deleted from database")
-            return True
-
-        logger.debug(f"User '{telegram_id}' not found for deletion")
-        return False
-
-    async def delete_by_id(self, user_id: int) -> bool:
+    async def delete(self, user_id: int) -> bool:
         stmt = delete(User).where(User.id == user_id).returning(User.id)
         result = await self.session.execute(stmt)
         deleted_id = result.scalar_one_or_none()
@@ -204,14 +163,13 @@ class UserDaoImpl(UserDao):
         logger.debug(f"User id='{user_id}' not found for deletion")
         return False
 
-    async def exists(self, telegram_id: int) -> bool:
-        stmt = select(select(User).where(User.telegram_id == telegram_id).exists())
+    async def exists(self, user_id: int) -> bool:
+        stmt = select(select(User).where(User.id == user_id).exists())
         is_exists = await self.session.scalar(stmt) or False
 
-        logger.debug(f"User '{telegram_id}' existence status is '{is_exists}'")
+        logger.debug(f"User id='{user_id}' existence status is '{is_exists}'")
         return is_exists
 
-    # @provide_cache(prefix=USER_COUNT_PREFIX, ttl=TTL_6H)
     async def count(self) -> int:
         stmt = select(func.count()).select_from(User)
         total = await self.session.scalar(stmt) or 0
@@ -219,7 +177,6 @@ class UserDaoImpl(UserDao):
         logger.debug(f"Total users count requested: '{total}'")
         return total
 
-    # @provide_cache(ttl=TTL_1H, key_builder=RoleKey)
     async def filter_by_role(self, role: list[Role]) -> list[UserDto]:
         stmt = select(User)
 
@@ -234,37 +191,29 @@ class UserDaoImpl(UserDao):
         logger.debug(f"Filtered '{len(db_users)}' users with role '{role}'")
         return self._convert_to_dto_list(db_users)
 
-    # @invalidate_cache(key_builder=[USER_COUNT_PREFIX, USER_LIST_PREFIX])
-    # @invalidate_cache(key_builder=UserCacheKey)
     async def set_trial_available(self, user_id: int, is_trial_available: bool) -> None:
         stmt = update(User).where(User.id == user_id).values(is_trial_available=is_trial_available)
         await self.session.execute(stmt)
-        logger.debug(f"Trial available status for user '{user_id}' set to '{is_trial_available}'")
-
-    # @invalidate_cache(key_builder=[USER_COUNT_PREFIX, USER_LIST_PREFIX])
-    # @invalidate_cache(key_builder=UserCacheKey)
-    async def set_bot_blocked_status(self, telegram_id: int, is_bot_blocked: bool) -> None:
-        stmt = (
-            update(User)
-            .where(User.telegram_id == telegram_id)
-            .values(is_bot_blocked=is_bot_blocked)
+        logger.debug(
+            f"Trial available status for user_id '{user_id}' set to '{is_trial_available}'"
         )
-        await self.session.execute(stmt)
-        logger.debug(f"Bot blocked status for user '{telegram_id}' set to '{is_bot_blocked}'")
 
-    async def set_current_subscription(self, user_id: int, subscription_id: int) -> None:
+    async def set_bot_blocked_status(self, user_id: int, is_bot_blocked: bool) -> None:
+        stmt = update(User).where(User.id == user_id).values(is_bot_blocked=is_bot_blocked)
+        await self.session.execute(stmt)
+        logger.debug(f"Bot blocked status for user_id='{user_id}' set to '{is_bot_blocked}'")
+
+    async def set_current_subscription_by_id(self, user_id: int, subscription_id: int) -> None:
         stmt = (
             update(User).where(User.id == user_id).values(current_subscription_id=subscription_id)
         )
         await self.session.execute(stmt)
-        logger.debug(f"Current subscription for user id='{user_id}' set to '{subscription_id}'")
+        logger.debug(f"Current subscription for user_id='{user_id}' set to '{subscription_id}'")
 
-    # @invalidate_cache(key_builder=[USER_COUNT_PREFIX, USER_LIST_PREFIX])
-    # @invalidate_cache(key_builder=UserCacheKey)
     async def clear_current_subscription(self, user_id: int) -> None:
         stmt = update(User).where(User.id == user_id).values(current_subscription_id=None)
         await self.session.execute(stmt)
-        logger.debug(f"Current subscription cleared for user '{user_id}'")
+        logger.debug(f"Current subscription cleared for user_id '{user_id}'")
 
     async def get_blocked_users(self) -> list[UserDto]:
         stmt = select(User).where(User.is_blocked.is_(True)).order_by(User.id.desc())
@@ -275,21 +224,16 @@ class UserDaoImpl(UserDao):
         logger.debug(f"Retrieved '{len(db_users)}' blocked users")
         return self._convert_to_dto_list(list(db_users))
 
-    async def get_recent_activity_users(
-        self,
-        excluded_ids: Optional[list[int]] = None,
-    ) -> list[UserDto]:
-        stmt = select(User)
+    async def get_by_ids(self, user_ids: list[int]) -> list[UserDto]:
+        if not user_ids:
+            return []
 
-        if excluded_ids:
-            stmt = stmt.where(User.telegram_id.not_in(excluded_ids))
+        stmt = select(User).where(User.id.in_(user_ids))
+        result = await self.session.scalars(stmt)
+        db_users = cast(list, result.all())
 
-        stmt = stmt.order_by(User.updated_at.desc().nulls_last()).limit(10)
-        result = await self.session.execute(stmt)
-        db_users = result.scalars().all()
-
-        logger.debug(f"Retrieved '{len(db_users)}' users with recent activity")
-        return self._convert_to_dto_list(list(db_users))
+        logger.debug(f"Retrieved '{len(db_users)}' users by ID list")
+        return self._convert_to_dto_list(db_users)
 
     async def get_recent_registered_users(self, limit: int = 5) -> list[UserDto]:
         stmt = select(User).order_by(User.created_at.desc()).limit(limit)
@@ -312,6 +256,21 @@ class UserDaoImpl(UserDao):
         logger.debug(f"Retrieved '{count}' blocked users")
         return count
 
+    async def block_by_telegram_ids(self, telegram_ids: list[int]) -> int:
+        if not telegram_ids:
+            return 0
+        stmt = (
+            update(User)
+            .where(User.telegram_id.in_(telegram_ids))
+            .where(User.is_blocked.is_(False))
+            .values(is_blocked=True)
+            .returning(User.telegram_id)
+        )
+        result = await self.session.execute(stmt)
+        blocked = len(result.scalars().all())
+        logger.debug(f"Bulk-blocked '{blocked}' users from external blacklist")
+        return blocked
+
     async def has_any_subscription(self, user_id: int, *, include_trial: bool = True) -> bool:
         stmt = select(func.count()).select_from(Subscription).where(Subscription.user_id == user_id)
 
@@ -323,15 +282,13 @@ class UserDaoImpl(UserDao):
         return count > 0
 
     async def is_invited_user(self, user_id: int) -> bool:
-        stmt = (
-            select(func.count()).select_from(Referral).where(Referral.referred_user_id == user_id)
-        )
+        stmt = select(func.count()).select_from(Referral).where(Referral.referred_id == user_id)
 
         result = await self.session.execute(stmt)
         count = result.scalar() or 0
 
         is_invited = count > 0
-        logger.debug(f"Checked invite status for user '{user_id}', result '{is_invited}'")
+        logger.debug(f"Checked invite status for user_id='{user_id}', result '{is_invited}'")
         return is_invited
 
     async def toggle_blocked_status(self, user_id: int) -> None:
@@ -345,7 +302,9 @@ class UserDaoImpl(UserDao):
         result = await self.session.execute(stmt)
         new_status = result.scalar()
 
-        logger.debug(f"Toggled blocked status for user '{user_id}', new status is '{new_status}'")
+        logger.debug(
+            f"Toggled blocked status for user_id='{user_id}', new status is '{new_status}'"
+        )
 
     async def count_active_non_blocked(self) -> int:
         stmt = (
@@ -498,16 +457,3 @@ class UserDaoImpl(UserDao):
         count = await self.session.scalar(stmt) or 0
         logger.debug(f"Total bot-blocked users count is '{count}'")
         return count
-
-    async def get_new_web_only_users(self, days: int = 7) -> list[UserDto]:
-        since = datetime.now(timezone.utc) - timedelta(days=days)
-        stmt = select(User).where(
-            User.telegram_id.is_(None),
-            User.email.isnot(None),
-            User.is_blocked.is_(False),
-            User.created_at >= since,
-        )
-        result = await self.session.execute(stmt)
-        db_users = list(result.scalars().all())
-        logger.debug(f"Retrieved '{len(db_users)}' new web-only users for last {days} day(s)")
-        return self._convert_to_dto_list(db_users)

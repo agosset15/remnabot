@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import Self
+from typing import Optional, Self
 from uuid import UUID
 
 from src.core.enums import Currency, PaymentGatewayType, PurchaseType, TransactionStatus
@@ -38,6 +38,8 @@ class TransactionDto(BaseDto, TrackableMixin, TimestampMixin):
 
     purchase_type: PurchaseType
     gateway_type: PaymentGatewayType
+    gateway_display_name: Optional[str] = None
+    payment_method: Optional[str] = None
 
     pricing: "PriceDetailsDto"
     currency: Currency
@@ -46,3 +48,7 @@ class TransactionDto(BaseDto, TrackableMixin, TimestampMixin):
     @property
     def is_completed(self) -> bool:
         return self.status == TransactionStatus.COMPLETED
+
+    @property
+    def is_terminal(self) -> bool:
+        return self.status in (TransactionStatus.COMPLETED, TransactionStatus.CANCELED)
