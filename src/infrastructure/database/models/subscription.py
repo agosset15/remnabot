@@ -3,7 +3,7 @@ from typing import Any, Optional
 from uuid import UUID
 
 from remnapy.enums import TrafficLimitStrategy
-from sqlalchemy import DateTime, ForeignKey, Integer
+from sqlalchemy import BigInteger, DateTime, ForeignKey, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.core.enums import SubscriptionStatus
@@ -18,6 +18,12 @@ class Subscription(BaseSql, TimestampMixin):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_remna_id: Mapped[UUID] = mapped_column(index=True)
+    # Numeric Remnawave user id (panel `user.id`). Backfilled from the panel by
+    # `user_remna_id` (UUID) in migration 0041. Nullable during the transition;
+    # the code switch-over to numeric identity lives on a separate branch.
+    user_remna_num_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, index=True, nullable=True
+    )
     user_id: Mapped[int] = mapped_column(
         Integer,
         ForeignKey("users.id", ondelete="CASCADE"),
