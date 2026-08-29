@@ -1,13 +1,13 @@
 from datetime import datetime, timedelta
 from decimal import Decimal
-from typing import Iterable, Optional, cast
+from typing import Any, Iterable, Optional, cast
 from uuid import UUID
 
 from adaptix import Retort
 from adaptix.conversion import ConversionRetort
 from loguru import logger
 from redis.asyncio import Redis
-from sqlalchemy import and_, case, func, select, update
+from sqlalchemy import CursorResult, and_, case, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.application.common.dao import TransactionDao
@@ -98,7 +98,7 @@ class TransactionDaoImpl(TransactionDao):
             .where(Transaction.user_id == from_user_id)
             .values(user_id=to_user_id)
         )
-        result = await self.session.execute(stmt)
+        result = cast("CursorResult[Any]", await self.session.execute(stmt))
         logger.debug(
             f"Reassigned '{result.rowcount}' transactions "
             f"from user_id='{from_user_id}' to user_id='{to_user_id}'"

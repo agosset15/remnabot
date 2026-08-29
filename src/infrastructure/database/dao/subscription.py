@@ -1,12 +1,12 @@
 from datetime import timedelta
-from typing import Optional, cast
+from typing import Any, Optional, cast
 from uuid import UUID
 
 from adaptix import Retort
 from adaptix.conversion import ConversionRetort
 from loguru import logger
 from redis.asyncio import Redis
-from sqlalchemy import and_, case, func, select, update
+from sqlalchemy import CursorResult, and_, case, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.application.common.dao import SubscriptionDao, UserDao
@@ -97,7 +97,7 @@ class SubscriptionDaoImpl(SubscriptionDao, BaseDaoImpl):
             .where(Subscription.user_id == from_user_id)
             .values(user_id=to_user_id)
         )
-        result = await self.session.execute(stmt)
+        result = cast("CursorResult[Any]", await self.session.execute(stmt))
         logger.debug(
             f"Reassigned '{result.rowcount}' subscriptions "
             f"from user_id='{from_user_id}' to user_id='{to_user_id}'"
@@ -222,23 +222,6 @@ class SubscriptionDaoImpl(SubscriptionDao, BaseDaoImpl):
             f"Retrieved '{len(squads)}' unique internal squads from all active subscriptions"
         )
         return squads
-
-    async def get_active_excluded_from_squad(self, squad_uuid: UUID) -> list[SubscriptionDto]:
-        stmt = (
-            select(Subscription)
-            .join(User, User.current_subscription_id == Subscription.id)
-            .where(
-                Subscription.status == SubscriptionStatus.ACTIVE,
-                ~Subscription.internal_squads.contains([squad_uuid]),
-            )
-        )
-        result = await self.session.scalars(stmt)
-        db_subscriptions = cast(list, result.all())
-        logger.debug(
-            f"Found '{len(db_subscriptions)}' active subscriptions excluded from "
-            f"squad '{squad_uuid}'"
-        )
-        return self._convert_to_dto_list(db_subscriptions)
 
     async def count_total_trials(self) -> int:
         stmt = select(func.count(func.distinct(Subscription.user_id))).where(

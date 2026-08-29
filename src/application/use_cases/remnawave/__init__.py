@@ -8,11 +8,23 @@ from .commands.management import (
     ReissueSubscription,
     ReissueUserSubscription,
     ResetUserTraffic,
-    RestoreUsersToLteSquad,
-    ToggleLteSquad,
 )
 from .commands.synchronization import SyncAllUsersFromBot, SyncAllUsersFromPanel, SyncRemnaUser
 from .queries.squads import GetExternalSquads, GetInternalSquads
+
+__all__ = (
+    "REMNAWAVE_USE_CASES",
+    "DeleteUserAllDevices",
+    "DeleteUserDevice",
+    "ReissueSubscription",
+    "ReissueUserSubscription",
+    "ResetUserTraffic",
+    "SyncAllUsersFromBot",
+    "SyncAllUsersFromPanel",
+    "SyncRemnaUser",
+    "GetExternalSquads",
+    "GetInternalSquads",
+)
 
 REMNAWAVE_USE_CASES: Final[tuple[type[Interactor], ...]] = (
     SyncAllUsersFromBot,
@@ -23,8 +35,6 @@ REMNAWAVE_USE_CASES: Final[tuple[type[Interactor], ...]] = (
     ResetUserTraffic,
     ReissueSubscription,
     ReissueUserSubscription,
-    ToggleLteSquad,
-    RestoreUsersToLteSquad,
     GetInternalSquads,
     GetExternalSquads,
 )

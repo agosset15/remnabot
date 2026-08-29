@@ -9,6 +9,8 @@ from remnapy.models.webhook import (
     TorrentBlockerReportDto,
     UserDto,
     UserHwidDeviceEventDto,
+)
+from remnapy.models.webhook import (
     WebhookNodeDto as NodeDto,
 )
 

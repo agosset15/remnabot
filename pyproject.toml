@@ -74,6 +74,7 @@ lint.select = [
     "YTT",
 ]
 lint.ignore = ["N805"]
+lint.per-file-ignores = { "src/infrastructure/database/migrations/versions/*" = ["PLC0415"] }
 exclude = ["venv", ".venv", ".idea"]
 
 [tool.pytest.ini_options]

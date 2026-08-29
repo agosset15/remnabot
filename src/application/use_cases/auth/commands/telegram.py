@@ -286,7 +286,9 @@ class LinkTelegram(Interactor[LinkTelegramData, UserDto]):
 
             await self.uow.commit()
 
-        logger.info(f"Telegram link merge: donor id='{donor.id}' merged into survivor id='{actor.id}'")
+        logger.info(
+            f"Telegram link merge: donor id='{donor.id}' merged into survivor id='{actor.id}'"
+        )
 
         updated = await self.user_dao.get_by_id(actor.id) or actor
 

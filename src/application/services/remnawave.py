@@ -6,6 +6,8 @@ from redis.asyncio import Redis
 from remnapy.models.webhook import (
     HwidUserDeviceDto,
     TorrentBlockerReportDto,
+)
+from remnapy.models.webhook import (
     WebhookNodeDto as NodeDto,
 )
 
@@ -28,7 +30,6 @@ from src.application.events import (
 )
 from src.application.events.system import SubscriptionRevokedEvent, TorrentBlockerReportEvent
 from src.application.events.user import SubscriptionExpiredAgoEvent
-from src.application.use_cases.remnawave.commands.management import ToggleLteSquad
 from src.application.use_cases.remnawave.commands.synchronization import (
     SyncRemnaUser,
     SyncRemnaUserDto,
@@ -60,7 +61,6 @@ class RemnaWebhookService:
         bot_service: BotService,
         #
         sync_user: SyncRemnaUser,
-        toggle_lte_squad: ToggleLteSquad,
     ) -> None:
         self.config = config
         self.uow = uow
@@ -71,7 +71,6 @@ class RemnaWebhookService:
         self.bot_service = bot_service
         #
         self.sync_user = sync_user
-        self.toggle_lte_squad = toggle_lte_squad
 
     async def handle_user_event(self, event: str, remna_user: RemnaUserDto) -> None:
         logger.debug(f"Received user event '{event}'")
@@ -107,7 +106,6 @@ class RemnaWebhookService:
             RemnaUserEvent.DISABLED,
             RemnaUserEvent.LIMITED,
             RemnaUserEvent.EXPIRED,
-            RemnaUserEvent.TRAFFIC_RESET,
         }:
             await self._process_status(user, current_subscription, event, remna_user)
 
@@ -420,7 +418,6 @@ class RemnaWebhookService:
                     ),
                 )
             )
-            await self.toggle_lte_squad.system(remna_user)
         elif event == RemnaUserEvent.EXPIRED:
             if remna_user.expire_at is None:
                 logger.debug(
@@ -436,10 +433,6 @@ class RemnaWebhookService:
             await self.event_bus.publish(
                 SubscriptionExpiredEvent(user=user, is_trial=current_subscription.is_trial)
             )
-
-        if event == RemnaUserEvent.TRAFFIC_RESET:
-            # Traffic reset → user is active again, restore them to the LTE squad
-            await self.toggle_lte_squad.system(remna_user)
 
         if event == RemnaUserEvent.REVOKED:
             await self.event_bus.publish(
