@@ -3,7 +3,7 @@ from typing import Any, Optional
 from uuid import UUID
 
 from remnapy.enums import TrafficLimitStrategy
-from sqlalchemy import ForeignKey
+from sqlalchemy import BigInteger, DateTime, ForeignKey, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.core.enums import SubscriptionStatus
@@ -18,13 +18,21 @@ class Subscription(BaseSql, TimestampMixin):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_remna_id: Mapped[UUID] = mapped_column(index=True)
+    # Numeric Remnawave user id (panel `user.id`). Backfilled from the panel by
+    # `user_remna_id` (UUID) in migration 0041. Nullable during the transition;
+    # the code switch-over to numeric identity lives on a separate branch.
+    user_remna_num_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, index=True, nullable=True
+    )
     user_id: Mapped[int] = mapped_column(
+        Integer,
         ForeignKey("users.id", ondelete="CASCADE"),
         index=True,
     )
 
     status: Mapped[SubscriptionStatus] = mapped_column(index=True)
     is_trial: Mapped[bool]
+    disabled_by_channel_leave: Mapped[bool] = mapped_column(default=False, server_default="false")
 
     traffic_limit: Mapped[int]
     device_limit: Mapped[int]
@@ -39,5 +47,14 @@ class Subscription(BaseSql, TimestampMixin):
     url: Mapped[str]
 
     plan_snapshot: Mapped[dict[str, Any]]
+    device_single_reset_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    device_all_reset_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    link_reset_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     user: Mapped["User"] = relationship(foreign_keys=[user_id])

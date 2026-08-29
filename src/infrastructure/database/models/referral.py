@@ -1,4 +1,4 @@
-from sqlalchemy import ForeignKey
+from sqlalchemy import ForeignKey, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.core.enums import ReferralLevel, ReferralRewardType
@@ -12,12 +12,14 @@ class Referral(BaseSql, TimestampMixin):
     __tablename__ = "referrals"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    referrer_user_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id"),
+    referrer_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("users.id", ondelete="CASCADE"),
         index=True,
     )
-    referred_user_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id"),
+    referred_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("users.id", ondelete="CASCADE"),
         index=True,
         unique=True,
     )
@@ -26,11 +28,11 @@ class Referral(BaseSql, TimestampMixin):
 
     referrer: Mapped["User"] = relationship(
         lazy="selectin",
-        foreign_keys=[referrer_user_id],
+        foreign_keys=[referrer_id],
     )
     referred: Mapped["User"] = relationship(
         lazy="selectin",
-        foreign_keys=[referred_user_id],
+        foreign_keys=[referred_id],
     )
     rewards: Mapped[list["ReferralReward"]] = relationship(
         back_populates="referral",
@@ -43,9 +45,13 @@ class ReferralReward(BaseSql, TimestampMixin):
     __tablename__ = "referral_rewards"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    referral_id: Mapped[int] = mapped_column(ForeignKey("referrals.id"))
+    referral_id: Mapped[int] = mapped_column(
+        ForeignKey("referrals.id", ondelete="CASCADE"),
+        index=True,
+    )
     user_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id"),
+        Integer,
+        ForeignKey("users.id", ondelete="CASCADE"),
         index=True,
     )
 

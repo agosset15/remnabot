@@ -1,14 +1,12 @@
 from typing import Optional
 
-from src.application.services.bot import BotService
 from src.core.config import AppConfig
 from src.core.enums import FaqSection, WebPage
 
 
 class WebService:
-    def __init__(self, config: AppConfig, bot_service: BotService):
+    def __init__(self, config: AppConfig) -> None:
         self._web = config.web
-        self._bot_service = bot_service
 
     @property
     def _base_url(self) -> Optional[str]:
@@ -75,8 +73,3 @@ class WebService:
         if not self._base_url:
             return None
         return WebPage.REFERRAL.build_url(self._base_url, referral_code)
-
-    async def get_referral_url(self, referral_code: str) -> str:
-        if self._web.referral_via_domain and self._base_url:
-            return WebPage.REFERRAL.build_url(self._base_url, referral_code)
-        return await self._bot_service.get_referral_url(referral_code)

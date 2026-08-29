@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Optional
 
+from aiogram.enums import ButtonStyle
 from pydantic import SecretStr
 
 from src.core.constants import REPOSITORY, T_ME
@@ -8,6 +9,7 @@ from src.core.enums import (
     AccessMode,
     ButtonType,
     Currency,
+    MediaType,
     ReferralAccrualStrategy,
     ReferralLevel,
     ReferralRewardStrategy,
@@ -25,6 +27,35 @@ def get_default_notifications() -> dict[str, bool]:
     system_keys = {ntf.value: True for ntf in SystemNotificationType}
     user_keys = {ntf.value: True for ntf in UserNotificationType}
     return {**system_keys, **user_keys}
+
+
+def get_default_notifications_routes() -> dict[str, "SystemNotificationRouteDto"]:
+    return {ntf.value: SystemNotificationRouteDto() for ntf in SystemNotificationType}
+
+
+# Maps each system notification type to its semantic category. Used to apply the
+# per-category thread ids from BOT_* config onto the per-type routes at startup.
+SYSTEM_NOTIFICATION_CATEGORIES: dict[str, set[SystemNotificationType]] = {
+    "user": {
+        SystemNotificationType.USER_REGISTERED,
+        SystemNotificationType.BLACKLIST_ATTEMPT,
+        SystemNotificationType.SUBSCRIPTION,
+        SystemNotificationType.PROMOCODE_ACTIVATED,
+        SystemNotificationType.TRIAL_ACTIVATED,
+        SystemNotificationType.TORRENT_BLOCKER,
+        SystemNotificationType.USER_FIRST_CONNECTION,
+        SystemNotificationType.USER_DEVICES_UPDATED,
+        SystemNotificationType.USER_REVOKED_SUBSCRIPTION,
+    },
+    "node": {
+        SystemNotificationType.NODE_STATUS_CHANGED,
+        SystemNotificationType.NODE_TRAFFIC_REACHED,
+    },
+    "bot": {
+        SystemNotificationType.BOT_LIFECYCLE,
+        SystemNotificationType.BOT_UPDATE,
+    },
+}
 
 
 @dataclass(kw_only=True)
@@ -65,8 +96,26 @@ class RequirementSettingsDto(TrackableMixin):
 
 
 @dataclass(kw_only=True)
+class SystemNotificationRouteDto:
+    chat_id: Optional[int] = None
+    thread_id: Optional[int] = None
+
+    @property
+    def effective_thread_id(self) -> Optional[int]:
+        return None if self.thread_id == 1 else self.thread_id
+
+    @property
+    def is_configured(self) -> bool:
+        return self.chat_id is not None
+
+
+@dataclass(kw_only=True)
 class NotificationsSettingsDto(TrackableMixin):
     settings: dict[str, bool] = field(default_factory=get_default_notifications)
+    routes: dict[str, SystemNotificationRouteDto] = field(
+        default_factory=get_default_notifications_routes
+    )
+    default_route: SystemNotificationRouteDto = field(default_factory=SystemNotificationRouteDto)
 
     def is_enabled(self, ntf_type: NotificationType) -> bool:
         return self.settings.get(ntf_type, True)
@@ -76,18 +125,88 @@ class NotificationsSettingsDto(TrackableMixin):
         new_settings[ntf_type] = not self.is_enabled(ntf_type)
         self.settings = new_settings
 
+    def get_route(self, ntf_type: NotificationType) -> Optional[SystemNotificationRouteDto]:
+        return self.routes.get(str(ntf_type))
+
+    def resolve_route(self, ntf_type: NotificationType) -> Optional[SystemNotificationRouteDto]:
+        route = self.routes.get(str(ntf_type))
+        if route and route.is_configured:
+            return route
+        if self.default_route.is_configured:
+            return self.default_route
+        return None
+
+    def set_default_route(self, chat_id: Optional[int], thread_id: Optional[int]) -> None:
+        self.default_route = SystemNotificationRouteDto(chat_id=chat_id, thread_id=thread_id)
+
+    def apply_config_routes(
+        self,
+        chat_id: Optional[int],
+        *,
+        user_thread_id: Optional[int],
+        node_thread_id: Optional[int],
+        bot_thread_id: Optional[int],
+    ) -> bool:
+        """Seed default_route and per-type routes from BOT_* config.
+
+        ``chat_id`` is the shared notifications chat; each system notification type
+        gets its category thread id (user/node/bot), while uncategorized types
+        (e.g. SYSTEM) fall back to the threadless default_route.
+
+        Returns True when anything changed (idempotent across restarts).
+        """
+        thread_by_type = {
+            "user": user_thread_id,
+            "node": node_thread_id,
+            "bot": bot_thread_id,
+        }
+
+        new_routes: dict[str, SystemNotificationRouteDto] = {}
+        for ntf in SystemNotificationType:
+            thread_id = None
+            for category, members in SYSTEM_NOTIFICATION_CATEGORIES.items():
+                if ntf in members:
+                    thread_id = thread_by_type[category]
+                    break
+            new_routes[ntf.value] = SystemNotificationRouteDto(
+                chat_id=chat_id, thread_id=thread_id
+            )
+
+        new_default = SystemNotificationRouteDto(chat_id=chat_id, thread_id=None)
+
+        if new_routes == self.routes and new_default == self.default_route:
+            return False
+
+        self.routes = new_routes
+        self.default_route = new_default
+        return True
+
+    def set_route(
+        self,
+        ntf_type: NotificationType,
+        chat_id: Optional[int],
+        thread_id: Optional[int],
+    ) -> None:
+        new_routes = self.routes.copy()
+        new_routes[str(ntf_type)] = SystemNotificationRouteDto(chat_id=chat_id, thread_id=thread_id)
+        self.routes = new_routes
+
+    def clear_route(self, ntf_type: NotificationType) -> None:
+        new_routes = self.routes.copy()
+        new_routes.pop(str(ntf_type), None)
+        self.routes = new_routes
+
     @property
-    def system(self) -> list[tuple[str, bool]]:
+    def system(self) -> list[tuple[NotificationType, bool]]:
         return [
-            (ntf.value, self.is_enabled(SystemNotificationType(ntf.value)))
+            (ntf, self.is_enabled(SystemNotificationType(ntf.value)))
             for ntf in SystemNotificationType
         ]
 
     @property
-    def user(self) -> list[tuple[str, bool]]:
+    def user(self) -> list[tuple[NotificationType, bool]]:
         return [
-            (ntf.value, self.is_enabled(UserNotificationType(ntf.value)))
-            for ntf in UserNotificationType
+            (ntf, self.is_enabled(UserNotificationType(ntf.value))) for ntf in UserNotificationType
         ]
 
 
@@ -125,8 +244,12 @@ class MenuButtonDto(TrackableMixin):
     text: str = "btn-test"
     type: ButtonType = ButtonType.URL
     payload: str = REPOSITORY
+    color: Optional[ButtonStyle] = None
+    media_file_id: Optional[str] = None
+    media_type: Optional[MediaType] = None
     is_active: bool = False
     required_role: Role = Role.USER
+    subscribers_only: bool = False
 
 
 @dataclass(kw_only=True)
@@ -137,6 +260,43 @@ class MenuSettingsDto(TrackableMixin):
 
 
 @dataclass(kw_only=True)
+class BackupSettingsDto(TrackableMixin):
+    enabled: bool = False
+    interval_hours: int = 24
+    max_files: int = 7
+    send_to_chat: bool = True
+
+
+@dataclass(kw_only=True)
+class BlacklistSourceDto:
+    id: int
+    url: str
+    name: Optional[str] = None
+
+
+@dataclass(kw_only=True)
+class BlacklistSettingsDto(TrackableMixin):
+    blocked_ids: list[int] = field(default_factory=list)
+    sources: list[BlacklistSourceDto] = field(default_factory=list)
+
+
+@dataclass(kw_only=True)
+class ResetFeatureSettingsDto(TrackableMixin):
+    enabled: bool = True
+    cooldown_hours: int = 0
+
+
+@dataclass(kw_only=True)
+class ExtraSettingsDto(TrackableMixin):
+    device_single_reset: ResetFeatureSettingsDto = field(default_factory=ResetFeatureSettingsDto)
+    device_all_reset: ResetFeatureSettingsDto = field(default_factory=ResetFeatureSettingsDto)
+    link_reset: ResetFeatureSettingsDto = field(default_factory=ResetFeatureSettingsDto)
+    referral_reset: ResetFeatureSettingsDto = field(default_factory=ResetFeatureSettingsDto)
+    trial_channel_guard: bool = False
+    mini_app_reserve: bool = False
+
+
+@dataclass(kw_only=True)
 class SettingsDto(BaseDto, TrackableMixin, TimestampMixin):
     default_currency: Currency = Currency.XTR
     access: AccessSettingsDto = field(default_factory=AccessSettingsDto)
@@ -144,3 +304,6 @@ class SettingsDto(BaseDto, TrackableMixin, TimestampMixin):
     notifications: NotificationsSettingsDto = field(default_factory=NotificationsSettingsDto)
     referral: ReferralSettingsDto = field(default_factory=ReferralSettingsDto)
     menu: MenuSettingsDto = field(default_factory=MenuSettingsDto)
+    backup: BackupSettingsDto = field(default_factory=BackupSettingsDto)
+    blacklist: BlacklistSettingsDto = field(default_factory=BlacklistSettingsDto)
+    extra: ExtraSettingsDto = field(default_factory=ExtraSettingsDto)

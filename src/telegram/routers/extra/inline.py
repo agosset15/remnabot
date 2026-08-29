@@ -14,9 +14,8 @@ from dishka import FromDishka
 from dishka.integrations.aiogram_dialog import inject
 from loguru import logger
 
-from src.application.common import TranslatorRunner
+from src.application.common import BotService, TranslatorRunner
 from src.application.common.dao import UserDao
-from src.application.services import BotService, WebService
 from src.core.constants import INLINE_QUERY_INVITE
 
 router = Router(name=__name__)
@@ -28,7 +27,6 @@ async def handle_inline_query(
     inline_query: InlineQuery,
     user_dao: FromDishka[UserDao],
     bot_service: FromDishka[BotService],
-    web_service: FromDishka[WebService],
     i18n: FromDishka[TranslatorRunner],
 ) -> None:
     user = await user_dao.get_by_telegram_id(inline_query.from_user.id)
@@ -42,9 +40,8 @@ async def handle_inline_query(
     logger.info(f"{user.log} Sent inline query {INLINE_QUERY_INVITE}")
 
     result_id = hashlib.md5(inline_query.query.strip().encode()).hexdigest()
-    referral_url = await web_service.get_referral_url(user.referral_code)
-    bot_username = await bot_service.get_my_username()
-    bot_url = await bot_service.get_referral_url(user.referral_code)
+    referral_url = await bot_service.get_referral_url(user.referral_code)
+    bot_name = await bot_service.get_my_name()
 
     builder = InlineKeyboardBuilder()
     builder.row(
@@ -62,9 +59,7 @@ async def handle_inline_query(
             title=i18n.get("inline-invite.title"),
             description=i18n.get("inline-invite.description"),
             input_message_content=InputTextMessageContent(
-                message_text=i18n.get(
-                    "inline-invite.message", bot_username=bot_username, bot_url=bot_url
-                )
+                message_text=i18n.get("inline-invite.message", bot_name=bot_name)
             ),
             reply_markup=builder.as_markup(),
         )

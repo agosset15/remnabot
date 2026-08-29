@@ -3,20 +3,20 @@
 .vscode/
 .code-workspace
 data/*
-tests
 .DS_Store
 traefik
 logs/*
 !logs/.gitkeep
 .history
-scripts
+.claude
+CLAUDE.md
+docs/
 
 # Environment
 .venv/
 .env
 venv/
 .tests
-openapi.json
 
 # Cache
 __pycache__/
@@ -26,9 +26,17 @@ __pycache__/
 .mypy_cache/
 .pytest_cache/
 .coverage/
-.claude/
-memory/
-CLAUDE.md
+
+# Coverage
+.coverage
+htmlcov/
+
+# Backups
+backups/*
+!backups/.gitkeep
+
+# Logs
+*.log
 
 # Build
 build/
@@ -37,3 +45,4 @@ dist/
 site/
 *.egg-info/
 *.egg
+frontend/

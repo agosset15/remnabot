@@ -24,9 +24,6 @@ class MessagePayloadDto:
     disable_default_markup: bool = True
 
     delete_after: Optional[int] = 5
-    thread_id: Optional[int] = None
-    forwarded_from_id: Optional[int] = None
-    forwarded_message_id: Optional[int] = None
     message_effect: Optional[MessageEffectId] = None
     disable_notification: bool = False
 
@@ -45,3 +42,7 @@ class MessagePayloadDto:
     @property
     def is_document(self) -> bool:
         return self.media_type is MediaType.DOCUMENT
+
+    @property
+    def is_animation(self) -> bool:
+        return self.media_type is MediaType.GIF

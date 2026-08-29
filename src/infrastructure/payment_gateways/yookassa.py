@@ -1,7 +1,7 @@
 import asyncio
 import uuid
 from decimal import Decimal
-from typing import Any, Final, Optional
+from typing import Any, Final, Union
 from uuid import UUID
 
 import orjson
@@ -62,10 +62,8 @@ class YookassaGateway(BasePaymentGateway):
             ),
         )
 
-    async def handle_create_payment(
-        self, amount: Decimal, details: str, return_url: Optional[str] = None
-    ) -> PaymentResultDto:
-        payload = await self._create_payment_payload(str(amount), details, return_url)
+    async def handle_create_payment(self, amount: Decimal, details: str) -> PaymentResultDto:
+        payload = await self._create_payment_payload(str(amount), details)
         headers = {"Idempotence-Key": str(uuid.uuid4())}
         logger.debug(f"Creating payment payload: {payload}")
 
@@ -106,7 +104,7 @@ class YookassaGateway(BasePaymentGateway):
         )
         raise last_connect_error  # type: ignore[misc]
 
-    async def handle_webhook(self, request: Request) -> tuple[UUID, TransactionStatus]:
+    async def handle_webhook(self, request: Request) -> Union[tuple[UUID, TransactionStatus], None]:
         logger.debug("Received YooKassa webhook request")
 
         if not self._verify_webhook(request):
@@ -132,15 +130,10 @@ class YookassaGateway(BasePaymentGateway):
 
         return payment_id, transaction_status
 
-    async def _create_payment_payload(
-        self, amount: str, details: str, return_url: Optional[str] = None
-    ) -> dict[str, Any]:
+    async def _create_payment_payload(self, amount: str, details: str) -> dict[str, Any]:
         return {
             "amount": {"value": amount, "currency": self.data.currency},
-            "confirmation": {
-                "type": "redirect",
-                "return_url": return_url if return_url else await self._get_bot_redirect_url(),
-            },
+            "confirmation": {"type": "redirect", "return_url": await self._get_bot_redirect_url()},
             "capture": True,
             "description": details,
             "receipt": {

@@ -1,24 +1,32 @@
 space = {" "}
 empty = { "!empty!" }
-sc-open = { "{" }
-sc-close = { "}" }
 btn-test = Кнопка
 msg-test = Сообщение
 development = В разработке!
 test-payment = Тестовый платеж
 unknown = —
+raw-message = { $content }
 
-development-promocode = Промокоды еще не реализованы, для мотивации и ускорения разработки можете закинуть монет.
+payment-invoice-description = { purchase-type } подписки { $name } на { $duration }
 
-payment-invoice-description = { purchase-type } лицензии на доступ к ПО уровень { $name } на { $duration }
+ad-link-default-name = Новая ссылка
+plan-default-name = Новый план
+
+platform-icon =
+    .ios = 🍎
+    .android = 🤖
+    .windows = 🖥️
+    .macos = 💻
+    .linux = 🐧
+    .default = 📱
 
 inline-invite =
     .title = Пригласить друга
     .description = Нажмите, чтобы отправить пригласительную ссылку!
     .message =
-        🚀 Привет! Рекомендую быстрый и недорогой VPN.
+        🚀 Привет! Хочешь стабильный и быстрый VPN?
         
-        <a href="{ $bot_url }">@{ $bot_username }</a> - стабильный доступ в интернет!
+        { $bot_name } — поможет тебе с этим!
 
         ↘️ ЖМИ КНОПКУ И ПОПРОБУЙ БЕСПЛАТНО!
     .start = 🚀 Присоединиться
@@ -34,29 +42,28 @@ command =
     .rules = Условия использования
     .help = Помощь
 
-hdr-user = <b>👤 Пользователь:</b>
-hdr-user-profile = <b>👤 Профиль:</b>
-hdr-payment = <b>💰 Платеж:</b>
-hdr-error = <b>⚠️ Ошибка:</b>
-hdr-node = <b>🖥 Нода:</b>
-hdr-hwid = <b>📱 Устройство:</b>
+hdr-user = <b>👤 Пользователь</b>:
+hdr-user-profile = <b>👤 Профиль</b>:
+hdr-payment = <b>💰 Платеж</b>:
+hdr-error = <b>⚠️ Ошибка</b>:
+hdr-node = <b>🖥 Нода</b>:
+hdr-hwid = <b>📱 Устройство</b>:
 
 hdr-subscription = { $is_trial ->
-    [1] <b>🎁 Пробная подписка:</b>
-    *[0] <b>💳 Подписка:</b>
+    [1] <b>🎁 Пробная подписка</b>:
+    *[0] <b>💳 Подписка</b>:
 }
 
 hdr-plan = { $is_trial_plan ->
-    [1] <b>🎁 Пробный тариф:</b>
-    *[0] <b>📦 Тариф:</b>
+    [1] <b>🎁 Пробный план</b>:
+    *[0] <b>📦 План</b>:
 }
 
 frg-user =
     <blockquote>
-    • <b>ID</b>: <code>{ NUMBER($telegram_id, useGrouping: 0) }</code>
-    { $email ->
-        [0] { empty }
-        *[HAS] • <b>Email</b>: <code>{ $email }</code>
+    { $telegram_id ->
+        [0] • <b>Почта</b>: <code>{ $email }</code>
+        *[HAS] • <b>ID</b>: <code>{ NUMBER($telegram_id, useGrouping: 0) }</code>
     }
     • <b>Имя</b>: { $name }
     { $show_personal_discount ->
@@ -72,15 +79,11 @@ frg-user =
 frg-user-info =
     <blockquote>
     { $telegram_id ->
-        [0] { empty }
+        [0] • <b>Почта</b>: <code>{ $email }</code>
         *[HAS] • <b>ID</b>: <code>{ NUMBER($telegram_id, useGrouping: 0) }</code>
     }
-    { $email ->
+    • <b>Имя</b>: { $name } { $username ->
         [0] { empty }
-        *[HAS] • <b>Email</b>: <code>{ $email }</code>
-    }
-    • <b>Имя</b>: { $name } { $username -> 
-        [0] { space }
         *[HAS] (<a href="tg://user?id={ $telegram_id }">@{ $username }</a>)
     }
     </blockquote>
@@ -88,18 +91,13 @@ frg-user-info =
 frg-user-details =
     <blockquote>
     { $telegram_id ->
-        [0] { empty }
+        [0] • <b>Почта</b>: <code>{ $email }</code>
         *[HAS] • <b>ID</b>: <code>{ NUMBER($telegram_id, useGrouping: 0) }</code>
     }
-    { $email ->
-        [0] { empty }
-        *[HAS] • <b>Email</b>: <code>{ $email }</code>
-    }
-    • <b>Имя</b>: { $name } { $username -> 
+    • <b>Имя</b>: { $name } { $username ->
         [0] { space }
         *[HAS] (<a href="tg://user?id={ $telegram_id }">@{ $username }</a>)
     }
-    • <b>Реферальный код</b>: <code>{ $referral_code }</code>
     • <b>Роль</b>: { role }
     • <b>Язык</b>: { language }
     • <b>Бот заблокирован</b>: { $is_bot_blocked ->
@@ -112,15 +110,17 @@ frg-user-details =
     }
     </blockquote>
 
-frg-user-discounts-details =
-    <blockquote>
-    • <b>Персональная</b>: { $personal_discount }%
-    • <b>На следующую покупку</b>: { $purchase_discount }%
-    </blockquote>
-
 frg-subscription =
     <blockquote>
-    • <b>Лимит трафика на LTE-серверах</b>: { $traffic_limit }
+    • <b>Лимит трафика</b>: { $traffic_limit }
+    • <b>Лимит устройств</b>: { $device_limit }
+    • <b>Осталось</b>: { $expire_time }
+    </blockquote>
+
+frg-subscription-user-editor =
+    <blockquote>
+    • <b>План</b>: { $plan_name }
+    • <b>Лимит трафика</b>: { $traffic_limit }
     • <b>Лимит устройств</b>: { $device_limit }
     • <b>Осталось</b>: { $expire_time }
     </blockquote>
@@ -169,8 +169,8 @@ frg-node-info =
     • <b>Название</b>: { $country } { $name }
     • <b>Адрес</b>: <code>{ $address }{ $port ->
     [0] { space }
-    *[HAS] :{ NUMBER($port, useGrouping: 0) }</code>
-    }
+    *[HAS] :{ $port }
+    }</code>
     • <b>Трафик</b>: { $traffic_used } / { $traffic_limit }
     { $last_status_message -> 
     [0] { empty }
@@ -207,12 +207,35 @@ frg-build-info =
     { $has_build ->
     [0] { space }
     *[HAS]
-    <b>🏗️ Информация о сборке:</b>
+    <b>🏗️ Информация о сборке</b>:
     <blockquote>
     Время сборки: { $time }
     Ветка: { $branch } ({ $tag })
     Коммит: <a href="{ $commit_url }">{ $commit }</a>
     </blockquote>
+    }
+
+frg-promocode-reward = { $promocode_type ->
+    [DURATION] { $reward ->
+        [0] { unlimited } дней
+        [one] { $reward } день
+        [few] { $reward } дня
+        *[more] { $reward } дней
+        } к текущей подписке
+    [TRAFFIC] { $reward ->
+        [0] { unlimited } ГБ
+        *[OTHER] { $reward } ГБ
+        } к текущей подписке
+    [DEVICES] { $reward ->
+        [0] { unlimited } устройств
+        [one] { $reward } устройство
+        [few] { $reward } устройства
+        *[more] { $reward } устройств
+        } к текущей подписке
+    [SUBSCRIPTION] подписка { $plan_name }
+    [PERSONAL_DISCOUNT] { $reward }% к персональной скидке
+    [PURCHASE_DISCOUNT] { $reward }% к скидке на следующую покупку
+    *[OTHER] { $reward }
     }
 
 role-owner = Владелец
@@ -233,17 +256,17 @@ unlimited = ∞
 
 unit-unlimited = { $value ->
     [0] { unlimited }
-    *[other] { $value }
+    *[OTHER] { $value }
 }
 
-unit-device = { $value ->
+unit-device = { $value -> 
     [0] { unlimited }
-    *[other] { $value }
+    *[OTHER] { $value } 
 } { $value ->
     [0] { space }
     [one] устройство
     [few] устройства
-    *[other] устройств
+    *[OTHER] устройств
 }
 
 unit-byte = { $value } Б
@@ -255,37 +278,37 @@ unit-terabyte = { $value } ТБ
 unit-second = { $value } { $value ->
     [one] секунда
     [few] секунды
-    *[other] секунд
+    *[OTHER] секунд
 }
 
 unit-minute = { $value } { $value ->
     [one] минута
     [few] минуты
-    *[other] минут
+    *[OTHER] минут
 }
 
 unit-hour = { $value } { $value ->
     [one] час
     [few] часа
-    *[other] часов
+    *[OTHER] часов
 }
 
 unit-day = { $value } { $value ->
     [one] день
     [few] дня
-    *[other] дней
+    *[OTHER] дней
 }
 
 unit-month = { $value } { $value ->
     [one] месяц
     [few] месяца
-    *[other] месяцев
+    *[OTHER] месяцев
 }
 
 unit-year = { $value } { $value ->
     [one] год
     [few] года
-    *[other] лет
+    *[OTHER] лет
 }
 
 
@@ -331,6 +354,7 @@ gateway-type = { $gateway_type ->
     [ROBOKASSA] RoboKassa
     [URLPAY] UrlPay
     [WATA] WATA
+    [VALUTIX] Valutix
     *[OTHER] { $gateway_type }
 }
 
@@ -416,8 +440,38 @@ button-type = { $button_type ->
     [URL] Открыть ссылку
     [COPY] Скопировать текст
     [WEB_APP] Открыть веб-приложение
+    [TEXT] Отправить сообщение
     *[OTHER] { $button_type }
 }
+
+notification-type = { $notification_type ->
+    [SYSTEM] Система
+    [EXPIRES_IN_3_DAYS] Подписка истекает (3 дня)
+    [EXPIRES_IN_2_DAYS] Подписка истекает (2 дня)
+    [EXPIRES_IN_1_DAY] Подписка истекает (1 день)
+    [EXPIRED] Подписка истекла
+    [EXPIRED_1_DAY_AGO] Подписка истекла (1 день)
+    [LIMITED] Трафик исчерпан
+    [REFERRAL_ATTACHED] Реферал закреплен
+    [REFERRAL_REWARD_RECEIVED] Вознаграждение за реферала
+    [REFERRAL_REWARD_FAILED] Ошибка начисления вознаграждения
+    [BOT_LIFECYCLE] Жизненный цикл бота
+    [BOT_UPDATE] Обновления бота
+    [USER_REGISTERED] Регистрация пользователя
+    [SUBSCRIPTION] Оформление подписки
+    [PROMOCODE_ACTIVATED] Активация промокода
+    [TRIAL_ACTIVATED] Активация пробника
+    [NODE_STATUS_CHANGED] Статус узла
+    [NODE_TRAFFIC_REACHED] Трафик узла
+    [TORRENT_BLOCKER] Обнаружение Torrent
+    [USER_FIRST_CONNECTION] Первое подключение
+    [USER_DEVICES_UPDATED] Устройства пользователя
+    [USER_REVOKED_SUBSCRIPTION] Сброс подписки
+    [NOT_CONNECTED] Нет подключения
+    [TORRENT_BLOCKED] Ограничение Torrent
+    [BLACKLIST_ATTEMPT] Регистрация пользователя (из ЧС)
+    *[OTHER] { $notification_type }
+    }
 
 language = { $language ->
     [ar] Арабский
@@ -449,17 +503,3 @@ language = { $language ->
     [vi] Вьетнамский
     *[OTHER] { $language }
 }
-
-hdr-email-html =
-    <!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>KAGO VPN</title>
-    <style>
-    @media(max-width:600px){ sc-open }.wrap{ sc-open }padding:16px 8px!important{ sc-close }.card{ sc-open }border-radius:12px!important;border-left:none!important;border-right:none!important;width:100%!important{ sc-close }.hd{ sc-open }padding:28px 20px 24px!important;border-radius:12px 12px 0 0!important{ sc-close }.hd h1{ sc-open }font-size:22px!important{ sc-close }.body,.btns,.foot{ sc-open }padding-left:20px!important;padding-right:20px!important{ sc-close }.btn{ sc-open }padding:14px!important;font-size:14px!important{ sc-close }{ sc-close }
-    </style>
-    </head><body style="margin:0;padding:0;background:#EEF3FB;font-family:Arial,sans-serif;">
-
-ftr-email-html =
-    <tr><td class="foot" align="center" style="background:#F8FAFF;border-top:1px solid #EEF2FF;padding:20px 32px;border-radius:0 0 16px 16px;">
-      <p style="margin:0 0 10px;font-size:12px;"><a href="https://usekago.net/help" style="color:#94A3B8;text-decoration:none;margin:0 8px;">Поддержка</a><a href="https://usekago.net/faq" style="color:#94A3B8;text-decoration:none;margin:0 8px;">FAQ</a><a href="https://usekago.net/terms" style="color:#94A3B8;text-decoration:none;margin:0 8px;">Условия</a></p>
-      <p style="margin:0;font-size:11px;color:#CBD5E1;line-height:1.7;">© 2026 KAGO VPN · Письмо отправлено автоматически. Не отвечайте на него.</p>
-    </td></tr>
-    </table></td></tr></table></body></html>
