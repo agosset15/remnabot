@@ -154,6 +154,7 @@ btn-user =
         *[other] ✉️ Изменить почту
     }
     .email-clear = 🗑 Удалить почту
+    .password-reset = 🔒 Сбросить пароль
     .discount = 💸 Скидка
     .discount-personal = 👤 Персональная скидка
     .discount-purchase = 🎟 На следующую покупку

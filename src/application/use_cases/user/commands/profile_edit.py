@@ -6,9 +6,12 @@ from loguru import logger
 
 from src.application.common import Cryptographer, Interactor
 from src.application.common.dao import SettingsDao, UserDao
+from src.application.common.dao.auth import AuthSessionDao
+from src.application.common.password_hasher import PasswordHasher
 from src.application.common.policy import Permission
 from src.application.common.uow import UnitOfWork
 from src.application.dto import UserDto
+from src.core.constants import WEB_PASSWORD_MAX_LEN, WEB_PASSWORD_MIN_LEN
 from src.core.exceptions import CooldownError, PermissionDeniedError
 from src.core.utils.time import datetime_now
 from src.core.utils.validators import is_valid_email
@@ -239,6 +242,58 @@ class ResetUserReferralCode(Interactor[int, None]):
             await self.uow.commit()
 
         logger.info(f"{actor.log} Reset referral code for user '{user_id}'")
+
+
+@dataclass(frozen=True)
+class SetUserPasswordDto:
+    user_id: int
+    password: str
+
+
+class SetUserPassword(Interactor[SetUserPasswordDto, None]):
+    required_permission = Permission.USER_EDITOR
+
+    def __init__(
+        self,
+        uow: UnitOfWork,
+        user_dao: UserDao,
+        password_hasher: PasswordHasher,
+        auth_session: AuthSessionDao,
+    ) -> None:
+        self.uow = uow
+        self.user_dao = user_dao
+        self.password_hasher = password_hasher
+        self.auth_session = auth_session
+
+    async def _execute(self, actor: UserDto, data: SetUserPasswordDto) -> None:
+        password = data.password.strip()
+        if not (WEB_PASSWORD_MIN_LEN <= len(password) <= WEB_PASSWORD_MAX_LEN):
+            raise ValueError(
+                f"Password length must be between {WEB_PASSWORD_MIN_LEN} "
+                f"and {WEB_PASSWORD_MAX_LEN} characters"
+            )
+
+        async with self.uow:
+            target_user = await self.user_dao.get_by_id(data.user_id)
+            if not target_user:
+                raise ValueError(f"User '{data.user_id}' not found")
+
+            if not target_user.email:
+                raise ValueError(f"User '{data.user_id}' has no email; password is unusable")
+
+            if actor.id != target_user.id and not actor.role > target_user.role:
+                logger.warning(
+                    f"{actor.log} denied editing user '{target_user.id}': "
+                    f"target role '{target_user.role}' >= actor role '{actor.role}'"
+                )
+                raise PermissionDeniedError()
+
+            target_user.password_hash = self.password_hasher.hash(password)
+            await self.user_dao.update(target_user)
+            await self.uow.commit()
+
+        await self.auth_session.revoke_all_user_tokens(target_user.id)
+        logger.info(f"{actor.log} Reset password for user '{data.user_id}'")
 
 
 class ResetOwnReferralCode(Interactor[None, None]):

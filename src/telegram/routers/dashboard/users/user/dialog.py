@@ -68,6 +68,7 @@ from .handlers import (
     on_give_subscription,
     on_go_to_user,
     on_internal_squad_select,
+    on_password_input,
     on_personal_discount_input,
     on_personal_discount_select,
     on_plan_select,
@@ -950,6 +951,14 @@ email_options = Window(
     ),
     Row(
         SwitchTo(
+            text=I18nFormat("btn-user.password-reset"),
+            id="password_reset",
+            state=DashboardUser.PASSWORD,
+            when=F["email"],
+        ),
+    ),
+    Row(
+        SwitchTo(
             text=I18nFormat("btn-back.general"),
             id="back",
             state=DashboardUser.MAIN,
@@ -957,6 +966,22 @@ email_options = Window(
     ),
     IgnoreUpdate(),
     state=DashboardUser.EMAIL_OPTIONS,
+    getter=email_getter,
+)
+
+password_reset = Window(
+    Banner(BannerName.DASHBOARD),
+    I18nFormat("msg-user-password-reset", email=F["email"]),
+    Row(
+        SwitchTo(
+            text=I18nFormat("btn-back.general"),
+            id="back",
+            state=DashboardUser.EMAIL_OPTIONS,
+        ),
+    ),
+    MessageInput(func=on_password_input),
+    IgnoreUpdate(),
+    state=DashboardUser.PASSWORD,
     getter=email_getter,
 )
 
@@ -1018,4 +1043,5 @@ router = Dialog(
     email_set,
     email_options,
     email_custom,
+    password_reset,
 )

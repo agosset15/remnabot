@@ -115,6 +115,7 @@ class DashboardUser(StatesGroup):
     EMAIL_SET = State()
     EMAIL_OPTIONS = State()
     EMAIL_CUSTOM = State()
+    PASSWORD = State()
 
 
 class DashboardRemnashop(StatesGroup):
