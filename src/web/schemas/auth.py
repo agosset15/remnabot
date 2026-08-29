@@ -33,7 +33,8 @@ class LoginRequest(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
 
     email: str = Field(max_length=255, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
-    password: str = Field(min_length=1, max_length=256)
+    # min_length=0 allows passwordless first login for users whose password_hash is null.
+    password: str = Field(min_length=0, max_length=256)
 
     @field_validator("email")
     @classmethod
