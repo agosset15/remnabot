@@ -5,7 +5,7 @@ from typing import Optional
 
 from fastapi import HTTPException, status
 
-from src.application.common import Interactor
+from src.application.common import Interactor, TranslatorHub
 from src.application.common.dao import UserDao
 from src.application.common.email_sender import EmailSender
 from src.application.common.policy import Permission
@@ -17,11 +17,7 @@ from src.application.use_cases.auth._codes import (
     hash_email_verification_code,
 )
 from src.core.config import AppConfig
-from src.core.constants import (
-    EMAIL_VERIFICATION_BODY_TEMPLATE,
-    EMAIL_VERIFICATION_RESEND_COOLDOWN_SECONDS,
-    EMAIL_VERIFICATION_SUBJECT,
-)
+from src.core.constants import EMAIL_VERIFICATION_RESEND_COOLDOWN_SECONDS
 from src.core.exceptions import EmailDeliveryDisabledError
 from src.core.utils.time import datetime_now
 
@@ -80,11 +76,13 @@ class RequestEmailVerification(Interactor[RequestEmailVerificationDto, EmailVeri
         uow: UnitOfWork,
         user_dao: UserDao,
         email_sender: EmailSender,
+        i18n_hub: TranslatorHub,
     ) -> None:
         self.config = config
         self.uow = uow
         self.user_dao = user_dao
         self.email_sender = email_sender
+        self.i18n_hub = i18n_hub
 
     async def _execute(
         self, actor: UserDto, data: RequestEmailVerificationDto
@@ -136,14 +134,16 @@ class RequestEmailVerification(Interactor[RequestEmailVerificationDto, EmailVeri
             minutes=self.config.email.verification_code_ttl_minutes
         )
 
+        minutes = self.config.email.verification_code_ttl_minutes
+        i18n = self.i18n_hub.get_translator_by_locale(actor.language)
+
         # FIX: send first; persist code/expiry only on success so a failed SMTP
         # delivery does not leave committed state and a started cooldown.
         await self.email_sender.send(
             to=target_email,
-            subject=EMAIL_VERIFICATION_SUBJECT,
-            body=EMAIL_VERIFICATION_BODY_TEMPLATE.format(
-                code=code, minutes=self.config.email.verification_code_ttl_minutes
-            ),
+            subject=i18n.get("email-verification.title", code=code),
+            body=i18n.get("email-verification.message", code=code, minutes=minutes),
+            html=i18n.get("email-verification.message-html", code=code, minutes=minutes),
         )
 
         actor.email_verification_code_hash = hash_email_verification_code(

@@ -104,11 +104,6 @@ TELEGRAM_JWKS_CACHE_TTL: Final[int] = 3600  # 1 hour
 PUBLIC_LANDING_PLANS_CACHE_TTL_SECONDS: Final[int] = 21600
 EMAIL_VERIFICATION_CODE_LENGTH: Final[int] = 6
 EMAIL_VERIFICATION_RESEND_COOLDOWN_SECONDS: Final[int] = 60
-EMAIL_VERIFICATION_SUBJECT: Final[str] = "Your verification code"
-EMAIL_VERIFICATION_BODY_TEMPLATE: Final[str] = (
-    "Your verification code is: {code}\n\n"
-    "It is valid for {minutes} minutes. If you did not request this, ignore this email."
-)
 WEB_PASSWORD_LEN: Final[int] = 8
 WEB_PASSWORD_ALPHABET: Final[str] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 WEB_PASSWORD_MIN_LEN: Final[int] = 8
