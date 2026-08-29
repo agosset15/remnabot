@@ -58,6 +58,8 @@ from src.application.use_cases.user.commands.profile_edit import (
     ResetUserReferralCode,
     SetUserEmail,
     SetUserEmailDto,
+    SetUserPassword,
+    SetUserPasswordDto,
     SetUserPersonalDiscount,
     SetUserPersonalDiscountDto,
     SetUserPurchaseDiscount,
@@ -918,6 +920,40 @@ async def on_email_input(
             await notifier.notify_user(user, i18n_key="ntf-user.email-duplicate")
         else:
             await notifier.notify_user(user, i18n_key="ntf-common.invalid-value")
+
+
+@inject
+async def on_password_input(
+    message: Message,
+    widget: MessageInput,
+    dialog_manager: DialogManager,
+    notifier: FromDishka[Notifier],
+    set_user_password: FromDishka[SetUserPassword],
+) -> None:
+    dialog_manager.show_mode = ShowMode.EDIT
+    user: TelegramUserDto = dialog_manager.middleware_data[USER_KEY]
+    target_user_id = dialog_manager.dialog_data[TARGET_USER_ID]
+
+    # Remove the message so the plaintext password does not linger in the chat.
+    try:
+        await message.delete()
+    except Exception:
+        pass
+
+    if not message.text:
+        await notifier.notify_user(user, i18n_key="ntf-common.invalid-value")
+        return
+
+    try:
+        await set_user_password(user, SetUserPasswordDto(target_user_id, message.text))
+        await notifier.notify_user(user, i18n_key="ntf-user.password-reset-success")
+        await dialog_manager.switch_to(state=DashboardUser.EMAIL_OPTIONS)
+    except ValueError as e:
+        logger.warning(f"{user.log} Failed to reset password for '{target_user_id}': {e}")
+        if "no email" in str(e):
+            await notifier.notify_user(user, i18n_key="ntf-user.password-reset-no-email")
+        else:
+            await notifier.notify_user(user, i18n_key="ntf-user.password-reset-invalid")
 
 
 @inject
