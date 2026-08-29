@@ -23,26 +23,13 @@ class LoginEmailUser(Interactor[LoginEmailUserDto, UserDto]):
 
     async def _execute(self, actor: UserDto, data: LoginEmailUserDto) -> UserDto:
         user = await self.user_dao.get_by_email(data.email)
-        invalid = HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email or password",
-        )
-
-        if not user:
-            # Run a dummy verify to keep timing uniform whether the email exists.
-            self.password_hasher.verify(data.password, "")
-            raise invalid
-
-        if user.password_hash:
-            if not self.password_hasher.verify(data.password, user.password_hash):
-                raise invalid
-        else:
-            # Passwordless first login: a user created with an email but no password
-            # (e.g. by an admin) may sign in once with an empty password. They should
-            # set a password afterwards.
-            if data.password:
-                raise invalid
-
+        password_hash = user.password_hash if (user and user.password_hash) else ""
+        password_ok = self.password_hasher.verify(data.password, password_hash)
+        if not user or not user.password_hash or not password_ok:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid email or password",
+            )
         if user.is_blocked:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User is blocked")
         return user
