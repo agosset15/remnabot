@@ -13,7 +13,7 @@ from remnapy.models import (
     CreateUserRequestDto,
     DeleteUserAllHwidDeviceRequestDto,
     DeleteUserHwidDeviceRequestDto,
-    DropByUserUuids,
+    DropByUserIds,
     DropConnectionsRequestDto,
     GetMetadataResponseDto,
     TargetAllNodes,
@@ -90,86 +90,81 @@ class RemnawaveImpl(Remnawave):
             remna_user = await self.sdk.users.create_user(request_dto)
             logger.info(
                 f"RemnaUser '{remna_user.username}' created successfully. "
-                f"UUID: '{remna_user.uuid}', telegram_id: '{remna_user.telegram_id}'"
+                f"id: '{remna_user.id}', telegram_id: '{remna_user.telegram_id}'"
             )
             return remna_user
         except ConflictError:
             logger.warning(
-                f"RemnaUser '{request_dto.username}' with UUID '{request_dto.uuid}' "
-                f"already exists in panel"
+                f"RemnaUser '{request_dto.username}' already exists in panel"
             )
             raise
 
     async def update_user(
         self,
         user: UserDto,
-        uuid: UUID,
+        num_id: int,
         plan: Optional[PlanSnapshotDto] = None,
         subscription: Optional[SubscriptionDto] = None,
         reset_traffic: bool = False,
     ) -> UserResponseDto:
-        request_dto = self._build_update_request(user, uuid, plan, subscription)
+        request_dto = self._build_update_request(user, num_id, plan, subscription)
 
         try:
             remna_user = await self.sdk.users.update_user(request_dto)
             logger.info(
                 f"RemnaUser '{remna_user.username}' updated successfully. "
-                f"UUID: '{remna_user.uuid}', telegram_id: '{remna_user.telegram_id}'"
+                f"id: '{remna_user.id}', telegram_id: '{remna_user.telegram_id}'"
             )
         except NotFoundError:
             logger.warning(
-                f"RemnaUser '{request_dto.username}' with UUID '{request_dto.uuid}' not found"
+                f"RemnaUser '{request_dto.username}' with id '{request_dto.id}' not found"
             )
             raise
 
         if reset_traffic:
-            await self.reset_traffic(uuid)
+            await self.reset_traffic(num_id)
 
         return remna_user
 
-    async def enable_user(self, uuid: UUID) -> None:
+    async def enable_user(self, num_id: int) -> None:
         try:
-            await self.sdk.users.enable_user(uuid)
-            logger.info(f"RemnaUser '{uuid}' enabled successfully")
+            await self.sdk.users.enable_user(num_id)
+            logger.info(f"RemnaUser '{num_id}' enabled successfully")
         except NotFoundError:
-            logger.debug(f"RemnaUser '{uuid}' not found in panel")
+            logger.debug(f"RemnaUser '{num_id}' not found in panel")
             raise
 
-    async def disable_user(self, uuid: UUID) -> None:
+    async def disable_user(self, num_id: int) -> None:
         try:
-            await self.sdk.users.disable_user(uuid)
-            logger.info(f"RemnaUser '{uuid}' disabled successfully")
+            await self.sdk.users.disable_user(num_id)
+            logger.info(f"RemnaUser '{num_id}' disabled successfully")
         except NotFoundError:
-            logger.debug(f"RemnaUser '{uuid}' not found in panel")
+            logger.debug(f"RemnaUser '{num_id}' not found in panel")
             raise
 
-    async def delete_user(self, uuid: UUID) -> bool:
+    async def delete_user(self, num_id: int) -> bool:
         try:
-            response = await self.sdk.users.delete_user(uuid)
+            await self.sdk.users.delete_user(num_id)
         except NotFoundError:
-            logger.debug(f"RemnaUser '{uuid}' not found in panel")
+            logger.debug(f"RemnaUser '{num_id}' not found in panel")
             return False
 
-        if response.is_deleted:
-            logger.info(f"RemnaUser '{uuid}' deleted successfully")
-        else:
-            logger.warning(f"Failed to delete RemnaUser '{uuid}'")
+        logger.info(f"RemnaUser '{num_id}' deleted successfully")
+        return True
 
-        return response.is_deleted
-
-    async def get_user_by_uuid(self, uuid: UUID) -> Optional[UserResponseDto]:
+    async def get_user_by_id(self, num_id: int) -> Optional[UserResponseDto]:
         try:
-            remna_user = await self.sdk.users.get_user_by_uuid(uuid)
-            logger.info(f"Fetched RemnaUser '{uuid}' from panel")
+            remna_user = await self.sdk.users.get_user_by_id(num_id)
+            logger.info(f"Fetched RemnaUser '{num_id}' from panel")
             return remna_user
         except NotFoundError:
-            logger.debug(f"RemnaUser '{uuid}' not found in panel")
+            logger.debug(f"RemnaUser '{num_id}' not found in panel")
             return None
 
     async def get_users_by_telegram_id(self, telegram_id: int) -> list[UserResponseDto]:
-        response = await self.sdk.users.get_users_by_telegram_id(telegram_id)
-        logger.debug(f"Fetched {len(response.root)} RemnaUsers for telegram_id '{telegram_id}'")
-        return response.root
+        response = await self.sdk.users.get_users_stream(telegram_id=str(telegram_id))
+        logger.debug(f"Fetched {len(response.users)} RemnaUsers for telegram_id '{telegram_id}'")
+        return response.users
 
     async def get_all_users(self, limit: int, offset: int) -> list[UserResponseDto]:
         response = await self.sdk.users.get_all_users(start=offset, size=limit)
@@ -177,81 +172,81 @@ class RemnawaveImpl(Remnawave):
         return response.users
 
     async def get_user_by_email(self, email: str) -> list[UserResponseDto]:
-        response = await self.sdk.users.get_users_by_email(email)
-        logger.debug(f"Fetched {len(response.root)} RemnaUsers for email '{email}'")
-        return response.root
+        response = await self.sdk.users.get_users_stream(email=email)
+        logger.debug(f"Fetched {len(response.users)} RemnaUsers for email '{email}'")
+        return response.users
 
-    async def get_devices(self, user_uuid: UUID) -> list[HwidDeviceDto]:
-        response = await self.sdk.hwid.get_hwid_user(user_uuid)
-        logger.debug(f"Fetched {response.total} devices for RemnaUser '{user_uuid}'")
+    async def get_devices(self, num_id: int) -> list[HwidDeviceDto]:
+        response = await self.sdk.hwid.get_hwid_user(num_id)
+        logger.debug(f"Fetched {response.total} devices for RemnaUser '{num_id}'")
         return response.devices if response.total else []
 
-    async def delete_device(self, user_uuid: UUID, hwid_uuid: str) -> Optional[int]:
+    async def delete_device(self, num_id: int, hwid_uuid: str) -> Optional[int]:
         try:
             response = await self.sdk.hwid.delete_hwid_to_user(
-                DeleteUserHwidDeviceRequestDto(user_uuid=user_uuid, hwid=hwid_uuid)
+                DeleteUserHwidDeviceRequestDto(user_id=num_id, hwid=hwid_uuid)
             )
             logger.info(
-                f"Deleted HWID device '{hwid_uuid}' for RemnaUser '{user_uuid}'. "
+                f"Deleted HWID device '{hwid_uuid}' for RemnaUser '{num_id}'. "
                 f"Total devices now: {response.total}"
             )
         except NotFoundError:
-            logger.debug(f"RemnaUser '{user_uuid}' not found in panel")
+            logger.debug(f"RemnaUser '{num_id}' not found in panel")
             return None
 
         return int(response.total)
 
-    async def delete_all_devices(self, user_uuid: UUID) -> None:
+    async def delete_all_devices(self, num_id: int) -> None:
         try:
             result = await self.sdk.hwid.delete_all_hwid_user(
-                DeleteUserAllHwidDeviceRequestDto(user_uuid=user_uuid)
+                DeleteUserAllHwidDeviceRequestDto(user_id=num_id)
             )
         except NotFoundError:
-            logger.debug(f"RemnaUser '{user_uuid}' not found in panel")
+            logger.debug(f"RemnaUser '{num_id}' not found in panel")
             return
-        logger.info(f"Deleted all HWID devices ({result.total}) for RemnaUser '{user_uuid}'")
+        logger.info(f"Deleted all HWID devices ({result.total}) for RemnaUser '{num_id}'")
 
-    async def drop_connections(self, user_uuid: UUID) -> None:
+    async def drop_connections(self, num_id: int) -> None:
         try:
-            await self.sdk.ip_control.drop_connections(
+            await self.sdk.connections.drop_connections(
                 body=DropConnectionsRequestDto(
-                    drop_by=DropByUserUuids(user_uuids=[user_uuid]),
+                    drop_by=DropByUserIds(user_ids=[num_id]),
                     target_nodes=TargetAllNodes(),
                 )
             )
-            logger.info(f"Dropped connections for RemnaUser '{user_uuid}'")
+            logger.info(f"Dropped connections for RemnaUser '{num_id}'")
         except Exception as e:
-            logger.warning(f"Failed to drop connections for RemnaUser '{user_uuid}': {e}")
+            logger.warning(f"Failed to drop connections for RemnaUser '{num_id}': {e}")
 
-    async def reset_traffic(self, uuid: UUID) -> Optional[UserResponseDto]:
+    async def reset_traffic(self, num_id: int) -> Optional[UserResponseDto]:
         try:
-            remna_user = await self.sdk.users.reset_user_traffic(uuid)
-            logger.info(f"Traffic for RemnaUser '{remna_user.uuid}' reset successfully")
+            remna_user = await self.sdk.users.reset_user_traffic(num_id)
+            logger.info(f"Traffic for RemnaUser '{remna_user.id}' reset successfully")
             return remna_user
         except NotFoundError:
-            logger.debug(f"RemnaUser '{uuid}' not found in panel")
+            logger.debug(f"RemnaUser '{num_id}' not found in panel")
             return None
 
-    async def revoke_subscription(self, uuid: UUID) -> None:
+    async def revoke_subscription(self, num_id: int) -> None:
         try:
-            await self.sdk.users.revoke_user_subscription(uuid)
-            logger.info(f"Subscription for RemnaUser '{uuid}' revoked successfully")
+            await self.sdk.users.revoke_user_subscription(num_id)
+            logger.info(f"Subscription for RemnaUser '{num_id}' revoked successfully")
         except NotFoundError:
-            logger.debug(f"RemnaUser '{uuid}' not found in panel")
+            logger.debug(f"RemnaUser '{num_id}' not found in panel")
 
-    async def update_user_internal_squads(self, user_uuid: UUID, squads: list[UUID]) -> None:
+    async def update_user_internal_squads(self, num_id: int, squads: list[UUID]) -> None:
         request_dto = UpdateUserRequestDto(
-            uuid=user_uuid, active_internal_squads=squads, status=UserStatus.ACTIVE
+            id=num_id, active_internal_squads=squads, status=UserStatus.ACTIVE
         )
 
         try:
             remna_user = await self.sdk.users.update_user(request_dto)
             logger.info(
                 f"RemnaUser '{remna_user.username}' internal squads updated. "
-                f"UUID: '{remna_user.uuid}', telegram_id: '{remna_user.telegram_id}'"
+                f"id: '{remna_user.id}', telegram_id: '{remna_user.telegram_id}'"
             )
         except NotFoundError:
-            logger.warning(f"RemnaUser with UUID '{user_uuid}' not found, squad update skipped")
+            logger.warning(f"RemnaUser with id '{num_id}' not found, squad update skipped")
             raise
 
     async def get_squads_available(self) -> bool:
@@ -273,7 +268,7 @@ class RemnawaveImpl(Remnawave):
         target_fields = {f.name for f in fields(target)}
         source_fields = {f.name for f in fields(source)}
 
-        field_map = {"user_remna_id": "uuid"}
+        field_map = {"user_remna_num_id": "num_id"}
 
         for target_field, source_field in field_map.items():
             if target_field in target_fields and source_field in source_fields:
@@ -306,7 +301,6 @@ class RemnawaveImpl(Remnawave):
     ) -> CreateUserRequestDto:
         if subscription:
             return CreateUserRequestDto(
-                uuid=subscription.user_remna_id,
                 username=user.remna_name,
                 telegram_id=user.telegram_id,
                 expire_at=subscription.expire_at,
@@ -346,13 +340,13 @@ class RemnawaveImpl(Remnawave):
     def _build_update_request(
         self,
         user: UserDto,
-        uuid: UUID,
+        num_id: int,
         plan: Optional[PlanSnapshotDto],
         subscription: Optional[SubscriptionDto],
     ) -> UpdateUserRequestDto:
         if subscription:
             return UpdateUserRequestDto(
-                uuid=uuid,
+                id=num_id,
                 telegram_id=user.telegram_id,
                 expire_at=subscription.expire_at,
                 status=(
@@ -372,7 +366,7 @@ class RemnawaveImpl(Remnawave):
 
         if plan:
             return UpdateUserRequestDto(
-                uuid=uuid,
+                id=num_id,
                 telegram_id=user.telegram_id,
                 expire_at=days_to_datetime(plan.duration),
                 status=SubscriptionStatus.ACTIVE,

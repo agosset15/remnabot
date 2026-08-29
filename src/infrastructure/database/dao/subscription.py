@@ -51,7 +51,7 @@ class SubscriptionDaoImpl(SubscriptionDao, BaseDaoImpl):
 
         logger.debug(
             f"Created new subscription '{db_subscription.id}' "
-            f"for remna user '{subscription.user_remna_id}'"
+            f"for remna user '{subscription.user_remna_num_id}'"
         )
         return self._convert_to_dto(db_subscription)
 
@@ -66,15 +66,17 @@ class SubscriptionDaoImpl(SubscriptionDao, BaseDaoImpl):
         logger.debug(f"Subscription '{subscription_id}' not found")
         return None
 
-    async def get_by_remna_id(self, user_remna_id: UUID) -> Optional[SubscriptionDto]:
-        stmt = select(Subscription).where(Subscription.user_remna_id == user_remna_id)
+    async def get_by_remna_id(self, user_remna_num_id: int) -> Optional[SubscriptionDto]:
+        stmt = select(Subscription).where(
+            Subscription.user_remna_num_id == user_remna_num_id
+        )
         db_subscription = await self.session.scalar(stmt)
 
         if db_subscription:
-            logger.debug(f"Subscription found by remna ID '{user_remna_id}'")
+            logger.debug(f"Subscription found by remna ID '{user_remna_num_id}'")
             return self._convert_to_dto(db_subscription)
 
-        logger.debug(f"Subscription with remna ID '{user_remna_id}' not found")
+        logger.debug(f"Subscription with remna ID '{user_remna_num_id}' not found")
         return None
 
     async def get_all_by_user(self, user_id: int) -> list[SubscriptionDto]:
@@ -168,14 +170,16 @@ class SubscriptionDaoImpl(SubscriptionDao, BaseDaoImpl):
         logger.warning(f"Failed to update subscription '{subscription_id}': not found")
         return None
 
-    async def exists(self, user_remna_id: UUID) -> bool:
+    async def exists(self, user_remna_num_id: int) -> bool:
         stmt = select(
-            select(Subscription).where(Subscription.user_remna_id == user_remna_id).exists()
+            select(Subscription)
+            .where(Subscription.user_remna_num_id == user_remna_num_id)
+            .exists()
         )
         is_exists = await self.session.scalar(stmt) or False
 
         logger.debug(
-            f"Subscription existence status for remna ID '{user_remna_id}' is '{is_exists}'"
+            f"Subscription existence status for remna ID '{user_remna_num_id}' is '{is_exists}'"
         )
         return is_exists
 

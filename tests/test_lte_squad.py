@@ -15,7 +15,7 @@ def _config(lte_uuid):
 
 def _remna_user(status, squad_uuids):
     return SimpleNamespace(
-        uuid=uuid4(),
+        id=42,
         status=status,
         active_internal_squads=[SimpleNamespace(uuid=u) for u in squad_uuids],
     )
@@ -39,8 +39,8 @@ async def test_toggle_excludes_when_limited_and_in_squad():
     await toggle.system(user)
 
     remna.update_user_internal_squads.assert_awaited_once()
-    target_uuid, squads = remna.update_user_internal_squads.await_args.args
-    assert target_uuid == user.uuid
+    target_id, squads = remna.update_user_internal_squads.await_args.args
+    assert target_id == user.id
     assert lte not in squads
     assert other in squads
 
@@ -80,8 +80,8 @@ async def test_toggle_noop_when_active_and_already_in_squad():
 async def test_restore_appends_lte_for_each_excluded_subscription():
     lte = uuid4()
     remna = AsyncMock()
-    sub_a = SimpleNamespace(user_remna_id=uuid4(), internal_squads=[uuid4()])
-    sub_b = SimpleNamespace(user_remna_id=uuid4(), internal_squads=[])
+    sub_a = SimpleNamespace(user_remna_num_id=1, internal_squads=[uuid4()])
+    sub_b = SimpleNamespace(user_remna_num_id=2, internal_squads=[])
     dao = AsyncMock()
     dao.get_active_excluded_from_squad.return_value = [sub_a, sub_b]
     restore = RestoreUsersToLteSquad(remnawave=remna, config=_config(lte), subscription_dao=dao)

@@ -295,10 +295,10 @@ class LinkTelegram(Interactor[LinkTelegramData, UserDto]):
         # user must not fail the link.
         if surviving is not None:
             try:
-                await self.remnawave.update_user(updated, surviving.user_remna_id)
+                await self.remnawave.update_user(updated, surviving.user_remna_num_id)
             except NotFoundError:
                 logger.warning(
-                    f"RemnaWave user '{surviving.user_remna_id}' not found while syncing merge"
+                    f"RemnaWave user '{surviving.user_remna_num_id}' not found while syncing merge"
                 )
 
         return updated
