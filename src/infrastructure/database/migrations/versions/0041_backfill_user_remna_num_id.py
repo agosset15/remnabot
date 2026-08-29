@@ -60,7 +60,7 @@ async def _fetch_panel_ids_async(uuids: list[str]) -> dict[str, int]:
         sdk = RemnawaveSDK(client)
         for user_uuid in uuids:
             try:
-                remna_user = await sdk.users.get_user_by_uuid(user_uuid)
+                remna_user = await sdk.users.get_user_by_uuid(user_uuid)  # type: ignore[attr-defined]
             except NotFoundError:
                 logger.warning(
                     f"[0041] user '{user_uuid}' not found on panel; leaving num id NULL"

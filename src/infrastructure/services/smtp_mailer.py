@@ -48,6 +48,7 @@ class SmtpMailerImpl(Mailer):
     ) -> None:
         if not self._ready(user):
             return
+        assert user.email is not None
 
         bot_url = await self._bot_service.get_referral_url(user.referral_code)
         purchase_type_value = purchase_type.value
@@ -79,6 +80,7 @@ class SmtpMailerImpl(Mailer):
     async def send_failed_purchase(self, user: UserDto) -> None:
         if not self._ready(user):
             return
+        assert user.email is not None
 
         bot_url = await self._bot_service.get_referral_url(user.referral_code)
 
@@ -93,6 +95,7 @@ class SmtpMailerImpl(Mailer):
     async def send_connect_telegram(self, user: UserDto) -> None:
         if not self._ready(user):
             return
+        assert user.email is not None
 
         bot_url = await self._bot_service.get_referral_url(user.referral_code)
 
@@ -107,6 +110,7 @@ class SmtpMailerImpl(Mailer):
     async def send_custom_message(self, user: UserDto, body: str) -> None:
         if not self._ready(user):
             return
+        assert user.email is not None
 
         bot_url = await self._bot_service.get_referral_url(user.referral_code)
 
@@ -121,6 +125,7 @@ class SmtpMailerImpl(Mailer):
     async def send_notification(self, user: UserDto, body: str) -> None:
         if not self._ready(user):
             return
+        assert user.email is not None
 
         i18n = self._i18n_hub.get_translator_by_locale(user.language)
         bot_url = await self._bot_service.get_referral_url(user.referral_code)

@@ -1,12 +1,12 @@
 from datetime import timedelta
-from typing import Optional, cast
+from typing import Any, Optional, cast
 from uuid import UUID
 
 from adaptix import Retort
 from adaptix.conversion import ConversionRetort
 from loguru import logger
 from redis.asyncio import Redis
-from sqlalchemy import and_, case, func, select, update
+from sqlalchemy import CursorResult, and_, case, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.application.common.dao import SubscriptionDao, UserDao
@@ -51,7 +51,7 @@ class SubscriptionDaoImpl(SubscriptionDao, BaseDaoImpl):
 
         logger.debug(
             f"Created new subscription '{db_subscription.id}' "
-            f"for remna user '{subscription.user_remna_id}'"
+            f"for remna user '{subscription.user_remna_num_id}'"
         )
         return self._convert_to_dto(db_subscription)
 
@@ -66,15 +66,17 @@ class SubscriptionDaoImpl(SubscriptionDao, BaseDaoImpl):
         logger.debug(f"Subscription '{subscription_id}' not found")
         return None
 
-    async def get_by_remna_id(self, user_remna_id: UUID) -> Optional[SubscriptionDto]:
-        stmt = select(Subscription).where(Subscription.user_remna_id == user_remna_id)
+    async def get_by_remna_id(self, user_remna_num_id: int) -> Optional[SubscriptionDto]:
+        stmt = select(Subscription).where(
+            Subscription.user_remna_num_id == user_remna_num_id
+        )
         db_subscription = await self.session.scalar(stmt)
 
         if db_subscription:
-            logger.debug(f"Subscription found by remna ID '{user_remna_id}'")
+            logger.debug(f"Subscription found by remna ID '{user_remna_num_id}'")
             return self._convert_to_dto(db_subscription)
 
-        logger.debug(f"Subscription with remna ID '{user_remna_id}' not found")
+        logger.debug(f"Subscription with remna ID '{user_remna_num_id}' not found")
         return None
 
     async def get_all_by_user(self, user_id: int) -> list[SubscriptionDto]:
@@ -95,7 +97,7 @@ class SubscriptionDaoImpl(SubscriptionDao, BaseDaoImpl):
             .where(Subscription.user_id == from_user_id)
             .values(user_id=to_user_id)
         )
-        result = await self.session.execute(stmt)
+        result = cast("CursorResult[Any]", await self.session.execute(stmt))
         logger.debug(
             f"Reassigned '{result.rowcount}' subscriptions "
             f"from user_id='{from_user_id}' to user_id='{to_user_id}'"
@@ -168,14 +170,16 @@ class SubscriptionDaoImpl(SubscriptionDao, BaseDaoImpl):
         logger.warning(f"Failed to update subscription '{subscription_id}': not found")
         return None
 
-    async def exists(self, user_remna_id: UUID) -> bool:
+    async def exists(self, user_remna_num_id: int) -> bool:
         stmt = select(
-            select(Subscription).where(Subscription.user_remna_id == user_remna_id).exists()
+            select(Subscription)
+            .where(Subscription.user_remna_num_id == user_remna_num_id)
+            .exists()
         )
         is_exists = await self.session.scalar(stmt) or False
 
         logger.debug(
-            f"Subscription existence status for remna ID '{user_remna_id}' is '{is_exists}'"
+            f"Subscription existence status for remna ID '{user_remna_num_id}' is '{is_exists}'"
         )
         return is_exists
 
@@ -218,23 +222,6 @@ class SubscriptionDaoImpl(SubscriptionDao, BaseDaoImpl):
             f"Retrieved '{len(squads)}' unique internal squads from all active subscriptions"
         )
         return squads
-
-    async def get_active_excluded_from_squad(self, squad_uuid: UUID) -> list[SubscriptionDto]:
-        stmt = (
-            select(Subscription)
-            .join(User, User.current_subscription_id == Subscription.id)
-            .where(
-                Subscription.status == SubscriptionStatus.ACTIVE,
-                ~Subscription.internal_squads.contains([squad_uuid]),
-            )
-        )
-        result = await self.session.scalars(stmt)
-        db_subscriptions = cast(list, result.all())
-        logger.debug(
-            f"Found '{len(db_subscriptions)}' active subscriptions excluded from "
-            f"squad '{squad_uuid}'"
-        )
-        return self._convert_to_dto_list(db_subscriptions)
 
     async def count_total_trials(self) -> int:
         stmt = select(func.count(func.distinct(Subscription.user_id))).where(

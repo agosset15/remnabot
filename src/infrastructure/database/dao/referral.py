@@ -107,7 +107,9 @@ class ReferralDaoImpl(ReferralDao):
             .values(user_id=to_user_id)
         )
 
-        logger.debug(f"Reassigned referrals from user_id='{from_user_id}' to user_id='{to_user_id}'")
+        logger.debug(
+            f"Reassigned referrals from user_id='{from_user_id}' to user_id='{to_user_id}'"
+        )
 
     async def get_referrals_count(self, referrer_id: int) -> int:
         stmt = select(func.count()).select_from(Referral).where(Referral.referrer_id == referrer_id)

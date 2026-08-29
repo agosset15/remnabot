@@ -9,10 +9,7 @@ from src.application.common.policy import Permission, PermissionPolicy
 from src.application.common.remnawave import Remnawave
 from src.application.common.uow import UnitOfWork
 from src.application.dto import UserDto
-from src.core.config import AppConfig
-from src.core.enums import SubscriptionStatus
 from src.core.exceptions import CooldownError, PermissionDeniedError
-from src.core.types import RemnaUserDto
 from src.core.utils.time import datetime_now
 
 
@@ -65,10 +62,10 @@ class DeleteUserDevice(Interactor[DeleteUserDeviceDto, bool]):
 
         async with self.uow:
             remaining_devices = await self.remnawave.delete_device(
-                current_subscription.user_remna_id,
+                current_subscription.user_remna_num_id,
                 data.hwid,
             )
-            await self.remnawave.drop_connections(current_subscription.user_remna_id)
+            await self.remnawave.drop_connections(current_subscription.user_remna_num_id)
             current_subscription.device_single_reset_at = datetime_now()
             await self.subscription_dao.update(current_subscription)
             await self.uow.commit()
@@ -113,8 +110,8 @@ class DeleteUserAllDevices(Interactor[None, None]):
                 raise CooldownError(available_at)
 
         async with self.uow:
-            await self.remnawave.delete_all_devices(current_subscription.user_remna_id)
-            await self.remnawave.drop_connections(current_subscription.user_remna_id)
+            await self.remnawave.delete_all_devices(current_subscription.user_remna_num_id)
+            await self.remnawave.drop_connections(current_subscription.user_remna_num_id)
             current_subscription.device_all_reset_at = datetime_now()
             await self.subscription_dao.update(current_subscription)
             await self.uow.commit()
@@ -145,7 +142,7 @@ class ResetUserTraffic(Interactor[int, None]):
             raise ValueError(f"Subscription for user '{target_user.remna_name}' not found")
 
         try:
-            await self.remnawave.reset_traffic(subscription.user_remna_id)
+            await self.remnawave.reset_traffic(subscription.user_remna_num_id)
         except Exception as e:
             logger.error(
                 f"Failed to reset traffic in Remnawave for user '{target_user.remna_name}': {e}"
@@ -189,7 +186,7 @@ class ReissueSubscription(Interactor[None, None]):
                 raise CooldownError(available_at)
 
         async with self.uow:
-            await self.remnawave.revoke_subscription(current_subscription.user_remna_id)
+            await self.remnawave.revoke_subscription(current_subscription.user_remna_num_id)
             current_subscription.link_reset_at = datetime_now()
             await self.subscription_dao.update(current_subscription)
             await self.uow.commit()
@@ -217,70 +214,6 @@ class ReissueUserSubscription(Interactor[int, None]):
         if not current_subscription:
             raise ValueError(f"No active subscription for user '{target_user.remna_name}'")
 
-        await self.remnawave.revoke_subscription(current_subscription.user_remna_id)
+        await self.remnawave.revoke_subscription(current_subscription.user_remna_num_id)
 
         logger.info(f"{actor.log} Reissued subscription for user '{target_user.id}'")
-
-
-class ToggleLteSquad(Interactor[RemnaUserDto, None]):
-    required_permission = Permission.USER_EDITOR
-
-    def __init__(self, remnawave: Remnawave, config: AppConfig) -> None:
-        self.remnawave = remnawave
-        self.config = config
-
-    async def _execute(self, actor: UserDto, data: RemnaUserDto) -> None:
-        lte_squad_uuid = self.config.remnawave.lte_squad_uuid
-        if not lte_squad_uuid:
-            return
-
-        internal_squads = {s.uuid for s in data.active_internal_squads}
-
-        if data.status == SubscriptionStatus.LIMITED:
-            if lte_squad_uuid not in internal_squads:
-                return
-            internal_squads.discard(lte_squad_uuid)
-            await self.remnawave.update_user_internal_squads(data.uuid, list(internal_squads))
-            logger.info(f"Excluded user '{data.uuid}' from LTE squad")
-        else:
-            if lte_squad_uuid in internal_squads:
-                return
-            internal_squads.add(lte_squad_uuid)
-            await self.remnawave.update_user_internal_squads(data.uuid, list(internal_squads))
-            logger.info(f"Returned user '{data.uuid}' to LTE squad")
-
-
-class RestoreUsersToLteSquad(Interactor[None, None]):
-    required_permission = None
-
-    def __init__(
-        self,
-        remnawave: Remnawave,
-        config: AppConfig,
-        subscription_dao: SubscriptionDao,
-    ) -> None:
-        self.remnawave = remnawave
-        self.config = config
-        self.subscription_dao = subscription_dao
-
-    async def _execute(self, actor: UserDto, data: None) -> None:
-        lte_squad_uuid = self.config.remnawave.lte_squad_uuid
-        if not lte_squad_uuid:
-            return
-
-        excluded = await self.subscription_dao.get_active_excluded_from_squad(lte_squad_uuid)
-        if not excluded:
-            logger.info("RestoreUsersToLteSquad: no excluded users found")
-            return
-
-        logger.info(f"RestoreUsersToLteSquad: restoring {len(excluded)} user(s) to LTE squad")
-        restored = 0
-        for sub in excluded:
-            try:
-                squads = [*sub.internal_squads, lte_squad_uuid]
-                await self.remnawave.update_user_internal_squads(sub.user_remna_id, squads)
-                restored += 1
-            except Exception as exc:
-                logger.error(f"RestoreUsersToLteSquad: failed for '{sub.user_remna_id}': {exc}")
-
-        logger.info(f"RestoreUsersToLteSquad: restored {restored}/{len(excluded)}")

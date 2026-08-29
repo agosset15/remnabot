@@ -17,13 +17,10 @@ class Subscription(BaseSql, TimestampMixin):
     __tablename__ = "subscriptions"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_remna_id: Mapped[UUID] = mapped_column(index=True)
-    # Numeric Remnawave user id (panel `user.id`). Backfilled from the panel by
-    # `user_remna_id` (UUID) in migration 0041. Nullable during the transition;
-    # the code switch-over to numeric identity lives on a separate branch.
-    user_remna_num_id: Mapped[Optional[int]] = mapped_column(
-        BigInteger, index=True, nullable=True
-    )
+    # Numeric Remnawave user id (panel `user.id`). This is the sole identity link
+    # to the panel; the legacy `user_remna_id` (UUID) column was dropped in
+    # migration 0042 after the code switch-over to numeric identity.
+    user_remna_num_id: Mapped[int] = mapped_column(BigInteger, index=True)
     user_id: Mapped[int] = mapped_column(
         Integer,
         ForeignKey("users.id", ondelete="CASCADE"),

@@ -7,7 +7,7 @@ from src.core.enums import PaymentGatewayType
 
 
 class SubscriptionInfoResponse(BaseModel):
-    user_remna_id: str
+    user_remna_num_id: int
     status: str
     is_trial: bool
     traffic_limit: int

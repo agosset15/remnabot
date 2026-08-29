@@ -6,10 +6,12 @@ from fastapi import APIRouter, HTTPException, Request, Response, status
 from loguru import logger
 from remnapy.controllers import WebhookUtility
 from remnapy.models.webhook import (
-    NodeDto,
     TorrentBlockerReportDto,
     UserDto,
     UserHwidDeviceEventDto,
+)
+from remnapy.models.webhook import (
+    WebhookNodeDto as NodeDto,
 )
 
 from src.application.common import EventPublisher

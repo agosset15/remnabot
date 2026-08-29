@@ -286,7 +286,9 @@ class LinkTelegram(Interactor[LinkTelegramData, UserDto]):
 
             await self.uow.commit()
 
-        logger.info(f"Telegram link merge: donor id='{donor.id}' merged into survivor id='{actor.id}'")
+        logger.info(
+            f"Telegram link merge: donor id='{donor.id}' merged into survivor id='{actor.id}'"
+        )
 
         updated = await self.user_dao.get_by_id(actor.id) or actor
 
@@ -295,10 +297,10 @@ class LinkTelegram(Interactor[LinkTelegramData, UserDto]):
         # user must not fail the link.
         if surviving is not None:
             try:
-                await self.remnawave.update_user(updated, surviving.user_remna_id)
+                await self.remnawave.update_user(updated, surviving.user_remna_num_id)
             except NotFoundError:
                 logger.warning(
-                    f"RemnaWave user '{surviving.user_remna_id}' not found while syncing merge"
+                    f"RemnaWave user '{surviving.user_remna_num_id}' not found while syncing merge"
                 )
 
         return updated
