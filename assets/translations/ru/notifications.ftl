@@ -425,3 +425,32 @@ email-notification =
           <a href="https://usekago.net/plans" class="btn" style="display:block;margin-top:10px;padding:15px;background:#fff;border:1px solid #3B6FD4;border-radius:10px;text-align:center;text-decoration:none;font-size:15px;font-weight:700;color:#3B6FD4;">&#127760; На сайт</a>
         </td></tr>
         { ftr-email-html }
+
+email-verification =
+    .title = Ваш код подтверждения — { $code }
+    .message =
+        Ваш код подтверждения: { $code }
+
+        Он действителен { $minutes } минут. Если вы не запрашивали код — просто проигнорируйте это письмо.
+
+    .message-html =
+        { hdr-email-html }
+        <span style="display:none; max-height:0; overflow:hidden; mso-hide:all;">Ваш код подтверждения KAGO VPN: { $code }. Он действителен { $minutes } минут.</span>
+        <span style="display:none; max-height:0; overflow:hidden; mso-hide:all;">&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;</span>
+        <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" class="wrap" style="padding:36px 16px;">
+        <table class="card" width="560" style="max-width:560px;width:100%;background:#fff;border:1px solid #DDE6F4;border-radius:16px;">
+        <tr><td class="hd" align="center" style="background:#EFF6FF;border-bottom:1px solid #DBEAFE;padding:40px 32px 32px;border-radius:16px 16px 0 0;">
+        <p style="margin:0 0 16px;"><span style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:100px;padding:4px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#3B6FD4;">&#128274; Подтверждение почты</span></p>
+        <h1 style="margin:0 0 12px;font-size:26px;font-weight:800;color:#1e2a4a;line-height:1.25;">Ваш код<br><span style="color:#3B6FD4;">подтверждения</span></h1>
+        <p style="margin:0;font-size:14px;color:#64748B;line-height:1.6;">Введите этот код, чтобы подтвердить адрес электронной почты.</p>
+        </td></tr>
+        <tr><td class="body" style="padding:28px 32px;">
+        <div style="background:#F8FAFF;border:1px solid #DBEAFE;border-radius:12px;padding:24px;text-align:center;">
+          <p style="margin:0 0 10px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#94A3B8;">Код подтверждения</p>
+          <div style="font-size:38px;font-weight:800;letter-spacing:.32em;color:#1e2a4a;font-family:'Courier New',Courier,monospace;">{ $code }</div>
+        </div>
+        <p style="margin:18px 0 0;font-size:13px;color:#64748B;line-height:1.6;text-align:center;">&#9201; Код действителен <b style="color:#1e2a4a;">{ $minutes } минут</b>. Никому его не сообщайте.</p>
+        </td></tr>
+        <tr><td style="padding:0 32px;"><div style="height:1px;background:#EEF2FF;"></div></td></tr>
+        <tr><td style="padding:20px 32px 8px;"><p style="margin:0;font-size:12px;color:#94A3B8;line-height:1.6;">Если вы не запрашивали этот код, просто проигнорируйте письмо — с вашим аккаунтом ничего не произойдёт.</p></td></tr>
+        { ftr-email-html }
