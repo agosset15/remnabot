@@ -9,7 +9,7 @@ from .base import BaseConfig
 
 class WebConfig(BaseConfig, env_prefix="WEB_"):
     enabled: bool = False
-    cabinet_url: str = ""
+    cabinet_url: Optional[str] = None
     domain: Optional[SecretStr] = None
     referral_via_domain: bool = False
 
