@@ -1,7 +1,7 @@
 import asyncio
 from dataclasses import fields, is_dataclass
 from datetime import timedelta
-from typing import Optional, Union
+from typing import Any, Optional, Union
 from uuid import UUID
 
 from loguru import logger
@@ -94,9 +94,7 @@ class RemnawaveImpl(Remnawave):
             )
             return remna_user
         except ConflictError:
-            logger.warning(
-                f"RemnaUser '{request_dto.username}' already exists in panel"
-            )
+            logger.warning(f"RemnaUser '{request_dto.username}' already exists in panel")
             raise
 
     async def update_user(
@@ -123,6 +121,40 @@ class RemnawaveImpl(Remnawave):
 
         if reset_traffic:
             await self.reset_traffic(num_id)
+
+        return remna_user
+
+    async def sync_user_identity(self, user: UserDto, num_id: int) -> UserResponseDto:
+        """
+        Push only the account identity (telegram_id, description, email) to the panel.
+
+        Used after a Telegram link/merge, where the local account changed owner data but
+        no subscription changed. Every other field is left unset so the SDK omits it from
+        the request body, keeping the panel's expiry, status, traffic and squads intact --
+        `_build_update_request` would force `status=ACTIVE`, which is wrong for a
+        subscription that is expired or limited.
+
+        `email` and `telegram_id` are only passed when set locally: the SDK serializes
+        with `exclude_unset`, so passing an explicit ``None`` would send ``null`` and
+        clear whatever the panel already holds.
+        """
+        identity: dict[str, Any] = {"id": num_id, "description": user.remna_description}
+        if user.telegram_id is not None:
+            identity["telegram_id"] = user.telegram_id
+        if user.email:
+            identity["email"] = user.email
+
+        request_dto = UpdateUserRequestDto(**identity)
+
+        try:
+            remna_user = await self.sdk.users.update_user(request_dto)
+            logger.info(
+                f"RemnaUser '{remna_user.username}' identity synced. "
+                f"id: '{remna_user.id}', telegram_id: '{remna_user.telegram_id}'"
+            )
+        except NotFoundError:
+            logger.warning(f"RemnaUser with id '{num_id}' not found, identity sync skipped")
+            raise
 
         return remna_user
 
