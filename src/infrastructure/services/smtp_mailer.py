@@ -92,21 +92,6 @@ class SmtpMailerImpl(Mailer):
         )
         logger.info(f"Sent failed-purchase email to '{user.email}'")
 
-    async def send_connect_telegram(self, user: UserDto) -> None:
-        if not self._ready(user):
-            return
-        assert user.email is not None
-
-        bot_url = await self._bot_service.get_referral_url(user.referral_code)
-
-        await self._email_sender.send(
-            to=user.email,
-            subject=self._i18n.get("email-connect-telegram.title"),
-            body=self._i18n.get("email-connect-telegram.message", bot_url=bot_url),
-            html=self._i18n.get("email-connect-telegram.message-html", bot_url=bot_url),
-        )
-        logger.info(f"Sent connect-telegram email to '{user.email}'")
-
     async def send_custom_message(self, user: UserDto, body: str) -> None:
         if not self._ready(user):
             return

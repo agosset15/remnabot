@@ -338,42 +338,6 @@ email-failed-purchase =
         </td></tr>
         { ftr-email-html }
 
-email-connect-telegram =
-    .title = Подключите Telegram для управления подпиской
-    .message =
-        Здравствуйте!
-
-        Вы зарегистрировались в нашем сервисе, но ещё не подключили Telegram-аккаунт.
-        Подключите Telegram-бота, чтобы удобно управлять подпиской, получать уведомления и обращаться в поддержку.
-
-        Подключиться: { $bot_url }
-
-        Если у вас есть вопросы — мы всегда рады помочь.
-
-    .message-html =
-        { hdr-email-html }
-        <span style="display:none; max-height:0; overflow:hidden; mso-hide:all;">Подключите Telegram-бота к аккаунту KAGO VPN — управляйте подпиской, трафиком и поддержкой.</span>
-        <span style="display:none; max-height:0; overflow:hidden; mso-hide:all;">&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;</span>
-        <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" class="wrap" style="padding:36px 16px;">
-        <table class="card" width="560" style="max-width:560px;width:100%;background:#fff;border:1px solid #DDE6F4;border-radius:16px;">
-        <tr><td class="hd" align="center" style="background:#EFF6FF;border-bottom:1px solid #DBEAFE;padding:40px 32px 32px;border-radius:16px 16px 0 0;">
-        <p style="margin:0 0 16px;"><span style="background:#FFF7ED;border:1px solid #FED7AA;border-radius:100px;padding:4px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#EA580C;">&#128274; Telegram не подключён</span></p>
-        <h1 style="margin:0 0 12px;font-size:26px;font-weight:800;color:#1e2a4a;line-height:1.25;">Подключите Telegram<br><span style="color:#3B6FD4;">и управляйте подпиской</span></h1>
-        <p style="margin:0;font-size:14px;color:#64748B;line-height:1.6;">Через бота удобно продлевать подписку, следить за трафиком и обращаться в поддержку.</p>
-        </td></tr>
-        <tr><td class="body" style="padding:28px 32px;">
-        <p style="margin:0 0 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#94A3B8;">Что вы получите</p>
-        <table width="100%" cellpadding="0" cellspacing="0">
-        <tr><td width="30" valign="top"><div style="width:30px;height:30px;background:#3B6FD4;border-radius:50%;text-align:center;line-height:30px;font-size:16px;">&#128276;</div></td><td style="padding-left:12px;padding-bottom:12px;"><b style="font-size:14px;color:#1e2a4a;">Мгновенные уведомления</b><br><span style="font-size:13px;color:#64748B;">Узнавайте об истечении подписки заранее</span></td></tr>
-        <tr><td width="30" valign="top"><div style="width:30px;height:30px;background:#3B6FD4;border-radius:50%;text-align:center;line-height:30px;font-size:16px;">&#9889;</div></td><td style="padding-left:12px;padding-bottom:12px;"><b style="font-size:14px;color:#1e2a4a;">Быстрое продление</b><br><span style="font-size:13px;color:#64748B;">Продлевайте подписку в пару нажатий</span></td></tr>
-        <tr><td width="30" valign="top"><div style="width:30px;height:30px;background:#3B6FD4;border-radius:50%;text-align:center;line-height:30px;font-size:16px;">&#128241;</div></td><td style="padding-left:12px;"><b style="font-size:14px;color:#1e2a4a;">Всё в одном месте</b><br><span style="font-size:13px;color:#64748B;">Трафик, устройства и поддержка — прямо в Telegram</span></td></tr>
-        </table>
-        </td></tr>
-        <tr><td class="btns" style="padding:0 32px 28px;">
-          <a href="{ $bot_url }" class="btn" style="display:block;padding:15px;background:#3B6FD4;border-radius:10px;text-align:center;text-decoration:none;font-size:15px;font-weight:700;color:#fff;">&#9992;&#65039; Подключить Telegram</a>
-        </td></tr>
-        { ftr-email-html }
-
 email-custom-message =
     .title = Сообщение от KAGO VPN
     .message =

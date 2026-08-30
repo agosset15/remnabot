@@ -4,7 +4,7 @@ import json
 import uuid
 from decimal import Decimal
 from hmac import compare_digest
-from typing import Any, Union
+from typing import Any, Optional, Union
 from uuid import UUID
 
 import orjson
@@ -49,7 +49,12 @@ class CryptomusGateway(BasePaymentGateway):
             headers={"merchant": self.data.settings.merchant_id},  # type: ignore[dict-item]
         )
 
-    async def handle_create_payment(self, amount: Decimal, details: str) -> PaymentResultDto:
+    async def handle_create_payment(
+        self,
+        amount: Decimal,
+        details: str,
+        return_url: Optional[str] = None,
+    ) -> PaymentResultDto:
         payload = await self._create_payment_payload(str(amount), str(uuid.uuid4()))
         body = json.dumps(payload)
         headers = {"sign": self._generate_signature(body), "Content-Type": "application/json"}

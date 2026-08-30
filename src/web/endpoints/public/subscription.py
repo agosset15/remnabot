@@ -35,6 +35,7 @@ from src.application.use_cases.subscription.commands.purchase import (
     ActivateTrialSubscriptionDto,
 )
 from src.application.use_cases.user.queries.plans import GetAvailablePlans, GetAvailableTrial
+from src.core.config import AppConfig
 from src.core.enums import (
     PaymentGatewayType,
     PurchaseType,
@@ -69,7 +70,7 @@ from src.web.schemas import (
     TrialPurchaseRequest,
 )
 
-from ._common import CurrentUser
+from ._common import CurrentUser, resolve_return_url
 
 router = APIRouter(prefix="/subscription", tags=["Public - Subscription"])
 
@@ -326,6 +327,7 @@ async def purchase_trial_web(
     get_available_trial: FromDishka[GetAvailableTrial],
     create_payment: FromDishka[CreatePayment],
     process_payment: FromDishka[ProcessPayment],
+    config: FromDishka[AppConfig],
 ) -> PaymentInitResponse:
     _assert_web_purchase_email_verified(user)
     await _validate_gateway_for_web(body.gateway_type, payment_gateway_dao)
@@ -360,6 +362,7 @@ async def purchase_trial_web(
             pricing=pricing,
             purchase_type=PurchaseType.NEW,
             gateway_type=body.gateway_type,
+            return_url=resolve_return_url(body.return_url, config),
         ),
     )
 
@@ -396,6 +399,7 @@ async def purchase_subscription(
     get_available_plans: FromDishka[GetAvailablePlans],
     create_payment: FromDishka[CreatePayment],
     process_payment: FromDishka[ProcessPayment],
+    config: FromDishka[AppConfig],
 ) -> PaymentInitResponse:
     _assert_web_purchase_email_verified(user)
     await _validate_gateway_for_web(body.gateway_type, payment_gateway_dao)
@@ -431,6 +435,7 @@ async def purchase_subscription(
             pricing=pricing,
             purchase_type=purchase_type,
             gateway_type=body.gateway_type,
+            return_url=resolve_return_url(body.return_url, config),
         ),
     )
 
@@ -468,6 +473,7 @@ async def extend_subscription(
     match_plan: FromDishka[MatchPlan],
     create_payment: FromDishka[CreatePayment],
     process_payment: FromDishka[ProcessPayment],
+    config: FromDishka[AppConfig],
 ) -> PaymentInitResponse:
     _assert_web_purchase_email_verified(user)
     await _validate_gateway_for_web(body.gateway_type, payment_gateway_dao)
@@ -510,6 +516,7 @@ async def extend_subscription(
             pricing=pricing,
             purchase_type=PurchaseType.RENEW,
             gateway_type=body.gateway_type,
+            return_url=resolve_return_url(body.return_url, config),
         ),
     )
 

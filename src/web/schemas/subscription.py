@@ -54,7 +54,10 @@ class PromocodeActivateResponse(BaseModel):
 
 
 class TrialPurchaseRequest(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
     gateway_type: PaymentGatewayType
+    return_url: Optional[str] = Field(default=None, max_length=2048)
 
 
 class ReissueResponse(BaseModel):
@@ -67,11 +70,15 @@ class PurchaseRequest(BaseModel):
     plan_code: str = Field(min_length=3, max_length=64)
     duration_days: int = Field(ge=0)
     gateway_type: PaymentGatewayType
+    return_url: Optional[str] = Field(default=None, max_length=2048)
 
 
 class ExtendRequest(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
     duration_days: int = Field(ge=0)
     gateway_type: PaymentGatewayType
+    return_url: Optional[str] = Field(default=None, max_length=2048)
 
 
 class PaymentInitResponse(BaseModel):

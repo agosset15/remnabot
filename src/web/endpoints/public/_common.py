@@ -1,7 +1,8 @@
 import secrets
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
-from typing import Annotated
+from typing import Annotated, Optional
+from urllib.parse import urlparse
 
 import jwt
 from dishka import FromDishka
@@ -21,6 +22,51 @@ def _normalize_decimal_str(value: Decimal) -> str:
         return str(int(value))
     normalized = value.quantize(Decimal("0.01")).normalize()
     return format(normalized, "f")
+
+
+def _allowed_return_hosts(config: AppConfig) -> set[str]:
+    hosts: set[str] = {config.domain.get_secret_value().lower()}
+
+    if config.web.domain:
+        hosts.add(config.web.domain.get_secret_value().lower())
+
+    if config.web.cabinet_url:
+        cabinet_host = urlparse(config.web.cabinet_url.strip()).hostname
+        if cabinet_host:
+            hosts.add(cabinet_host.lower())
+
+    for origin in config.origins:
+        origin_host = urlparse(origin.strip()).hostname
+        if origin_host:
+            hosts.add(origin_host.lower())
+
+    return hosts
+
+
+def resolve_return_url(return_url: Optional[str], config: AppConfig) -> Optional[str]:
+    """Validate a client-supplied post-checkout redirect URL.
+
+    Only https URLs pointing at a host we own are accepted; anything else is
+    rejected so the gateway cannot be used as an open redirect.
+    """
+    if not return_url:
+        return None
+
+    parsed = urlparse(return_url.strip())
+
+    if parsed.scheme != "https" or not parsed.hostname:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="return_url must be an absolute https URL",
+        )
+
+    if parsed.hostname.lower() not in _allowed_return_hosts(config):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="return_url host is not allowed",
+        )
+
+    return parsed.geturl()
 
 
 def generate_access_token(user_id: int, key: str) -> tuple[str, datetime]:
