@@ -75,9 +75,7 @@ async def _verify_id_token(id_token: str, config: AppConfig, redis: Redis) -> _T
     try:
         claims = decode_telegram_id_token(id_token, jwks, config.bot.id)
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e)
-        ) from e
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e)) from e
 
     raw_id = claims.get("id") or claims.get("sub")
     if raw_id is None:
@@ -253,9 +251,7 @@ class LinkTelegram(Interactor[LinkTelegramData, UserDto]):
             await self.uow.commit()
         return updated
 
-    async def _merge(
-        self, actor: UserDto, donor: UserDto, identity: _TelegramIdentity
-    ) -> UserDto:
+    async def _merge(self, actor: UserDto, donor: UserDto, identity: _TelegramIdentity) -> UserDto:
         """
         Merge a Telegram-only account (donor) into the current web account (actor).
 
@@ -278,9 +274,7 @@ class LinkTelegram(Interactor[LinkTelegramData, UserDto]):
             await self.user_dao.update(actor)
 
             subscriptions = await self.subscription_dao.get_all_by_user(actor.id)
-            surviving = (
-                max(subscriptions, key=lambda sub: sub.expire_at) if subscriptions else None
-            )
+            surviving = max(subscriptions, key=lambda sub: sub.expire_at) if subscriptions else None
             if surviving is not None:
                 await self.user_dao.set_current_subscription_by_id(actor.id, surviving.id)
 
@@ -292,15 +286,22 @@ class LinkTelegram(Interactor[LinkTelegramData, UserDto]):
 
         updated = await self.user_dao.get_by_id(actor.id) or actor
 
-        # Best-effort: sync the surviving subscription's RemnaWave user with the
-        # merged identity. The merge is already committed, so a missing panel
-        # user must not fail the link.
-        if surviving is not None:
+        # Best-effort: sync every panel user the merged account now owns with the
+        # merged identity (email, telegram_id, description). Each subscription is a
+        # separate RemnaWave user, so syncing only the surviving one would leave the
+        # donor's other panel users without the survivor's email. The merge is already
+        # committed, so a missing panel user must not fail the link.
+        for subscription in subscriptions:
             try:
-                await self.remnawave.update_user(updated, surviving.user_remna_num_id)
+                await self.remnawave.update_user(
+                    user=updated,
+                    num_id=subscription.user_remna_num_id,
+                    subscription=subscription,
+                )
             except NotFoundError:
                 logger.warning(
-                    f"RemnaWave user '{surviving.user_remna_num_id}' not found while syncing merge"
+                    f"RemnaWave user '{subscription.user_remna_num_id}' "
+                    f"not found while syncing merge"
                 )
 
         return updated
