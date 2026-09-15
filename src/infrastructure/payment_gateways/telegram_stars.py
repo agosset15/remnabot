@@ -1,6 +1,6 @@
 import uuid
 from decimal import Decimal
-from typing import Union
+from typing import Optional, Union
 from uuid import UUID
 
 from aiogram.types import LabeledPrice
@@ -15,7 +15,12 @@ from .base import BasePaymentGateway
 
 # https://core.telegram.org/api/stars/
 class TelegramStarsGateway(BasePaymentGateway):
-    async def handle_create_payment(self, amount: Decimal, details: str) -> PaymentResultDto:
+    async def handle_create_payment(
+        self,
+        amount: Decimal,
+        details: str,
+        return_url: Optional[str] = None,
+    ) -> PaymentResultDto:
         prices = [LabeledPrice(label=self.data.currency, amount=int(amount))]
         payment_id = uuid.uuid4()
 

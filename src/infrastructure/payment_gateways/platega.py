@@ -52,7 +52,12 @@ class PlategaGateway(BasePaymentGateway):
         )
         self.selected_payment_method: Optional[str] = None
 
-    async def handle_create_payment(self, amount: Decimal, details: str) -> PaymentResultDto:
+    async def handle_create_payment(
+        self,
+        amount: Decimal,
+        details: str,
+        return_url: Optional[str] = None,
+    ) -> PaymentResultDto:
         payload = await self._create_payment_payload(amount, details)
         logger.debug(f"Creating payment payload: {payload}")
         endpoint = (

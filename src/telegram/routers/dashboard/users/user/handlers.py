@@ -1011,31 +1011,6 @@ async def on_send_email_purchase(
 
 
 @inject
-async def on_send_email_connect(
-    callback: CallbackQuery,
-    widget: Button,
-    dialog_manager: DialogManager,
-    user_dao: FromDishka[UserDao],
-    mailer: FromDishka[Mailer],
-    notifier: FromDishka[Notifier],
-) -> None:
-    user: TelegramUserDto = dialog_manager.middleware_data[USER_KEY]
-    target_user_id = dialog_manager.dialog_data[TARGET_USER_ID]
-
-    target_user = await user_dao.get_by_id(target_user_id)
-    if not target_user:
-        await notifier.notify_user(user, i18n_key="ntf-user.not-found")
-        return
-
-    try:
-        await mailer.send_connect_telegram(target_user)
-        await notifier.notify_user(user, i18n_key="ntf-user.email-connect-success")
-    except Exception as e:
-        logger.error(f"{user.log} Failed to send connect email to '{target_user_id}': {e}")
-        await notifier.notify_user(user, i18n_key="ntf-user.email-connect-failed")
-
-
-@inject
 async def on_email_custom_input(
     message: Message,
     widget: MessageInput,

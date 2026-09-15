@@ -2,7 +2,7 @@ import hashlib
 import hmac
 import uuid
 from decimal import Decimal
-from typing import Any, Final, Union
+from typing import Any, Final, Optional, Union
 from uuid import UUID
 
 import orjson
@@ -39,7 +39,12 @@ class ValutixGateway(BasePaymentGateway):
             headers={"X-Api-Token": self.data.settings.api_key.get_secret_value()},  # type: ignore[union-attr]
         )
 
-    async def handle_create_payment(self, amount: Decimal, details: str) -> PaymentResultDto:
+    async def handle_create_payment(
+        self,
+        amount: Decimal,
+        details: str,
+        return_url: Optional[str] = None,
+    ) -> PaymentResultDto:
         payload = {
             "amount": str(amount),
             "externalId": str(uuid.uuid4()),
