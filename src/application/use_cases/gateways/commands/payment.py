@@ -141,8 +141,6 @@ class CreatePaymentDto:
     pricing: PriceDetailsDto
     purchase_type: PurchaseType
     gateway_type: PaymentGatewayType
-    # Where the gateway sends the user back after checkout. Set by the web
-    # cabinet so the user returns to the site instead of the bot.
     return_url: Optional[str] = None
 
 
