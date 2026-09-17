@@ -62,9 +62,7 @@ async def _fetch_panel_ids_async(uuids: list[str]) -> dict[str, int]:
             try:
                 remna_user = await sdk.users.get_user_by_uuid(user_uuid)  # type: ignore[attr-defined]
             except NotFoundError:
-                logger.warning(
-                    f"[0041] user '{user_uuid}' not found on panel; leaving num id NULL"
-                )
+                logger.warning(f"[0041] user '{user_uuid}' not found on panel; leaving num id NULL")
                 continue
             except Exception as exc:  # noqa: BLE001
                 logger.error(f"[0041] failed to fetch user '{user_uuid}': {exc}")
@@ -141,9 +139,7 @@ def upgrade() -> None:
         if num_id is None:
             continue
         bind.execute(
-            sa.text(
-                "UPDATE subscriptions SET user_remna_num_id = :num_id WHERE id = :sub_id"
-            ),
+            sa.text("UPDATE subscriptions SET user_remna_num_id = :num_id WHERE id = :sub_id"),
             {"num_id": num_id, "sub_id": sub_id},
         )
         updated += 1

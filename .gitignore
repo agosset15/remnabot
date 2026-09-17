@@ -10,6 +10,7 @@ logs/*
 .history
 .claude
 CLAUDE.md
+memory/
 docs/
 
 # Environment
