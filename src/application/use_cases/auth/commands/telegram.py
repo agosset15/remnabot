@@ -64,7 +64,10 @@ async def _fetch_telegram_jwks(redis: Redis, jwks_url: str) -> dict[str, Any]:
 async def _verify_id_token(id_token: str, config: AppConfig, redis: Redis) -> _TelegramIdentity:
     """Validate an id_token and extract the Telegram identity from its claims."""
     try:
-        jwks = await _fetch_telegram_jwks(redis, config.bot.jwks_url or TELEGRAM_JWKS_URL_DEFAULT)
+        url = config.bot.jwks_url
+        if not isinstance(url, str):
+            url = TELEGRAM_JWKS_URL_DEFAULT
+        jwks = await _fetch_telegram_jwks(redis, url)
     except httpx.HTTPError as e:
         logger.error(f"Failed to fetch Telegram JWKS: {e}")
         raise HTTPException(
