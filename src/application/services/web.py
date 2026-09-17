@@ -69,6 +69,11 @@ class WebService:
             return WebPage.PURCHASE.build_url(self._base_url, planId=plan_id)
         return WebPage.PURCHASE.build_url(self._base_url)
 
+    def reset_password(self, token: str) -> Optional[str]:
+        if not self._base_url:
+            return None
+        return WebPage.CABINET.build_url(self._base_url, "reset-password", token=token)
+
     def referral(self, referral_code: str) -> Optional[str]:
         if not self._base_url:
             return None

@@ -56,6 +56,7 @@ class FaqSection(StrEnum):
 
 class WebPage(StrEnum):
     HOME = "/"
+    CABINET = "/my"
     PLANS = "/plans"
     DOWNLOAD = "/download"
     FAQ = "/faq"

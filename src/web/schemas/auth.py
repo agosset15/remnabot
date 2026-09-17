@@ -3,7 +3,11 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from src.core.constants import EMAIL_VERIFICATION_CODE_LENGTH
+from src.core.constants import (
+    EMAIL_VERIFICATION_CODE_LENGTH,
+    WEB_PASSWORD_MAX_LEN,
+    WEB_PASSWORD_MIN_LEN,
+)
 from src.core.enums import AuthType
 
 
@@ -44,6 +48,30 @@ class LoginRequest(BaseModel):
 class ChangePasswordRequest(BaseModel):
     current_password: str = Field(min_length=1, max_length=256)
     new_password: str = Field(min_length=8, max_length=256)
+
+
+class ForgotPasswordRequest(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    email: str = Field(max_length=255, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+    @field_validator("email")
+    @classmethod
+    def normalize_email(cls, value: str) -> str:
+        return value.lower()
+
+
+class ForgotPasswordResponse(BaseModel):
+    success: bool
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str = Field(min_length=16, max_length=512)
+    new_password: str = Field(min_length=WEB_PASSWORD_MIN_LEN, max_length=WEB_PASSWORD_MAX_LEN)
+
+
+class ResetPasswordResponse(BaseModel):
+    success: bool
 
 
 class MigrateTelegramRequest(RegisterRequest):

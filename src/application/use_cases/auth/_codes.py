@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 from fastapi import HTTPException, status
 
-from src.core.constants import EMAIL_VERIFICATION_CODE_LENGTH
+from src.core.constants import EMAIL_VERIFICATION_CODE_LENGTH, PASSWORD_RESET_TOKEN_BYTES
 
 
 def generate_email_verification_code() -> str:
@@ -32,3 +32,18 @@ def check_email_resend_cooldown(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail="Please wait before requesting another code",
         )
+
+
+def generate_password_reset_token() -> str:
+    return secrets.token_urlsafe(PASSWORD_RESET_TOKEN_BYTES)
+
+
+def hash_password_reset_token(token: str, key: str) -> str:
+    payload = f"{token}:{key}".encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
+
+
+def hash_reset_email(email: str, key: str) -> str:
+    """Keyed digest of an email, used as the cooldown key so Redis stores no addresses."""
+    payload = f"{email}:{key}".encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()

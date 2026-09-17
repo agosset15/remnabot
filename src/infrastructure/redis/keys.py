@@ -62,3 +62,13 @@ class RefreshTokenKey(StorageKey, prefix="refresh"):
 @dataclass(frozen=True)
 class UserTokensKey(StorageKey, prefix="user_tokens"):
     user_id: int
+
+
+@dataclass(frozen=True)
+class PasswordResetTokenKey(StorageKey, prefix="pwd_reset"):
+    token_hash: str
+
+
+@dataclass(frozen=True)
+class PasswordResetCooldownKey(StorageKey, prefix="pwd_reset_cd"):
+    email_hash: str

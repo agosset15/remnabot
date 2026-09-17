@@ -14,6 +14,12 @@ from src.application.use_cases.auth.commands.email import (
 )
 from src.application.use_cases.auth.commands.login import LoginEmailUser, LoginEmailUserDto
 from src.application.use_cases.auth.commands.password import ChangePassword, ChangePasswordDto
+from src.application.use_cases.auth.commands.password_reset import (
+    RequestPasswordReset,
+    RequestPasswordResetDto,
+    ResetPassword,
+    ResetPasswordDto,
+)
 from src.application.use_cases.auth.commands.register import (
     RegisterEmailUser,
     RegisterEmailUserDto,
@@ -36,12 +42,16 @@ from src.web.schemas import (
     ChangePasswordResponse,
     ConfirmEmailVerificationRequest,
     ConfirmEmailVerificationResponse,
+    ForgotPasswordRequest,
+    ForgotPasswordResponse,
     LoginRequest,
     LogoutResponse,
     MeResponse,
     RegisterRequest,
     RequestEmailVerificationCodeRequest,
     RequestEmailVerificationCodeResponse,
+    ResetPasswordRequest,
+    ResetPasswordResponse,
     TelegramAuthRequest,
     TelegramWebAppAuthRequest,
 )
@@ -209,6 +219,39 @@ async def change_public_user_password(
     # All sessions were revoked; rotate the current device into a fresh session.
     await _issue_and_set(updated, response, config, auth_session)
     return ChangePasswordResponse(success=True)
+
+
+@router.post("/password/forgot", response_model=ForgotPasswordResponse)
+@inject
+async def forgot_password(
+    body: ForgotPasswordRequest,
+    request_password_reset: FromDishka[RequestPasswordReset],
+) -> ForgotPasswordResponse:
+    """Send a password reset link.
+
+    Always answers 200 so the endpoint cannot be used to probe which emails
+    have an account; only a broken mail configuration surfaces an error.
+    """
+    try:
+        await request_password_reset.system(RequestPasswordResetDto(email=body.email))
+    except EmailDeliveryDisabledError as e:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(e)) from e
+    except EmailDeliveryError as e:
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e)) from e
+    return ForgotPasswordResponse(success=True)
+
+
+@router.post("/password/reset", response_model=ResetPasswordResponse)
+@inject
+async def reset_password(
+    body: ResetPasswordRequest,
+    reset_password_uc: FromDishka[ResetPassword],
+) -> ResetPasswordResponse:
+    # All sessions are revoked and no cookies are issued: the user logs in anew.
+    await reset_password_uc.system(
+        ResetPasswordDto(token=body.token, new_password=body.new_password)
+    )
+    return ResetPasswordResponse(success=True)
 
 
 @router.post("/email/change", response_model=ChangeEmailResponse)

@@ -3,7 +3,12 @@ from typing import Optional
 from redis.asyncio import Redis
 
 from src.infrastructure.redis.key_builder import serialize_storage_key
-from src.infrastructure.redis.keys import RefreshTokenKey, UserTokensKey
+from src.infrastructure.redis.keys import (
+    PasswordResetCooldownKey,
+    PasswordResetTokenKey,
+    RefreshTokenKey,
+    UserTokensKey,
+)
 
 
 class RedisAuthRepository:
@@ -48,3 +53,26 @@ class RedisAuthRepository:
             token_keys = [serialize_storage_key(RefreshTokenKey(token=t)) for t in tokens]
             await self.redis.delete(*token_keys)
         await self.redis.delete(user_set_key)
+
+    async def store_password_reset_token(self, token_hash: str, user_id: int, ttl: int) -> None:
+        key = serialize_storage_key(PasswordResetTokenKey(token_hash=token_hash))
+        await self.redis.setex(key, ttl, str(user_id))
+
+    async def consume_password_reset_token(self, token_hash: str) -> Optional[int]:
+        key = serialize_storage_key(PasswordResetTokenKey(token_hash=token_hash))
+        value = await self.redis.getdel(key)
+        if value is None:
+            return None
+        return int(value)
+
+    async def revoke_password_reset_token(self, token_hash: str) -> None:
+        key = serialize_storage_key(PasswordResetTokenKey(token_hash=token_hash))
+        await self.redis.delete(key)
+
+    async def try_start_password_reset_cooldown(self, email_hash: str, ttl: int) -> bool:
+        key = serialize_storage_key(PasswordResetCooldownKey(email_hash=email_hash))
+        return bool(await self.redis.set(key, "1", ex=ttl, nx=True))
+
+    async def clear_password_reset_cooldown(self, email_hash: str) -> None:
+        key = serialize_storage_key(PasswordResetCooldownKey(email_hash=email_hash))
+        await self.redis.delete(key)

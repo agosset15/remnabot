@@ -9,6 +9,7 @@ from .commands.email import (
 )
 from .commands.login import LoginEmailUser
 from .commands.password import ChangePassword
+from .commands.password_reset import RequestPasswordReset, ResetPassword
 from .commands.register import RegisterEmailUser
 from .commands.session import RefreshSession
 from .commands.telegram import AuthenticateTelegram, AuthenticateTelegramWebApp, LinkTelegram
@@ -21,6 +22,8 @@ AUTH_USE_CASES: Final[tuple[type[Interactor], ...]] = (
     AuthenticateTelegramWebApp,
     LinkTelegram,
     ChangePassword,
+    RequestPasswordReset,
+    ResetPassword,
     ChangeEmail,
     RequestEmailVerification,
     ConfirmEmailVerification,
