@@ -99,6 +99,7 @@ REFRESH_TOKEN_TTL_SECONDS: Final[int] = 60 * 60 * 24 * 30  # 30 days
 TELEGRAM_AUTH_MAX_AGE_SECONDS: Final[int] = 600  # 10 minutes
 TELEGRAM_OIDC_ISSUER: Final[str] = "https://oauth.telegram.org"
 TELEGRAM_JWKS_PATH: Final[str] = "/.well-known/jwks.json"
+TELEGRAM_JWKS_URL_DEFAULT: Final[str] = TELEGRAM_OIDC_ISSUER + TELEGRAM_JWKS_PATH
 TELEGRAM_JWKS_CACHE_KEY: Final[str] = "telegram:oidc:jwks"
 TELEGRAM_JWKS_CACHE_TTL: Final[int] = 3600  # 1 hour
 PUBLIC_LANDING_PLANS_CACHE_TTL_SECONDS: Final[int] = 21600
