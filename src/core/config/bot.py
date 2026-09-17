@@ -1,9 +1,10 @@
 from typing import Optional, Union
+from urllib.parse import urlparse
 
 from pydantic import SecretStr, field_validator
 from pydantic_core.core_schema import FieldValidationInfo
 
-from src.core.constants import API_V1, BOT_WEBHOOK_PATH
+from src.core.constants import API_V1, BOT_WEBHOOK_PATH, TELEGRAM_JWKS_PATH
 from src.core.utils.validators import is_valid_url
 
 from .base import BaseConfig
@@ -54,6 +55,17 @@ class BotConfig(BaseConfig, env_prefix="BOT_"):
             value = self.mini_app.get_secret_value().strip()
             if value and is_valid_url(value):
                 return value
+        return False
+
+    @property
+    def jwks_url(self) -> Union[bool, str]:
+        if isinstance(self.api_url, SecretStr):
+            parsed = urlparse(self.api_url.get_secret_value().strip())
+            if parsed.scheme and parsed.netloc:
+                origin = f"{parsed.scheme}://{parsed.netloc}"
+                value = origin + TELEGRAM_JWKS_PATH
+                if is_valid_url(value):
+                    return value
         return False
 
     def webhook_url(self, domain: SecretStr) -> SecretStr:

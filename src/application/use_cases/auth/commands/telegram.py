@@ -27,7 +27,6 @@ from src.core.config import AppConfig
 from src.core.constants import (
     TELEGRAM_JWKS_CACHE_KEY,
     TELEGRAM_JWKS_CACHE_TTL,
-    TELEGRAM_JWKS_URL,
 )
 from src.core.enums import AuthType
 
@@ -46,14 +45,14 @@ class _TelegramIdentity:
     username: "str | None"
 
 
-async def _fetch_telegram_jwks(redis: Redis) -> dict[str, Any]:
+async def _fetch_telegram_jwks(redis: Redis, jwks_url: str) -> dict[str, Any]:
     """Return Telegram's OIDC signing keys, cached in Redis."""
     cached = await redis.get(TELEGRAM_JWKS_CACHE_KEY)
     if cached:
         return cast("dict[str, Any]", json.loads(cached))
 
     async with httpx.AsyncClient(timeout=10) as client:
-        resp = await client.get(TELEGRAM_JWKS_URL)
+        resp = await client.get(jwks_url)
         resp.raise_for_status()
         jwks = cast("dict[str, Any]", resp.json())
 
@@ -64,7 +63,7 @@ async def _fetch_telegram_jwks(redis: Redis) -> dict[str, Any]:
 async def _verify_id_token(id_token: str, config: AppConfig, redis: Redis) -> _TelegramIdentity:
     """Validate an id_token and extract the Telegram identity from its claims."""
     try:
-        jwks = await _fetch_telegram_jwks(redis)
+        jwks = await _fetch_telegram_jwks(redis, config.bot.jwks_url)
     except httpx.HTTPError as e:
         logger.error(f"Failed to fetch Telegram JWKS: {e}")
         raise HTTPException(
