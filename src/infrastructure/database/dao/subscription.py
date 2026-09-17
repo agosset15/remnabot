@@ -67,9 +67,7 @@ class SubscriptionDaoImpl(SubscriptionDao, BaseDaoImpl):
         return None
 
     async def get_by_remna_id(self, user_remna_num_id: int) -> Optional[SubscriptionDto]:
-        stmt = select(Subscription).where(
-            Subscription.user_remna_num_id == user_remna_num_id
-        )
+        stmt = select(Subscription).where(Subscription.user_remna_num_id == user_remna_num_id)
         db_subscription = await self.session.scalar(stmt)
 
         if db_subscription:
@@ -172,9 +170,7 @@ class SubscriptionDaoImpl(SubscriptionDao, BaseDaoImpl):
 
     async def exists(self, user_remna_num_id: int) -> bool:
         stmt = select(
-            select(Subscription)
-            .where(Subscription.user_remna_num_id == user_remna_num_id)
-            .exists()
+            select(Subscription).where(Subscription.user_remna_num_id == user_remna_num_id).exists()
         )
         is_exists = await self.session.scalar(stmt) or False
 

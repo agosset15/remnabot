@@ -168,9 +168,7 @@ class NotificationsSettingsDto(TrackableMixin):
                 if ntf in members:
                     thread_id = thread_by_type[category]
                     break
-            new_routes[ntf.value] = SystemNotificationRouteDto(
-                chat_id=chat_id, thread_id=thread_id
-            )
+            new_routes[ntf.value] = SystemNotificationRouteDto(chat_id=chat_id, thread_id=thread_id)
 
         new_default = SystemNotificationRouteDto(chat_id=chat_id, thread_id=None)
 
