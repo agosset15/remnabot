@@ -12,7 +12,7 @@ dependencies = [
     "python-multipart>=0.0.32",
     "remnapy==3.2.1",
     #
-    "dishka~=1.10.1",
+    "dishka~=1.8.0",
     "adaptix==3.0.0b11",
     "aiogram~=3.31.0",
     "aiohttp-socks>=0.12.0",
