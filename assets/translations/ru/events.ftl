@@ -357,6 +357,27 @@ event-node =
     { hdr-node }
     { frg-node-info }
 
+    .billing-payment =
+    #NodeBillingPaymentEvent
+
+    <b>💸 Событие: { $reminder ->
+        [in-7-days] Оплата узла через 7 дней
+        [in-48hrs] Оплата узла через 48 часов
+        [in-24hrs] Оплата узла через 24 часа
+        [due-today] Оплата узла сегодня!
+        [overdue-24hrs] Оплата узла просрочена на 24 часа!
+        [overdue-48hrs] Оплата узла просрочена на 48 часов!
+        [overdue-7-days] Оплата узла просрочена на 7 дней!
+        *[OTHER] Напоминание об оплате узла
+    }</b>
+
+    { hdr-node }
+    <blockquote>
+    • <b>Название</b>: { $node_name }
+    • <b>Провайдер</b>: { $provider_name }
+    • <b>Дата оплаты</b>: { $next_billing_at }
+    </blockquote>
+
 
 event-torrent-blocker =
     .user-blocked =

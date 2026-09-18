@@ -6,6 +6,7 @@ from fastapi import APIRouter, HTTPException, Request, Response, status
 from loguru import logger
 from remnapy.controllers import WebhookUtility
 from remnapy.models.webhook import (
+    BillingNodeDto,
     TorrentBlockerReportDto,
     UserDto,
     UserHwidDeviceEventDto,
@@ -66,6 +67,10 @@ async def _process_remnawave_webhook(
         elif WebhookUtility.is_torrent_blocker_event(payload.event):
             report = cast(TorrentBlockerReportDto, WebhookUtility.get_typed_data(payload))
             await remna_webhook_service.handle_torrent_blocker_event(report)
+
+        elif WebhookUtility.is_crm_event(payload.event):
+            billing_node = cast(BillingNodeDto, WebhookUtility.get_typed_data(payload))
+            await remna_webhook_service.handle_crm_event(payload.event, billing_node)
 
         else:
             logger.warning(f"Unhandled Remnawave event type '{payload.event}'")

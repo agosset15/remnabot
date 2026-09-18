@@ -257,6 +257,7 @@ btn-goto =
     .user-profile = 👤 Перейти к пользователю
     .referrer-profile = 🤝 Перейти к пригласителю
     .contact-support = 📩 Перейти в поддержку
+    .provider-login = 🔑 Перейти к провайдеру
 
 btn-promocodes =
     .save = ✅ Сохранить

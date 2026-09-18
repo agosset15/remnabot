@@ -4,6 +4,7 @@ from enum import StrEnum
 from loguru import logger
 from redis.asyncio import Redis
 from remnapy.models.webhook import (
+    BillingNodeDto,
     HwidUserDeviceDto,
     TorrentBlockerReportDto,
 )
@@ -16,6 +17,7 @@ from src.application.common.dao import SubscriptionDao, UserDao
 from src.application.common.uow import UnitOfWork
 from src.application.dto import SubscriptionDto, UserDto
 from src.application.events import (
+    NodeBillingPaymentEvent,
     NodeConnectionLostEvent,
     NodeConnectionRestoredEvent,
     NodeTrafficReachedEvent,
@@ -352,6 +354,34 @@ class RemnaWebhookService:
                 node_name=node_name,
                 block_duration=block_duration,
                 support_url=self.bot_service.get_support_url(),
+            )
+        )
+
+    async def handle_crm_event(self, event: str, billing_node: BillingNodeDto) -> None:
+        logger.info(f"Received CRM event '{event}' for node '{billing_node.node_name}'")
+
+        reminder_map: dict[str, str] = {
+            RemnaCrmEvent.INFRA_BILLING_NODE_PAYMENT_IN_7_DAYS: "in-7-days",
+            RemnaCrmEvent.INFRA_BILLING_NODE_PAYMENT_IN_48HRS: "in-48hrs",
+            RemnaCrmEvent.INFRA_BILLING_NODE_PAYMENT_IN_24HRS: "in-24hrs",
+            RemnaCrmEvent.INFRA_BILLING_NODE_PAYMENT_DUE_TODAY: "due-today",
+            RemnaCrmEvent.INFRA_BILLING_NODE_PAYMENT_OVERDUE_24HRS: "overdue-24hrs",
+            RemnaCrmEvent.INFRA_BILLING_NODE_PAYMENT_OVERDUE_48HRS: "overdue-48hrs",
+            RemnaCrmEvent.INFRA_BILLING_NODE_PAYMENT_OVERDUE_7_DAYS: "overdue-7-days",
+        }
+
+        reminder = reminder_map.get(event)
+        if not reminder:
+            logger.warning(f"Unhandled CRM event '{event}' for node '{billing_node.node_name}'")
+            return
+
+        await self.event_bus.publish(
+            NodeBillingPaymentEvent(
+                reminder=reminder,
+                provider_name=billing_node.provider_name,
+                node_name=billing_node.node_name,
+                next_billing_at=billing_node.next_billing_at.strftime(DATETIME_VIEW_FORMAT),
+                login_url=billing_node.login_url,
             )
         )
 
