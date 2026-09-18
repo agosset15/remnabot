@@ -229,6 +229,12 @@ def get_contact_support_keyboard(support_url: str) -> InlineKeyboardMarkup:
     return builder.as_markup()
 
 
+def get_provider_login_keyboard(login_url: str) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.row(InlineKeyboardButton(text="btn-goto.provider-login", url=login_url))
+    return builder.as_markup()
+
+
 def get_remnashop_keyboard() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
 

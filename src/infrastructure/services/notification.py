@@ -41,6 +41,7 @@ from src.application.events.base import BaseEvent, UserEvent
 from src.application.events.system import (
     BlacklistRegistrationAttemptEvent,
     BotUpdateEvent,
+    NodeBillingPaymentEvent,
     PromocodeActivatedEvent,
     RemnashopWelcomeEvent,
     SubscriptionRevokedEvent,
@@ -68,6 +69,7 @@ from src.telegram.keyboards import (
     get_buy_keyboard,
     get_close_notification_button,
     get_contact_support_keyboard,
+    get_provider_login_keyboard,
     get_remnashop_keyboard,
     get_remnashop_update_keyboard,
     get_renew_keyboard,
@@ -131,10 +133,10 @@ class NotificationService(Notifier):
             ),
         ):
             return get_buy_keyboard() if event.is_trial else get_renew_keyboard()
-        if isinstance(event, UserNotConnectedEvent):
+        if isinstance(event, (UserNotConnectedEvent, TorrentBlockedEvent)):
             return get_contact_support_keyboard(event.support_url)
-        if isinstance(event, TorrentBlockedEvent):
-            return get_contact_support_keyboard(event.support_url)
+        if isinstance(event, NodeBillingPaymentEvent):
+            return get_provider_login_keyboard(event.login_url)
         if isinstance(event, TorrentBlockerReportEvent):
             return get_user_keyboard(event.user_id)
         if isinstance(event, RemnashopWelcomeEvent):

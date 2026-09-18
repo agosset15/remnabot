@@ -50,6 +50,7 @@ SYSTEM_NOTIFICATION_CATEGORIES: dict[str, set[SystemNotificationType]] = {
     "node": {
         SystemNotificationType.NODE_STATUS_CHANGED,
         SystemNotificationType.NODE_TRAFFIC_REACHED,
+        SystemNotificationType.NODE_BILLING_PAYMENT,
     },
     "bot": {
         SystemNotificationType.BOT_LIFECYCLE,

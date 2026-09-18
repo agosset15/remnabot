@@ -463,6 +463,7 @@ notification-type = { $notification_type ->
     [TRIAL_ACTIVATED] Активация пробника
     [NODE_STATUS_CHANGED] Статус узла
     [NODE_TRAFFIC_REACHED] Трафик узла
+    [NODE_BILLING_PAYMENT] Оплата узла
     [TORRENT_BLOCKER] Обнаружение Torrent
     [USER_FIRST_CONNECTION] Первое подключение
     [USER_DEVICES_UPDATED] Устройства пользователя

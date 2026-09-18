@@ -394,6 +394,24 @@ class NodeTrafficReachedEvent(NodeEvent):
 
 
 @dataclass(frozen=True, kw_only=True)
+class NodeBillingPaymentEvent(SystemEvent):
+    notification_type: NotificationType = field(
+        default=SystemNotificationType.NODE_BILLING_PAYMENT,
+        init=False,
+    )
+
+    reminder: str
+    provider_name: str
+    node_name: str
+    next_billing_at: str
+    login_url: str
+
+    @property
+    def event_key(self) -> str:
+        return "event-node.billing-payment"
+
+
+@dataclass(frozen=True, kw_only=True)
 class TorrentBlockerReportEvent(UserEvent):
     notification_type: NotificationType = field(
         default=SystemNotificationType.TORRENT_BLOCKER,

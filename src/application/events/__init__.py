@@ -7,6 +7,7 @@ from .system import (
     BotUpdateEvent,
     ChannelCheckErrorEvent,
     ErrorEvent,
+    NodeBillingPaymentEvent,
     NodeConnectionLostEvent,
     NodeConnectionRestoredEvent,
     NodeTrafficReachedEvent,
@@ -49,6 +50,7 @@ __all__ = [
     "BotStartupEvent",
     "BotUpdateEvent",
     #
+    "NodeBillingPaymentEvent",
     "NodeConnectionLostEvent",
     "NodeConnectionRestoredEvent",
     "NodeTrafficReachedEvent",

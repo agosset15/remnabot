@@ -297,6 +297,7 @@ class SystemNotificationType(UpperStrEnum):
     #
     NODE_STATUS_CHANGED = auto()
     NODE_TRAFFIC_REACHED = auto()
+    NODE_BILLING_PAYMENT = auto()
     TORRENT_BLOCKER = auto()
     #
     USER_FIRST_CONNECTION = auto()

@@ -29,10 +29,10 @@ URL_PATTERN: Pattern[str] = re.compile(r"^https://\S+$")
 USERNAME_PATTERN: Pattern[str] = re.compile(r"^@[a-zA-Z0-9_]{5,32}$")
 INVITE_LINK_PATTERN: Pattern[str] = re.compile(r"^https://t\.me/(\+|joinchat/)[A-Za-z0-9_\-]+")
 
-REMNAWAVE_MIN_VERSION: Final[Version] = Version("2.7.0")
-REMNAWAVE_MAX_VERSION: Final[Version] = Version("2.8.0")
+REMNAWAVE_MIN_VERSION: Final[Version] = Version("3.0.0")
+REMNAWAVE_MAX_VERSION: Final[Version] = Version("3.4.4")
 
-REPOSITORY: Final[str] = "https://github.com/snoups/remnashop"
+REPOSITORY: Final[str] = "https://github.com/agosset15/remnabot"
 DOCS: Final[str] = "https://remnashop.mintlify.app"
 T_ME: Final[str] = "https://t.me/"
 API_V1: Final[str] = "/api/v1"
@@ -98,7 +98,8 @@ ACCESS_TOKEN_TTL_SECONDS: Final[int] = 900  # 15 minutes
 REFRESH_TOKEN_TTL_SECONDS: Final[int] = 60 * 60 * 24 * 30  # 30 days
 TELEGRAM_AUTH_MAX_AGE_SECONDS: Final[int] = 600  # 10 minutes
 TELEGRAM_OIDC_ISSUER: Final[str] = "https://oauth.telegram.org"
-TELEGRAM_JWKS_URL: Final[str] = "https://botapi.ag15.ru/.well-known/jwks.json"
+TELEGRAM_JWKS_PATH: Final[str] = "/.well-known/jwks.json"
+TELEGRAM_JWKS_URL_DEFAULT: Final[str] = TELEGRAM_OIDC_ISSUER + TELEGRAM_JWKS_PATH
 TELEGRAM_JWKS_CACHE_KEY: Final[str] = "telegram:oidc:jwks"
 TELEGRAM_JWKS_CACHE_TTL: Final[int] = 3600  # 1 hour
 PUBLIC_LANDING_PLANS_CACHE_TTL_SECONDS: Final[int] = 21600
