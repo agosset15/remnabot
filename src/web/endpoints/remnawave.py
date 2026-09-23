@@ -50,7 +50,7 @@ async def _process_remnawave_webhook(
     try:
         if WebhookUtility.is_user_event(payload.event):
             user = cast(UserDto, WebhookUtility.get_typed_data(payload))
-            await remna_webhook_service.handle_user_event(payload.event, user)
+            await remna_webhook_service.handle_user_event(payload.event, user, payload.meta)
 
         elif WebhookUtility.is_user_hwid_devices_event(payload.event):
             event = cast(UserHwidDeviceEventDto, WebhookUtility.get_typed_data(payload))
