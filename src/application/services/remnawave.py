@@ -7,7 +7,8 @@ from redis.asyncio import Redis
 from remnapy.models.webhook import (
     BillingNodeDto,
     HwidUserDeviceDto,
-    TorrentBlockerReportDto, WebhookMetaDto,
+    TorrentBlockerReportDto,
+    WebhookMetaDto,
 )
 from remnapy.models.webhook import (
     WebhookNodeDto as NodeDto,
@@ -75,7 +76,9 @@ class RemnaWebhookService:
         #
         self.sync_user = sync_user
 
-    async def handle_user_event(self, event: str, remna_user: RemnaUserDto, meta: Optional[WebhookMetaDto]) -> None:
+    async def handle_user_event(
+        self, event: str, remna_user: RemnaUserDto, meta: Optional[WebhookMetaDto]
+    ) -> None:
         logger.debug(f"Received user event '{event}'")
 
         if event == RemnaUserEvent.NOT_CONNECTED:
@@ -113,7 +116,7 @@ class RemnaWebhookService:
             await self._process_status(user, current_subscription, event, remna_user)
 
         elif event == RemnaUserEvent.EXPIRATION and meta and meta.expiration:
-            await self._process_expiring(user, current_subscription, meta.expiration,  remna_user)
+            await self._process_expiring(user, current_subscription, meta.expiration, remna_user)
 
         elif event == RemnaUserEvent.FIRST_CONNECTED:
             await self.event_bus.publish(
@@ -254,12 +257,7 @@ class RemnaWebhookService:
             )
             return
 
-        expire_map: dict[int, int] = {
-            -72: 3,
-            -48: 2,
-            -24: 1,
-            24: 1
-        }
+        expire_map: dict[int, int] = {-72: 3, -48: 2, -24: 1, 24: 1}
         if expiration_hours > 0:
             await self.event_bus.publish(
                 SubscriptionExpiredAgoEvent(
