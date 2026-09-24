@@ -306,12 +306,22 @@ class SystemNotificationType(UpperStrEnum):
 
     def get_logs_topic(self, topic_id_list: list[int]) -> int:
         match self:
-            case SystemNotificationType.BOT_LIFETIME | SystemNotificationType.BOT_UPDATE:
+            case SystemNotificationType.BOT_LIFECYCLE | SystemNotificationType.BOT_UPDATE:
                 return topic_id_list[0]
-            case SystemNotificationType.USER_REGISTERED | SystemNotificationType.SUBSCRIPTION | SystemNotificationType.PROMOCODE_ACTIVATED | SystemNotificationType.TRIAL_GETTED:
+            case (
+                SystemNotificationType.USER_REGISTERED
+                | SystemNotificationType.SUBSCRIPTION
+                | SystemNotificationType.PROMOCODE_ACTIVATED
+                | SystemNotificationType.TRIAL_ACTIVATED
+            ):
                 return topic_id_list[1]
-            case SystemNotificationType.NODE_STATUS | SystemNotificationType.USER_FIRST_CONNECTED | SystemNotificationType.USER_HWID:
+            case (
+                SystemNotificationType.NODE_STATUS_CHANGED
+                | SystemNotificationType.USER_FIRST_CONNECTION
+                | SystemNotificationType.USER_DEVICES_UPDATED
+            ):
                 return topic_id_list[2]
+        return 0
 
 
 class UserNotificationType(UpperStrEnum):
