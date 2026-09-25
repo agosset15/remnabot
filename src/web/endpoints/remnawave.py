@@ -20,6 +20,7 @@ from src.application.events import ErrorEvent
 from src.application.services import RemnaWebhookService
 from src.core.config import AppConfig
 from src.core.constants import API_V1, REMNAWAVE_WEBHOOK_PATH
+from src.core.sentry import capture_exception as sentry_capture_exception
 
 router = APIRouter(prefix=API_V1, include_in_schema=False)
 
@@ -77,6 +78,7 @@ async def _process_remnawave_webhook(
 
     except Exception as e:
         logger.exception(f"Failed to process Remnawave webhook due to '{e}'")
+        sentry_capture_exception(e, tags={"source": "remnawave_webhook"})
         error_event = ErrorEvent(**config.build.data, exception=e)
         await event_publisher.publish(error_event)
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE)

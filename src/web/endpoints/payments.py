@@ -15,6 +15,7 @@ from src.core.config import AppConfig
 from src.core.constants import API_V1, PAYMENTS_WEBHOOK_PATH
 from src.core.enums import PaymentGatewayType, TransactionStatus
 from src.core.exceptions import GatewayNotConfiguredError
+from src.core.sentry import capture_exception as sentry_capture_exception
 from src.infrastructure.payment_gateways import PlategaGateway
 from src.infrastructure.payment_gateways.base import BasePaymentGateway
 from src.infrastructure.taskiq.tasks.payments import handle_payment_transaction_task
@@ -28,8 +29,12 @@ async def _build_response(
     if gateway is not None:
         try:
             return await gateway.build_webhook_response(request)
-        except Exception:
+        except Exception as e:
             logger.exception(f"Failed to build webhook response for '{gateway_type}'")
+            sentry_capture_exception(
+                e,
+                tags={"source": "payment_webhook", "gateway": gateway_type, "stage": "response"},
+            )
     return Response(status_code=status.HTTP_200_OK)
 
 
@@ -46,6 +51,11 @@ async def _enqueue_payment_task(
         return None
     except Exception as e:
         logger.exception(f"Failed to enqueue payment task for '{gateway_type}'")
+        sentry_capture_exception(
+            e,
+            tags={"source": "payment_webhook", "gateway": gateway_type, "stage": "enqueue"},
+            extras={"payment_id": str(payment_id), "payment_status": payment_status},
+        )
         error_event = ErrorEvent(**config.build.data, exception=e)
         await event_publisher.publish(error_event)
         return Response(status_code=status.HTTP_503_SERVICE_UNAVAILABLE)
@@ -98,6 +108,10 @@ async def _process_payment_webhook(
         return Response(status_code=status.HTTP_403_FORBIDDEN)
     except Exception as e:
         logger.exception(f"Error processing webhook for '{gateway_type}': {e}")
+        sentry_capture_exception(
+            e,
+            tags={"source": "payment_webhook", "gateway": gateway_type, "stage": "handle"},
+        )
         error_event = ErrorEvent(**config.build.data, exception=e)
         await event_publisher.publish(error_event)
         return await _build_response(gateway, request, gateway_type)

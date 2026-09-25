@@ -28,6 +28,7 @@ from src.application.use_cases.settings.commands.defaults import (
 )
 from src.core.config import AppConfig
 from src.core.constants import REMNAWAVE_MAX_VERSION
+from src.core.sentry import flush as sentry_flush
 from src.core.utils.i18n_helpers import i18n_format_seconds
 from src.core.utils.time import get_uptime
 from src.infrastructure.redis.keys import WelcomedVersionKey
@@ -169,3 +170,4 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     await command_service.delete_commands()
     await webhook_service.delete_webhook()
     await container.close()
+    await sentry_flush()

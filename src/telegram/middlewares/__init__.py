@@ -6,6 +6,7 @@ from .channel import ChannelMiddleware
 from .error import ErrorMiddleware
 from .garbage import GarbageMiddleware
 from .rules import RulesMiddleware
+from .sentry import SentryMiddleware
 from .throttling import ThrottlingMiddleware
 from .user import UserMiddleware
 
@@ -16,6 +17,8 @@ __all__ = [
 
 def setup_middlewares(router: Router) -> None:
     outer_middlewares: list[EventTypedMiddleware] = [
+        # First: every later middleware and handler reports into its per-update scope.
+        SentryMiddleware(),
         AccessMiddleware(),
         ErrorMiddleware(),
         UserMiddleware(),

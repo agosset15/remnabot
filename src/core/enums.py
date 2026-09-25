@@ -455,6 +455,12 @@ class Locale(StrEnum):
     ZH = auto()  # Chinese
 
 
+class SentryComponent(StrEnum):
+    WEB = "web"
+    WORKER = "worker"
+    SCHEDULER = "scheduler"
+
+
 class LogLevel(UpperStrEnum):
     CRITICAL = auto()
     FATAL = auto()

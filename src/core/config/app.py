@@ -18,6 +18,7 @@ from .email import EmailConfig
 from .log import LogConfig
 from .redis import RedisConfig
 from .remnawave import RemnawaveConfig
+from .sentry import SentryConfig
 from .validators import validate_not_change_me
 from .web import WebConfig
 
@@ -43,6 +44,7 @@ class AppConfig(BaseConfig, env_prefix="APP_"):
     email: EmailConfig = Field(default_factory=EmailConfig)
     build: BuildConfig = Field(default_factory=BuildConfig)
     log: LogConfig = Field(default_factory=LogConfig)
+    sentry: SentryConfig = Field(default_factory=SentryConfig)
     web: WebConfig = Field(default_factory=WebConfig)
 
     @property

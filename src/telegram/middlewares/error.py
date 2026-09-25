@@ -4,6 +4,7 @@ from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
 from aiogram.types import ErrorEvent as AiogramErrorEvent
 from aiogram.types import TelegramObject
 from aiogram.types import User as AiogramUser
+from aiogram.types.update import UpdateTypeLookupError
 from aiogram_dialog.api.exceptions import (
     InvalidStackIdError,
     OutdatedIntent,
@@ -22,6 +23,8 @@ from src.core.config import AppConfig
 from src.core.constants import CONFIG_KEY, CONTAINER_KEY
 from src.core.enums import Command, MiddlewareEventType
 from src.core.exceptions import MenuRenderError, PermissionDeniedError
+from src.core.sentry import capture_exception as sentry_capture_exception
+from src.core.sentry import user_payload
 from src.telegram.keyboards import get_contact_support_keyboard
 
 from .base import EventTypedMiddleware
@@ -127,5 +130,35 @@ class ErrorMiddleware(EventTypedMiddleware):
             exception=event.exception,
         )
 
+        self._capture_to_sentry(event, aiogram_user)
+
         await event_publisher.publish(error_event)
         logger.exception(event.exception)
+
+    @staticmethod
+    def _capture_to_sentry(
+        event: AiogramErrorEvent,
+        aiogram_user: Optional[AiogramUser],
+    ) -> None:
+        update = event.update
+
+        try:
+            event_type = update.event_type
+        except UpdateTypeLookupError:
+            event_type = "unknown"
+
+        sentry_capture_exception(
+            event.exception,
+            tags={"source": "telegram", "update_type": event_type},
+            contexts={
+                "telegram_update": {
+                    "update_id": update.update_id,
+                    "update_type": event_type,
+                }
+            },
+            user=user_payload(
+                telegram_id=aiogram_user.id if aiogram_user else None,
+                username=aiogram_user.username if aiogram_user else None,
+                name=aiogram_user.full_name if aiogram_user else None,
+            ),
+        )

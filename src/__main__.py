@@ -4,7 +4,9 @@ from dishka.integrations.fastapi import setup_dishka as setup_fastapi_dishka
 from fastapi import FastAPI
 
 from src.core.config import AppConfig
+from src.core.enums import SentryComponent
 from src.core.logger import setup_logger
+from src.core.sentry import setup_sentry
 from src.infrastructure.di import create_aiogram_container
 from src.telegram.dispatcher import get_bg_manager_factory, get_dispatcher, setup_dispatcher
 from src.web.app import get_app
@@ -13,6 +15,7 @@ from src.web.app import get_app
 def application() -> FastAPI:
     config = AppConfig.get()
     setup_logger(config)
+    setup_sentry(config, SentryComponent.WEB)
 
     dispatcher = get_dispatcher(config)
     bg_manager_factory = get_bg_manager_factory(dispatcher)

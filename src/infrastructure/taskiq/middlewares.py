@@ -8,6 +8,7 @@ from taskiq.abc.middleware import TaskiqMiddleware
 from src.application.common import EventPublisher
 from src.application.events import ErrorEvent
 from src.core.config import AppConfig
+from src.core.sentry import capture_exception as sentry_capture_exception
 
 
 class ErrorMiddleware(TaskiqMiddleware):
@@ -18,6 +19,22 @@ class ErrorMiddleware(TaskiqMiddleware):
         exception: BaseException,
     ) -> None:
         logger.error(f"Task '{message.task_name}' error: {exception}")
+
+        sentry_capture_exception(
+            exception,
+            tags={
+                "source": "taskiq",
+                "task_name": message.task_name,
+            },
+            contexts={
+                "taskiq_task": {
+                    "task_id": message.task_id,
+                    "task_name": message.task_name,
+                    "labels": message.labels,
+                }
+            },
+            fingerprint=["taskiq", message.task_name, type(exception).__name__],
+        )
 
         container: Optional[AsyncContainer] = self.broker.custom_dependency_context.get(
             AsyncContainer
