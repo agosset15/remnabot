@@ -11,6 +11,7 @@ from src.application.common import EventPublisher, EventSubscriber
 from src.application.events import BaseEvent
 from src.application.events.system import ErrorEvent
 from src.core.config import AppConfig
+from src.core.sentry import capture_exception as sentry_capture_exception
 
 F = TypeVar("F", bound=Callable[..., Any])
 
@@ -88,6 +89,20 @@ class EventBusImpl(EventPublisher, EventSubscriber):
                 logger.error(
                     f"Error handling event '{type(event).__name__}' "
                     f"in '{service_class.__name__}': '{e}'"
+                )
+                sentry_capture_exception(
+                    e,
+                    tags={
+                        "source": "event_bus",
+                        "event": type(event).__name__,
+                        "handler": service_class.__name__,
+                    },
+                    fingerprint=[
+                        "event_bus",
+                        service_class.__name__,
+                        type(event).__name__,
+                        type(e).__name__,
+                    ],
                 )
                 if not isinstance(event, ErrorEvent):
                     await self.publish(ErrorEvent(**self._config.build.data, exception=e))

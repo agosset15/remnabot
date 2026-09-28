@@ -13,23 +13,23 @@ ad-link-default-name = Новая ссылка
 plan-default-name = Новый план
 
 platform-icon =
-    .ios = 🍎
-    .android = 🤖
-    .windows = 🖥️
-    .macos = 💻
+    .ios = <tg-emoji emoji-id="5775870512127283512">🍎</tg-emoji>
+    .android = <tg-emoji emoji-id="6030400221232501136">🤖</tg-emoji>
+    .windows = <tg-emoji emoji-id="5942734685976138521">🖥️</tg-emoji>
+    .macos = <tg-emoji emoji-id="5942734685976138521">💻</tg-emoji>
     .linux = 🐧
-    .default = 📱
+    .default = <tg-emoji emoji-id="5771652845652677093">📱</tg-emoji>
 
 inline-invite =
     .title = Пригласить друга
     .description = Нажмите, чтобы отправить пригласительную ссылку!
     .message =
-        🚀 Привет! Хочешь стабильный и быстрый VPN?
+        <tg-emoji emoji-id="6028205772117118673">🚀</tg-emoji> Привет! Хочешь стабильный и быстрый VPN?
         
         { $bot_name } — поможет тебе с этим!
 
         ↘️ ЖМИ КНОПКУ И ПОПРОБУЙ БЕСПЛАТНО!
-    .start = 🚀 Присоединиться
+    .start = <tg-emoji emoji-id="6028205772117118673">🚀</tg-emoji> Присоединиться
 
 message =
     .withdraw-points = Здравствуйте! Я бы хотел запросить обмен баллов.
@@ -42,21 +42,21 @@ command =
     .rules = Условия использования
     .help = Помощь
 
-hdr-user = <b>👤 Пользователь</b>:
-hdr-user-profile = <b>👤 Профиль</b>:
-hdr-payment = <b>💰 Платеж</b>:
-hdr-error = <b>⚠️ Ошибка</b>:
-hdr-node = <b>🖥 Нода</b>:
-hdr-hwid = <b>📱 Устройство</b>:
+hdr-user = <b><tg-emoji emoji-id="6035084557378654059">👤</tg-emoji> Пользователь</b>:
+hdr-user-profile = <b><tg-emoji emoji-id="6035084557378654059">👤</tg-emoji> Профиль</b>:
+hdr-payment = <b><tg-emoji emoji-id="5769126056262898415">💰</tg-emoji> Платеж</b>:
+hdr-error = <b><tg-emoji emoji-id="6030563507299160824">⚠️</tg-emoji> Ошибка</b>:
+hdr-node = <b><tg-emoji emoji-id="5942734685976138521">🖥</tg-emoji> Нода</b>:
+hdr-hwid = <b><tg-emoji emoji-id="5771652845652677093">📱</tg-emoji> Устройство</b>:
 
 hdr-subscription = { $is_trial ->
-    [1] <b>🎁 Пробная подписка</b>:
-    *[0] <b>💳 Подписка</b>:
+    [1] <b><tg-emoji emoji-id="6032644646587338669">🎁</tg-emoji> Пробная подписка</b>:
+    *[0] <b><tg-emoji emoji-id="5805331990618053402">💳</tg-emoji> Подписка</b>:
 }
 
 hdr-plan = { $is_trial_plan ->
-    [1] <b>🎁 Пробный план</b>:
-    *[0] <b>📦 План</b>:
+    [1] <b><tg-emoji emoji-id="6032644646587338669">🎁</tg-emoji> Пробный план</b>:
+    *[0] <b><tg-emoji emoji-id="5884479287171485878">📦</tg-emoji> План</b>:
 }
 
 frg-user =
