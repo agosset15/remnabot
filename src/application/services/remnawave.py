@@ -1,6 +1,6 @@
 from datetime import timedelta
 from enum import StrEnum
-from typing import Optional
+from typing import Final, Optional
 
 from loguru import logger
 from redis.asyncio import Redis
@@ -40,8 +40,8 @@ from src.application.use_cases.remnawave.commands.synchronization import (
 )
 from src.core.config import AppConfig
 from src.core.constants import DATETIME_VIEW_FORMAT, IMPORTED_TAG, T_ME, TIME_1H
-from src.core.enums import SubscriptionStatus
-from src.core.types import RemnaUserDto
+from src.core.enums import SubscriptionStatus, UserNotificationType
+from src.core.types import NotificationType, RemnaUserDto
 from src.core.utils.converters import country_code_to_flag
 from src.core.utils.i18n_helpers import (
     i18n_format_bytes_to_unit,
@@ -49,8 +49,17 @@ from src.core.utils.i18n_helpers import (
     i18n_format_expire_time,
     i18n_format_seconds,
 )
-from src.core.utils.i18n_keys import ByteUnitKey
+from src.core.utils.i18n_keys import ByteUnitKey, TimeUnitKey
 from src.core.utils.time import datetime_now, get_traffic_reset_delta
+
+EXPIRATION_SCHEDULE: Final[dict[int, tuple[NotificationType, str, int]]] = {
+    -72: (UserNotificationType.EXPIRES_IN_3_DAYS, TimeUnitKey.DAY, 3),
+    -48: (UserNotificationType.EXPIRES_IN_2_DAYS, TimeUnitKey.DAY, 2),
+    -24: (UserNotificationType.EXPIRES_IN_1_DAY, TimeUnitKey.DAY, 1),
+    -5: (UserNotificationType.EXPIRES_IN_5_HOURS, TimeUnitKey.HOUR, 5),
+    -2: (UserNotificationType.EXPIRES_IN_2_HOURS, TimeUnitKey.HOUR, 2),
+    24: (UserNotificationType.EXPIRED_1_DAY_AGO, TimeUnitKey.DAY, 1),
+}
 
 
 class RemnaWebhookService:
@@ -257,21 +266,33 @@ class RemnaWebhookService:
             )
             return
 
-        expire_map: dict[int, int] = {-72: 3, -48: 2, -24: 1, 24: 1}
+        schedule = EXPIRATION_SCHEDULE.get(expiration_hours)
+        if not schedule:
+            logger.warning(
+                f"Unhandled expiration offset '{expiration_hours}h' "
+                f"for '{remna_user.telegram_id}', skipping notification"
+            )
+            return
+
+        notification_type, unit_key, value = schedule
+        duration = (str(unit_key), {"value": value})
+
         if expiration_hours > 0:
             await self.event_bus.publish(
                 SubscriptionExpiredAgoEvent(
                     user=user,
                     is_trial=current_subscription.is_trial,
-                    day=expire_map[expiration_hours],
+                    notification_type=notification_type,
+                    duration=duration,
                 )
             )
         else:
             await self.event_bus.publish(
                 SubscriptionExpiresEvent(
-                    day=expire_map[expiration_hours],
                     user=user,
                     is_trial=current_subscription.is_trial,
+                    notification_type=notification_type,
+                    duration=duration,
                 )
             )
 

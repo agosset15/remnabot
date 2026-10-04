@@ -14,8 +14,8 @@ plan-default-name = Новый план
 
 platform-icon =
     .ios = <tg-emoji emoji-id="5775870512127283512">🍎</tg-emoji>
-    .android = <tg-emoji emoji-id="6030400221232501136">🤖</tg-emoji>
-    .windows = <tg-emoji emoji-id="5942734685976138521">🖥️</tg-emoji>
+    .android = <tg-emoji emoji-id="5418019841388858060">🤖</tg-emoji>
+    .windows = <tg-emoji emoji-id="5431409380459301983">🖥️</tg-emoji>
     .macos = <tg-emoji emoji-id="5942734685976138521">💻</tg-emoji>
     .linux = 🐧
     .default = <tg-emoji emoji-id="5771652845652677093">📱</tg-emoji>
@@ -47,7 +47,7 @@ hdr-user-profile = <b><tg-emoji emoji-id="6035084557378654059">👤</tg-emoji> �
 hdr-payment = <b><tg-emoji emoji-id="5769126056262898415">💰</tg-emoji> Платеж</b>:
 hdr-error = <b><tg-emoji emoji-id="6030563507299160824">⚠️</tg-emoji> Ошибка</b>:
 hdr-node = <b><tg-emoji emoji-id="5942734685976138521">🖥</tg-emoji> Нода</b>:
-hdr-hwid = <b><tg-emoji emoji-id="5771652845652677093">📱</tg-emoji> Устройство</b>:
+hdr-hwid = <b><tg-emoji emoji-id="5819062970998590994">📱</tg-emoji> Устройство</b>:
 
 hdr-subscription = { $is_trial ->
     [1] <b><tg-emoji emoji-id="6032644646587338669">🎁</tg-emoji> Пробная подписка</b>:
@@ -449,6 +449,8 @@ notification-type = { $notification_type ->
     [EXPIRES_IN_3_DAYS] Подписка истекает (3 дня)
     [EXPIRES_IN_2_DAYS] Подписка истекает (2 дня)
     [EXPIRES_IN_1_DAY] Подписка истекает (1 день)
+    [EXPIRES_IN_5_HOURS] Подписка истекает (5 часов)
+    [EXPIRES_IN_2_HOURS] Подписка истекает (2 часа)
     [EXPIRED] Подписка истекла
     [EXPIRED_1_DAY_AGO] Подписка истекла (1 день)
     [LIMITED] Трафик исчерпан
