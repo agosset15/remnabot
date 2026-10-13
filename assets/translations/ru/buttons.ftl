@@ -67,11 +67,11 @@ btn-menu =
     .connect = <tg-emoji emoji-id="6028205772117118673">🚀</tg-emoji> Подключиться
     .connect-reserve = <tg-emoji emoji-id="6028171274939797252">🔗</tg-emoji> Подключиться (резерв)
     .devices = <tg-emoji emoji-id="5771652845652677093">📱</tg-emoji> Устройства
-    .subscription = <tg-emoji emoji-id="5805331990618053402">💳</tg-emoji> Подписка
+    .subscription = <tg-emoji emoji-id="5886583490434044162">💳</tg-emoji> Подписка
     .invite = <tg-emoji emoji-id="6032609071373226027">👥</tg-emoji> Пригласить
     .support = <tg-emoji emoji-id="6032636795387121097">🆘</tg-emoji> Поддержка
     .web-cabinet = <tg-emoji emoji-id="5776233299424843260">🌐</tg-emoji> Личный кабинет
-    .dashboard = <tg-emoji emoji-id="5771449289972650710">🛠</tg-emoji> Панель управления
+    .dashboard = <tg-emoji emoji-id="5776424837786374634">🛠</tg-emoji> Панель управления
 
     .connect-not-available =
     <tg-emoji emoji-id="6030563507299160824">⚠️</tg-emoji> { $status ->
@@ -94,7 +94,7 @@ btn-dashboard =
     .broadcast = <tg-emoji emoji-id="6021418126061605425">📢</tg-emoji> Рассылка
     .promocodes = <tg-emoji emoji-id="5890727932011223292">🎟</tg-emoji> Промокоды
     .access = <tg-emoji emoji-id="6037496202990194718">🔓</tg-emoji> Режим доступа
-    .remnawave = 🌊 RemnaWave
+    .remnawave = <tg-emoji emoji-id="5463406057885821287">🌊</tg-emoji> RemnaWave
     .remnashop = <tg-emoji emoji-id="5920332557466997677">🛍</tg-emoji> RemnaShop
     .transactions = <tg-emoji emoji-id="6050643982646513651">🧾</tg-emoji> Транзакции
     .importer = <tg-emoji emoji-id="5805382340519664323">📥</tg-emoji> Импорт пользователей
@@ -570,7 +570,7 @@ btn-subscription =
     .plan = <tg-emoji emoji-id="5805331990618053402">💳</tg-emoji> Перейти к оформлению подписки
     .new = <tg-emoji emoji-id="5904462880941545555">💸</tg-emoji> Купить подписку
     .renew = <tg-emoji emoji-id="6030657343744644592">🔄</tg-emoji> Продлить
-    .change = <tg-emoji emoji-id="5767310088255576068">🔃</tg-emoji> Изменить
+    .change = <tg-emoji emoji-id="6039779802741739617">🔃</tg-emoji> Изменить
     .promocode = <tg-emoji emoji-id="5890727932011223292">🎟</tg-emoji> Активировать промокод
     .promocode-confirm = <tg-emoji emoji-id="5774022692642492953">✅</tg-emoji> Подтвердить
     .pay = <tg-emoji emoji-id="5805331990618053402">💳</tg-emoji> Оплатить
@@ -578,7 +578,7 @@ btn-subscription =
     .back-plans = <tg-emoji emoji-id="5960671702059848143">⬅️</tg-emoji> Назад к выбору плана
     .back-duration = <tg-emoji emoji-id="5960671702059848143">⬅️</tg-emoji> Изменить длительность
     .back-payment-method = <tg-emoji emoji-id="5960671702059848143">⬅️</tg-emoji> Изменить способ оплаты
-    .connect = <tg-emoji emoji-id="6028205772117118673">🚀</tg-emoji> Подключиться
+    .connect = <tg-emoji emoji-id="5776078972659962594">🚀</tg-emoji> Подключиться
 
     .payment-method = { $gateway_title } | { $final_amount ->
     [0] <tg-emoji emoji-id="6032644646587338669">🎁</tg-emoji>

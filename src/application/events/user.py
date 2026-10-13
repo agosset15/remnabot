@@ -64,7 +64,8 @@ class SubscriptionExpiredAgoEvent(UserEvent):
     )
 
     is_trial: bool
-    day: int
+    # (i18n time unit key, kwargs) pair resolved by the translator, e.g. ("unit-day", {"value": 1})
+    duration: tuple[str, dict[str, int]]
 
     @property
     def event_key(self) -> str:
@@ -73,7 +74,7 @@ class SubscriptionExpiredAgoEvent(UserEvent):
     def as_payload(self) -> "MessagePayloadDto":
         return MessagePayloadDto(
             i18n_key=self.event_key,
-            i18n_kwargs={**asdict(self), "value": self.day},
+            i18n_kwargs={**asdict(self)},
             disable_default_markup=False,
             delete_after=None,
         )
@@ -87,7 +88,8 @@ class SubscriptionExpiresEvent(UserEvent):
     )
 
     is_trial: bool
-    day: int
+    # (i18n time unit key, kwargs) pair resolved by the translator, e.g. ("unit-hour", {"value": 5})
+    duration: tuple[str, dict[str, int]]
 
     @property
     def event_key(self) -> str:
@@ -96,7 +98,7 @@ class SubscriptionExpiresEvent(UserEvent):
     def as_payload(self) -> "MessagePayloadDto":
         return MessagePayloadDto(
             i18n_key=self.event_key,
-            i18n_kwargs={**asdict(self), "value": self.day},
+            i18n_kwargs={**asdict(self)},
             disable_default_markup=False,
             delete_after=None,
         )
