@@ -12,6 +12,14 @@ from src.application.use_cases.auth.commands.email import (
     RequestEmailVerification,
     RequestEmailVerificationDto,
 )
+from src.application.use_cases.auth.commands.email_code import (
+    LoginWithEmailCode,
+    LoginWithEmailCodeDto,
+    LoginWithMagicLink,
+    LoginWithMagicLinkDto,
+    RequestEmailCode,
+    RequestEmailCodeDto,
+)
 from src.application.use_cases.auth.commands.login import LoginEmailUser, LoginEmailUserDto
 from src.application.use_cases.auth.commands.password import ChangePassword, ChangePasswordDto
 from src.application.use_cases.auth.commands.register import (
@@ -36,10 +44,14 @@ from src.web.schemas import (
     ChangePasswordResponse,
     ConfirmEmailVerificationRequest,
     ConfirmEmailVerificationResponse,
+    EmailCodeLoginRequest,
     LoginRequest,
     LogoutResponse,
+    MagicLinkLoginRequest,
     MeResponse,
     RegisterRequest,
+    RequestEmailCodeRequest,
+    RequestEmailCodeResponse,
     RequestEmailVerificationCodeRequest,
     RequestEmailVerificationCodeResponse,
     TelegramAuthRequest,
@@ -112,6 +124,55 @@ async def login_public_user(
     user = await login_email_user.system(
         LoginEmailUserDto(email=body.email, password=body.password)
     )
+    return await _issue_and_set(user, response, config, auth_session)
+
+
+@router.post("/email/code/request", response_model=RequestEmailCodeResponse)
+@inject
+async def request_email_login_code(
+    body: RequestEmailCodeRequest,
+    request_email_code: FromDishka[RequestEmailCode],
+) -> RequestEmailCodeResponse:
+    """Send a one-time login code to an email (and to Telegram when linked).
+
+    The response never reveals whether the address has an account.
+    """
+    try:
+        result = await request_email_code.system(
+            RequestEmailCodeDto(email=body.email, referral_code=body.referral_code)
+        )
+    except EmailDeliveryDisabledError as e:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(e)) from e
+    except EmailDeliveryError as e:
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e)) from e
+    return RequestEmailCodeResponse(success=True, expires_at=result.expires_at)
+
+
+@router.post("/email/code/verify", response_model=AuthResponse)
+@inject
+async def login_with_email_code(
+    body: EmailCodeLoginRequest,
+    response: Response,
+    config: FromDishka[AppConfig],
+    login_with_email_code_uc: FromDishka[LoginWithEmailCode],
+    auth_session: FromDishka[AuthSessionDao],
+) -> AuthResponse:
+    user = await login_with_email_code_uc.system(
+        LoginWithEmailCodeDto(email=body.email, code=body.code)
+    )
+    return await _issue_and_set(user, response, config, auth_session)
+
+
+@router.post("/email/magic", response_model=AuthResponse)
+@inject
+async def login_with_magic_link(
+    body: MagicLinkLoginRequest,
+    response: Response,
+    config: FromDishka[AppConfig],
+    login_with_magic_link_uc: FromDishka[LoginWithMagicLink],
+    auth_session: FromDishka[AuthSessionDao],
+) -> AuthResponse:
+    user = await login_with_magic_link_uc.system(LoginWithMagicLinkDto(token=body.token))
     return await _issue_and_set(user, response, config, auth_session)
 
 

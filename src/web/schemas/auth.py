@@ -41,6 +41,51 @@ class LoginRequest(BaseModel):
         return value.lower()
 
 
+class RequestEmailCodeRequest(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    email: str = Field(max_length=255, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+    referral_code: Optional[str] = Field(default=None, min_length=3, max_length=64)
+
+    @field_validator("email")
+    @classmethod
+    def normalize_email(cls, value: str) -> str:
+        return value.lower()
+
+    @field_validator("referral_code")
+    @classmethod
+    def normalize_referral_code(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return None
+        normalized = value.strip()
+        return normalized or None
+
+
+class RequestEmailCodeResponse(BaseModel):
+    success: bool
+    expires_at: datetime
+
+
+class EmailCodeLoginRequest(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    email: str = Field(max_length=255, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+    code: str = Field(
+        min_length=EMAIL_VERIFICATION_CODE_LENGTH,
+        max_length=EMAIL_VERIFICATION_CODE_LENGTH,
+        pattern=r"^\d{6}$",
+    )
+
+    @field_validator("email")
+    @classmethod
+    def normalize_email(cls, value: str) -> str:
+        return value.lower()
+
+
+class MagicLinkLoginRequest(BaseModel):
+    token: str = Field(min_length=1)
+
+
 class ChangePasswordRequest(BaseModel):
     current_password: str = Field(min_length=1, max_length=256)
     new_password: str = Field(min_length=8, max_length=256)
