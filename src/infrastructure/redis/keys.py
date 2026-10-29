@@ -62,3 +62,13 @@ class RefreshTokenKey(StorageKey, prefix="refresh"):
 @dataclass(frozen=True)
 class UserTokensKey(StorageKey, prefix="user_tokens"):
     user_id: int
+
+
+@dataclass(frozen=True)
+class EmailLoginCodeKey(StorageKey, prefix="email_login_code"):
+    email: str
+
+
+@dataclass(frozen=True)
+class EmailCodeAttemptsKey(StorageKey, prefix="email_code_attempts"):
+    email: str

@@ -1,9 +1,15 @@
-from typing import Optional
+import json
+from typing import Any, Optional
 
 from redis.asyncio import Redis
 
 from src.infrastructure.redis.key_builder import serialize_storage_key
-from src.infrastructure.redis.keys import RefreshTokenKey, UserTokensKey
+from src.infrastructure.redis.keys import (
+    EmailCodeAttemptsKey,
+    EmailLoginCodeKey,
+    RefreshTokenKey,
+    UserTokensKey,
+)
 
 
 class RedisAuthRepository:
@@ -48,3 +54,33 @@ class RedisAuthRepository:
             token_keys = [serialize_storage_key(RefreshTokenKey(token=t)) for t in tokens]
             await self.redis.delete(*token_keys)
         await self.redis.delete(user_set_key)
+
+    async def store_email_login_code(self, email: str, payload: dict[str, Any], ttl: int) -> None:
+        key = serialize_storage_key(EmailLoginCodeKey(email=email))
+        await self.redis.setex(key, ttl, json.dumps(payload))
+
+    async def get_email_login_code(self, email: str) -> Optional[dict[str, Any]]:
+        key = serialize_storage_key(EmailLoginCodeKey(email=email))
+        raw = await self.redis.get(key)
+        if raw is None:
+            return None
+        try:
+            data = json.loads(raw)
+        except json.JSONDecodeError:
+            return None
+        return data if isinstance(data, dict) else None
+
+    async def revoke_email_login_code(self, email: str) -> None:
+        key = serialize_storage_key(EmailLoginCodeKey(email=email))
+        await self.redis.delete(key)
+
+    async def incr_email_code_attempts(self, email: str, ttl: int) -> int:
+        key = serialize_storage_key(EmailCodeAttemptsKey(email=email))
+        attempts = await self.redis.incr(key)
+        if attempts == 1:
+            await self.redis.expire(key, ttl)
+        return int(attempts)
+
+    async def reset_email_code_attempts(self, email: str) -> None:
+        key = serialize_storage_key(EmailCodeAttemptsKey(email=email))
+        await self.redis.delete(key)

@@ -108,6 +108,26 @@ ntf-access =
     .payments-disabled = 🚧 <i>Платежи временно недоступны! Вы получите уведомление после восстановления.</i>
     .payments-restored = ❇️ <i>Платежи восстановлены! Теперь вы можете купить или продлить подписку. Спасибо за ожидание.</i>
 
+ntf-auth =
+    .login-code = <tg-emoji emoji-id="5280607998353334776">🔐</tg-emoji> <b>Код для входа в личный кабинет: <code>{ $code }</code></b>
+        <blockquote><i>Код действителен { $minutes } минут. Если вы не запрашивали вход — проигнорируйте это сообщение.</i></blockquote>{ $has_link ->
+            [yes] { "" }
+                <a href="{ $link }">🔗 Войти одним нажатием</a>
+           *[other] { "" }
+        }
+
+ntf-profile =
+    .email-invalid = <tg-emoji emoji-id="5774077015388852135">❌</tg-emoji> <i>Некорректный email.</i>
+    .email-same = <tg-emoji emoji-id="6030563507299160824">⚠️</tg-emoji> <i>Эта почта уже привязана и подтверждена.</i>
+    .email-duplicate = <tg-emoji emoji-id="5774077015388852135">❌</tg-emoji> <i>Эта почта уже используется другим пользователем.</i>
+    .email-cooldown = <tg-emoji emoji-id="6030563507299160824">⚠️</tg-emoji> <i>Подождите перед повторным запросом кода.</i>
+    .email-disabled = <tg-emoji emoji-id="5774077015388852135">❌</tg-emoji> <i>Отправка писем не настроена.</i>
+    .email-send-failed = <tg-emoji emoji-id="5774077015388852135">❌</tg-emoji> <i>Не удалось отправить код. Попробуйте позже.</i>
+    .email-code-sent = <tg-emoji emoji-id="5774022692642492953">✅</tg-emoji> <i>Код подтверждения отправлен на почту.</i>
+    .email-code-invalid = <tg-emoji emoji-id="5774077015388852135">❌</tg-emoji> <i>Неверный код подтверждения.</i>
+    .email-code-expired = <tg-emoji emoji-id="5774077015388852135">❌</tg-emoji> <i>Срок действия кода истек. Запросите новый.</i>
+    .email-confirmed = <tg-emoji emoji-id="5774022692642492953">✅</tg-emoji> <i>Почта подтверждена и привязана к аккаунту.</i>
+
 ntf-plan =
     .not-file = <tg-emoji emoji-id="6030563507299160824">⚠️</tg-emoji> <i>Отправьте планы в виде json файла.</i>
     .import-failed = <tg-emoji emoji-id="5774077015388852135">❌</tg-emoji> <i>Не удалось импортировать.</i>
@@ -395,7 +415,13 @@ email-verification =
     .message =
         Ваш код подтверждения: { $code }
 
-        Он действителен { $minutes } минут. Если вы не запрашивали код — просто проигнорируйте это письмо.
+        Он действителен { $minutes } минут. Если вы не запрашивали код — просто проигнорируйте это письмо.{ $has_link ->
+            [yes] { "" }
+
+                Или перейдите по ссылке, чтобы войти без ввода кода:
+                { $link }
+           *[other] { "" }
+        }
 
     .message-html =
         { hdr-email-html }
@@ -414,6 +440,10 @@ email-verification =
           <div style="font-size:38px;font-weight:800;letter-spacing:.32em;color:#1e2a4a;font-family:'Courier New',Courier,monospace;">{ $code }</div>
         </div>
         <p style="margin:18px 0 0;font-size:13px;color:#64748B;line-height:1.6;text-align:center;">&#9201; Код действителен <b style="color:#1e2a4a;">{ $minutes } минут</b>. Никому его не сообщайте.</p>
+        { $has_link ->
+            [yes] <a href="{ $link }" class="btn" style="display:block;margin-top:20px;padding:15px;background:#3B6FD4;border-radius:10px;text-align:center;text-decoration:none;font-size:15px;font-weight:700;color:#fff;">&#128273; Войти одним нажатием</a>
+           *[other] { "" }
+        }
         </td></tr>
         <tr><td style="padding:0 32px;"><div style="height:1px;background:#EEF2FF;"></div></td></tr>
         <tr><td style="padding:20px 32px 8px;"><p style="margin:0;font-size:12px;color:#94A3B8;line-height:1.6;">Если вы не запрашивали этот код, просто проигнорируйте письмо — с вашим аккаунтом ничего не произойдёт.</p></td></tr>

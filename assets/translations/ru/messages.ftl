@@ -1826,6 +1826,38 @@ msg-ad-link-stats =
     { $revenue_lines }
     </blockquote>
 
+msg-profile-main =
+    <b><tg-emoji emoji-id="6035084557378654059">👤</tg-emoji> Профиль</b>
+
+    { $has_email ->
+        [0] <i>Почта не задана.</i>
+        *[other] <b>Почта:</b> <code>{ $email }</code> { $is_email_verified ->
+            [0] <tg-emoji emoji-id="6030563507299160824">⚠️</tg-emoji> <i>не подтверждена</i>
+           *[other] <tg-emoji emoji-id="5774022692642492953">✅</tg-emoji> <i>подтверждена</i>
+        }
+    }{ $has_pending_email ->
+        [0] { "" }
+        *[other] { "" }
+            <b>Ожидает подтверждения:</b> <code>{ $pending_email }</code>
+    }
+
+    Почта используется для входа в личный кабинет и писем о покупках.
+
+msg-profile-email-input =
+    <b><tg-emoji emoji-id="5776182936638329359">✉️</tg-emoji> { $has_email ->
+        [0] Добавление почты
+        *[other] Изменение почты
+    }</b>
+
+    Отправьте email сообщением. На него придет код подтверждения.
+
+msg-profile-email-code =
+    <b><tg-emoji emoji-id="5280607998353334776">🔐</tg-emoji> Подтверждение почты</b>
+
+    Код отправлен на <code>{ $pending_email }</code>. Отправьте его сообщением, чтобы завершить привязку.
+
+    <blockquote><i>Если письмо не пришло — проверьте папку «Спам» или запросите код повторно.</i></blockquote>
+
 msg-user-email-set =
     <b><tg-emoji emoji-id="5776182936638329359">✉️</tg-emoji> Почта пользователя</b>
 

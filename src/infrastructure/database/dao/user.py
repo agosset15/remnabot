@@ -88,6 +88,17 @@ class UserDaoImpl(UserDao):
         logger.debug(f"User with email '{email}' not found")
         return None
 
+    async def get_by_pending_email(self, email: str) -> Optional[UserDto]:
+        stmt = select(User).where(User.pending_email == email)
+        db_user = await self.session.scalar(stmt)
+
+        if db_user:
+            logger.debug(f"User with pending email '{email}' found in database")
+            return self._convert_to_dto(db_user)
+
+        logger.debug(f"User with pending email '{email}' not found")
+        return None
+
     async def get_by_telegram_ids(self, telegram_ids: list[int]) -> list[UserDto]:
         if not telegram_ids:
             return []
