@@ -71,6 +71,7 @@ btn-menu =
     .invite = <tg-emoji emoji-id="6032609071373226027">👥</tg-emoji> Пригласить
     .support = <tg-emoji emoji-id="6032636795387121097">🆘</tg-emoji> Поддержка
     .web-cabinet = <tg-emoji emoji-id="5776233299424843260">🌐</tg-emoji> Личный кабинет
+    .profile = <tg-emoji emoji-id="6035084557378654059">👤</tg-emoji> Профиль
     .dashboard = <tg-emoji emoji-id="5776424837786374634">🛠</tg-emoji> Панель управления
 
     .connect-not-available =
@@ -79,6 +80,14 @@ btn-menu =
     [EXPIRED] СРОК ДЕЙСТВИЯ ИСТЕК
     *[OTHER] ВАША ПОДПИСКА НЕ РАБОТАЕТ
     } <tg-emoji emoji-id="6030563507299160824">⚠️</tg-emoji>
+
+btn-profile =
+    .email-set = { $has_email ->
+        [0] <tg-emoji emoji-id="5776182936638329359">✉️</tg-emoji> Добавить почту
+        *[other] <tg-emoji emoji-id="5776182936638329359">✉️</tg-emoji> Изменить почту
+    }
+    .email-confirm = <tg-emoji emoji-id="5774022692642492953">✅</tg-emoji> Подтвердить почту
+    .code-resend = <tg-emoji emoji-id="6030657343744644592">🔄</tg-emoji> Отправить код повторно
 
 btn-invite =
     .about = <tg-emoji emoji-id="6030848053177486888">❓</tg-emoji> Подробнее о награде

@@ -116,6 +116,18 @@ ntf-auth =
            *[other] { "" }
         }
 
+ntf-profile =
+    .email-invalid = <tg-emoji emoji-id="5774077015388852135">❌</tg-emoji> <i>Некорректный email.</i>
+    .email-same = <tg-emoji emoji-id="6030563507299160824">⚠️</tg-emoji> <i>Эта почта уже привязана и подтверждена.</i>
+    .email-duplicate = <tg-emoji emoji-id="5774077015388852135">❌</tg-emoji> <i>Эта почта уже используется другим пользователем.</i>
+    .email-cooldown = <tg-emoji emoji-id="6030563507299160824">⚠️</tg-emoji> <i>Подождите перед повторным запросом кода.</i>
+    .email-disabled = <tg-emoji emoji-id="5774077015388852135">❌</tg-emoji> <i>Отправка писем не настроена.</i>
+    .email-send-failed = <tg-emoji emoji-id="5774077015388852135">❌</tg-emoji> <i>Не удалось отправить код. Попробуйте позже.</i>
+    .email-code-sent = <tg-emoji emoji-id="5774022692642492953">✅</tg-emoji> <i>Код подтверждения отправлен на почту.</i>
+    .email-code-invalid = <tg-emoji emoji-id="5774077015388852135">❌</tg-emoji> <i>Неверный код подтверждения.</i>
+    .email-code-expired = <tg-emoji emoji-id="5774077015388852135">❌</tg-emoji> <i>Срок действия кода истек. Запросите новый.</i>
+    .email-confirmed = <tg-emoji emoji-id="5774022692642492953">✅</tg-emoji> <i>Почта подтверждена и привязана к аккаунту.</i>
+
 ntf-plan =
     .not-file = <tg-emoji emoji-id="6030563507299160824">⚠️</tg-emoji> <i>Отправьте планы в виде json файла.</i>
     .import-failed = <tg-emoji emoji-id="5774077015388852135">❌</tg-emoji> <i>Не удалось импортировать.</i>

@@ -32,7 +32,8 @@ class ChangeEmailDto:
 class ChangeEmail(Interactor[ChangeEmailDto, UserDto]):
     required_permission = Permission.PUBLIC
 
-    def __init__(self, uow: UnitOfWork, user_dao: UserDao) -> None:
+    def __init__(self, config: AppConfig, uow: UnitOfWork, user_dao: UserDao) -> None:
+        self.config = config
         self.uow = uow
         self.user_dao = user_dao
 
@@ -40,6 +41,15 @@ class ChangeEmail(Interactor[ChangeEmailDto, UserDto]):
         existing = await self.user_dao.get_by_email(data.email)
         if existing and existing.id != actor.id:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already exists")
+
+        # The change discards any pending code, so the resend cooldown has to be
+        # checked here too: otherwise re-submitting the form bypasses it.
+        check_email_resend_cooldown(
+            actor.email_verification_expires_at,
+            self.config.email.verification_code_ttl_minutes,
+            EMAIL_VERIFICATION_RESEND_COOLDOWN_SECONDS,
+            datetime_now(),
+        )
 
         actor.pending_email = data.email
         actor.is_email_verified = False

@@ -10,7 +10,7 @@ from src.core.constants import INLINE_QUERY_INVITE, PAYMENT_PREFIX
 from src.core.enums import BannerName
 from src.telegram.keyboards import build_buttons_row, connect_buttons
 from src.telegram.routers.dashboard.handlers import on_smart_search
-from src.telegram.states import Dashboard, MainMenu, Subscription
+from src.telegram.states import Dashboard, MainMenu, Profile, Subscription
 from src.telegram.utils import require_permission
 from src.telegram.widgets import Banner, I18nFormat, IgnoreUpdate
 from src.telegram.widgets.kbd import (
@@ -122,6 +122,14 @@ menu = Window(
             url=Format("{web_cabinet_url}"),
         ),
         when=F["web_cabinet_url"],
+    ),
+    Row(
+        Start(
+            text=I18nFormat("btn-menu.profile"),
+            id="profile",
+            state=Profile.MAIN,
+        ),
+        when=F["email_enabled"],
     ),
     *custom_buttons,
     Row(
