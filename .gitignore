@@ -9,6 +9,7 @@ logs/*
 !logs/.gitkeep
 .history
 .claude
+AGENTS.md
 CLAUDE.md
 memory/
 docs/
