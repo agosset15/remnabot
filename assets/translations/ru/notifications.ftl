@@ -22,7 +22,7 @@ ntf-common =
 
     .plan-not-found = <tg-emoji emoji-id="5774077015388852135">❌</tg-emoji> <i>План не найден или недоступен.</i>
     .connect-not-available =
-    <tg-emoji emoji-id="6030563507299160824">⚠️</tg-emoji> { $status ->
+    ⚠️ { $status ->
     [LIMITED]
     Вы израсходовали весь доступный объем трафика. { $is_trial ->
     [0] { $traffic_strategy ->

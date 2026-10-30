@@ -30,7 +30,7 @@ USERNAME_PATTERN: Pattern[str] = re.compile(r"^@[a-zA-Z0-9_]{5,32}$")
 INVITE_LINK_PATTERN: Pattern[str] = re.compile(r"^https://t\.me/(\+|joinchat/)[A-Za-z0-9_\-]+")
 
 REMNAWAVE_MIN_VERSION: Final[Version] = Version("3.0.0")
-REMNAWAVE_MAX_VERSION: Final[Version] = Version("3.4.4")
+REMNAWAVE_MAX_VERSION: Final[Version] = Version("3.4.7")
 
 REPOSITORY: Final[str] = "https://github.com/agosset15/remnabot"
 DOCS: Final[str] = "https://remnashop.mintlify.app"

@@ -20,7 +20,7 @@ from src.application.use_cases.auth.commands.email import (
 from src.core.constants import USER_KEY
 from src.core.exceptions import EmailDeliveryDisabledError
 from src.core.utils.validators import is_valid_email
-from src.telegram.states import Profile
+from src.telegram.states import MainMenu, Profile
 
 
 async def _notify_request_error(
@@ -115,7 +115,7 @@ async def on_code_input(
 
     dialog_manager.dialog_data.pop("pending_email", None)
     await notifier.notify_user(user, i18n_key="ntf-profile.email-confirmed")
-    await dialog_manager.switch_to(state=Profile.MAIN)
+    await dialog_manager.switch_to(state=MainMenu.MAIN)
 
 
 @inject
@@ -129,7 +129,7 @@ async def on_code_resend(
     user: TelegramUserDto = dialog_manager.middleware_data[USER_KEY]
 
     if not (user.pending_email or user.email):
-        await dialog_manager.switch_to(state=Profile.EMAIL_INPUT)
+        await dialog_manager.switch_to(state=MainMenu.MAIN)
         return
 
     await _request_code(notifier, user, request_verification)

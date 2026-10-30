@@ -7,32 +7,32 @@ readme = "README.md"
 license = "MIT"
 requires-python = ">=3.12,<3.13"
 dependencies = [
-    "uvicorn>=0.53.0",
-    "fastapi>=0.141.1",
+    "uvicorn==0.54.0",
+    "fastapi==0.162.0",
     "python-multipart>=0.0.32",
     "remnapy==3.2.1",
     #
-    "dishka~=1.8.0",
+    "dishka~=1.10.1",
     "adaptix==3.0.0b11",
     "aiogram~=3.31.0",
     "aiohttp-socks>=0.12.0",
     "aiogram-dialog~=2.6.0",
     "fluentogram~=1.2.1",
     #
-    "asyncpg~=0.31.0",
-    "alembic~=1.20.0",
-    "sqlalchemy>=2.0.54",
-    "redis~=7.0.1",
-    "taskiq[orjson]~=0.12.6",
-    "taskiq-redis~=1.2.2",
+    "asyncpg==0.32.0",
+    "alembic==1.20.1",
+    "sqlalchemy==2.1.6",
+    "redis==8.1.0",
+    "taskiq[orjson]==0.13.0",
+    "taskiq-redis==1.2.4",
     #
-    "pydantic-settings~=2.15.0",
+    "pydantic-settings==2.16.2",
     "loguru~=0.7.3",
-    "sentry-sdk[fastapi]>=2.20.0",
-    "msgspec~=0.21.1",
-    "cryptography>=46.0.3",
+    "sentry-sdk[fastapi]==2.73.0",
+    "msgspec~=0.22.0",
+    "cryptography>=46.0.7",
     "qrcode[pil]>=8.2",
-    "pyjwt>=2.14.0",
+    "pyjwt==2.15.1",
     "greenlet>=3.5.6",
 ]
 

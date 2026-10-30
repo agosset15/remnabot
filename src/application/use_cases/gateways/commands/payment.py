@@ -166,10 +166,14 @@ class CreatePayment(Interactor[CreatePaymentDto, PaymentResultDto]):
         i18n = self.translator_hub.get_translator_by_locale(actor.language)
 
         key, kw = i18n_format_days(data.plan_snapshot.duration)
+        plain_name_key = f"{data.plan_snapshot.name}-plain"
+        plain_name = i18n.get(plain_name_key)
+        if plain_name == plain_name_key:
+            plain_name = i18n.get(data.plan_snapshot.name)
         details = i18n.get(
             "payment-invoice-description",
             purchase_type=data.purchase_type,
-            name=i18n.get(data.plan_snapshot.name),
+            name=plain_name,
             duration=i18n.get(key, **kw),
         )
 

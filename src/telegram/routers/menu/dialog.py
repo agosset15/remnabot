@@ -46,6 +46,7 @@ from .handlers import (
     on_withdraw_points,
     show_reason,
 )
+from .profile.dialog import email_code, email_input
 
 custom_buttons = (
     build_buttons_row(1, text_on_click=on_text_button_click),
@@ -125,11 +126,23 @@ menu = Window(
     ),
     Row(
         Start(
-            text=I18nFormat("btn-menu.profile"),
-            id="profile",
-            state=Profile.MAIN,
+            text=I18nFormat("btn-profile.email-confirm"),
+            id="email_confirm",
+            state=Profile.EMAIL_CODE,
+            when=F["email_enabled"] & F["has_pending_email"],
         ),
-        when=F["email_enabled"],
+        Start(
+            text=I18nFormat("btn-profile.email-change"),
+            id="email_change",
+            state=Profile.EMAIL_INPUT,
+            when=F["email_enabled"] & ~F["has_pending_email"] & F["has_email"],
+        ),
+        Start(
+            text=I18nFormat("btn-profile.email-add"),
+            id="email_add",
+            state=Profile.EMAIL_INPUT,
+            when=F["email_enabled"] & ~F["has_pending_email"] & ~F["has_email"],
+        ),
     ),
     *custom_buttons,
     Row(
@@ -359,4 +372,6 @@ router = Dialog(
     device_confirm_reissue,
     invite,
     invite_about,
+    email_input,
+    email_code,
 )

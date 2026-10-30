@@ -17,7 +17,6 @@ def setup_routers(router: Router) -> None:
         #
         menu.handlers.router,
         menu.dialog.router,
-        menu.profile.dialog.router,
         #
         subscription.dialog.router,
         #

@@ -62,8 +62,15 @@ hdr-plan = { $is_trial_plan ->
 frg-user =
     <blockquote>
     { $telegram_id ->
-        [0] • <b>Почта</b>: <code>{ $email }</code>
+        [0] { empty }
         *[HAS] • <b>ID</b>: <code>{ NUMBER($telegram_id, useGrouping: 0) }</code>
+    }
+    { $email ->
+        [0] { empty }
+        *[HAS] • <b>Почта</b>: <code>{ $email }</code> { $is_email_verified ->
+            [1] ✅
+            *[0] ❌
+        }
     }
     • <b>Имя</b>: { $name }
     { $show_personal_discount ->
@@ -79,8 +86,12 @@ frg-user =
 frg-user-info =
     <blockquote>
     { $telegram_id ->
-        [0] • <b>Почта</b>: <code>{ $email }</code>
+        [0] { empty }
         *[HAS] • <b>ID</b>: <code>{ NUMBER($telegram_id, useGrouping: 0) }</code>
+    }
+    { $email ->
+        [0] { empty }
+        *[HAS] • <b>Почта</b>: <code>{ $email }</code>
     }
     • <b>Имя</b>: { $name } { $username ->
         [0] { empty }
@@ -91,8 +102,12 @@ frg-user-info =
 frg-user-details =
     <blockquote>
     { $telegram_id ->
-        [0] • <b>Почта</b>: <code>{ $email }</code>
+        [0] { empty }
         *[HAS] • <b>ID</b>: <code>{ NUMBER($telegram_id, useGrouping: 0) }</code>
+    }
+    { $email ->
+        [0] { empty }
+        *[HAS] • <b>Почта</b>: <code>{ $email }</code>
     }
     • <b>Имя</b>: { $name } { $username ->
         [0] { space }

@@ -112,7 +112,7 @@ All translation keys must follow a unified structure:
 
 ## `custom.ftl`
 
-Each locale folder may contain a `custom.ftl` file (e.g. `translations/ru/custom.ftl`). This file is intended for user-defined translations that are not part of the standard set — such as custom menu buttons, plan names, and similar entries.
+Each locale folder may contain a `custom.ftl` file (e.g. `translations/ru/custom.ftl`). This file is intended for user-defined translations that are not part of the standard set — such as custom menu buttons, plan names, and similar entries. If a plan name uses Telegram-only formatting such as `<tg-emoji>`, add a matching `<plan-key>-plain` entry for payment details and email templates, for example `custom-plan-max-plain = 🔥 Max` alongside `custom-plan-max`.
 
 ### Usage
 

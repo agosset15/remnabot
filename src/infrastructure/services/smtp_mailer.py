@@ -53,6 +53,10 @@ class SmtpMailerImpl(Mailer):
         bot_url = await self._bot_service.get_referral_url(user.referral_code)
         purchase_type_value = purchase_type.value
         device_key, device_kwargs = i18n_format_device_limit(subscription.device_limit)
+        plain_name_key = f"{subscription.plan_snapshot.name}-plain"
+        plain_name = self._i18n.get(plain_name_key)
+        if plain_name == plain_name_key:
+            plain_name = self._i18n.get(subscription.plan_snapshot.name)
 
         await self._email_sender.send(
             to=user.email,
@@ -71,7 +75,7 @@ class SmtpMailerImpl(Mailer):
                 bot_url=bot_url,
                 expire_date=subscription.expire_at.strftime("%d.%m.%Y"),
                 devices=self._i18n.get(device_key, **device_kwargs),
-                plan_name=subscription.plan_snapshot.name,
+                plan_name=plain_name,
                 purchase_type=purchase_type_value,
             ),
         )

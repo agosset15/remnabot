@@ -2,6 +2,10 @@
 msg-main-menu =
     { hdr-user-profile }
     { frg-user }
+    { $has_pending_email ->
+        [0] { empty }
+        *[other] <b>Ожидает подтверждения:</b> <code>{ $pending_email }</code>
+    }
 
     { hdr-subscription }
     { $status ->
@@ -1825,23 +1829,6 @@ msg-ad-link-stats =
     <blockquote>
     { $revenue_lines }
     </blockquote>
-
-msg-profile-main =
-    <b><tg-emoji emoji-id="6035084557378654059">👤</tg-emoji> Профиль</b>
-
-    { $has_email ->
-        [0] <i>Почта не задана.</i>
-        *[other] <b>Почта:</b> <code>{ $email }</code> { $is_email_verified ->
-            [0] <tg-emoji emoji-id="6030563507299160824">⚠️</tg-emoji> <i>не подтверждена</i>
-           *[other] <tg-emoji emoji-id="5774022692642492953">✅</tg-emoji> <i>подтверждена</i>
-        }
-    }{ $has_pending_email ->
-        [0] { "" }
-        *[other] { "" }
-            <b>Ожидает подтверждения:</b> <code>{ $pending_email }</code>
-    }
-
-    Почта используется для входа в личный кабинет и писем о покупках.
 
 msg-profile-email-input =
     <b><tg-emoji emoji-id="5776182936638329359">✉️</tg-emoji> { $has_email ->
