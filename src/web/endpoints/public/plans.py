@@ -5,7 +5,9 @@ from dishka.integrations.fastapi import inject
 from fastapi import APIRouter
 from redis.asyncio import Redis
 
+from src.application.common import TranslatorHub
 from src.application.common.dao import PlanDao
+from src.core.config import AppConfig
 from src.core.constants import PUBLIC_LANDING_PLANS_CACHE_TTL_SECONDS
 from src.core.enums import Currency, PlanAvailability
 from src.web.schemas import PublicPlanLandingListResponse, PublicPlanLandingResponse
@@ -14,7 +16,7 @@ from ._common import _normalize_decimal_str
 
 router = APIRouter(tags=["Public - Plans"])
 
-_CACHE_KEY = "cache:public_landing_plans"
+_CACHE_KEY = "cache:public_landing_plans:v2"
 
 
 @router.get("/plans/public", response_model=PublicPlanLandingListResponse)
@@ -22,12 +24,15 @@ _CACHE_KEY = "cache:public_landing_plans"
 async def get_public_landing_plans(
     plan_dao: FromDishka[PlanDao],
     redis: FromDishka[Redis],
+    config: FromDishka[AppConfig],
+    translator_hub: FromDishka[TranslatorHub],
 ) -> PublicPlanLandingListResponse:
     cached = await redis.get(_CACHE_KEY)
     if cached is not None:
         return PublicPlanLandingListResponse.model_validate_json(cached)
 
     plans = await plan_dao.filter_by_availability(PlanAvailability.ALL)
+    i18n = translator_hub.get_translator_by_locale(config.default_locale)
 
     result: list[PublicPlanLandingResponse] = []
     for plan in plans:
@@ -55,7 +60,7 @@ async def get_public_landing_plans(
         result.append(
             PublicPlanLandingResponse(
                 public_code=plan.public_code,
-                name=plan.name,
+                name=i18n.get(plan.name),
                 description=plan.description,
                 traffic_limit=plan.traffic_limit,
                 device_limit=plan.device_limit,
