@@ -5,7 +5,7 @@ from dishka.integrations.fastapi import inject
 from fastapi import APIRouter, HTTPException, status
 from remnapy.models.hwid import HwidDeviceDto
 
-from src.application.common import Remnawave, TranslatorHub
+from src.application.common import Remnawave
 from src.application.common.dao import (
     PaymentGatewayDao,
     SettingsDao,
@@ -137,8 +137,6 @@ async def get_current_subscription(
     user: CurrentUser,
     subscription_dao: FromDishka[SubscriptionDao],
     remnawave: FromDishka[Remnawave],
-    config: FromDishka[AppConfig],
-    translator_hub: FromDishka[TranslatorHub],
 ) -> Optional[SubscriptionInfoResponse]:
     current_subscription = await subscription_dao.get_current(user.id)
 
@@ -146,7 +144,6 @@ async def get_current_subscription(
         return None
 
     remna_user = await remnawave.get_user_by_id(current_subscription.user_remna_num_id)
-    i18n = translator_hub.get_translator_by_locale(config.default_locale)
 
     return SubscriptionInfoResponse(
         user_remna_num_id=current_subscription.user_remna_num_id,
@@ -157,7 +154,7 @@ async def get_current_subscription(
         traffic_limit_strategy=current_subscription.traffic_limit_strategy.value,
         expire_at=current_subscription.expire_at,
         url=current_subscription.url,
-        plan_name=i18n.get(current_subscription.plan_snapshot.name),
+        plan_name=current_subscription.plan_snapshot.name,
         plan_duration_days=current_subscription.plan_snapshot.duration,
         used_traffic_bytes=remna_user.used_traffic_bytes if remna_user else None,
         lifetime_used_traffic_bytes=remna_user.lifetime_used_traffic_bytes if remna_user else None,
@@ -554,10 +551,7 @@ async def get_subscription_offers(
     pricing_service: FromDishka[PricingService],
     get_available_plans: FromDishka[GetAvailablePlans],
     match_plan: FromDishka[MatchPlan],
-    config: FromDishka[AppConfig],
-    translator_hub: FromDishka[TranslatorHub],
 ) -> SubscriptionOffersResponse:
-    i18n = translator_hub.get_translator_by_locale(config.default_locale)
     active_gateways = await payment_gateway_dao.get_active()
     web_gateways = [
         gateway
@@ -623,7 +617,7 @@ async def get_subscription_offers(
             PlanOfferResponse(
                 id=plan.id,
                 public_code=plan.public_code,
-                name=i18n.get(plan.name),
+                name=plan.name,
                 description=plan.description,
                 traffic_limit=plan.traffic_limit,
                 device_limit=plan.device_limit,
