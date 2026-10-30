@@ -26,6 +26,5 @@
 menu-link-site = <tg-emoji emoji-id="5359629206948976159">🌐</tg-emoji> Сайт
 menu-link-channel = <tg-emoji emoji-id="5260268501515377807">📢</tg-emoji> Канал
 
-custom-plan-max = <tg-emoji emoji-id="5258165702707125574">🔥</tg-emoji> Max
-custom-plan-premium = <tg-emoji emoji-id="5323761960829862762">⚡️</tg-emoji> Premium
-custom-plan-base = <tg-emoji emoji-id="5936035091045159318">🎟</tg-emoji> Базовый
+Max = <tg-emoji emoji-id="5258165702707125574">🔥</tg-emoji> Max
+Premium = <tg-emoji emoji-id="5323761960829862762">⚡️</tg-emoji> Premium
