@@ -13,8 +13,8 @@ from starlette.datastructures import Headers
 
 from src.application.dto import PaymentGatewayDto, PaymentResultDto
 from src.core.config import AppConfig
-from src.core.constants import T_ME
 from src.core.enums import TransactionStatus
+from src.infrastructure.services.bot_registry import BotRegistry
 
 
 class PaymentGatewayFactory(Protocol):
@@ -23,17 +23,14 @@ class PaymentGatewayFactory(Protocol):
 
 class BasePaymentGateway(ABC):
     data: PaymentGatewayDto
-    bot: Bot
-
-    _bot_username: Optional[str]
+    bots: BotRegistry
 
     NETWORKS: list[str] = []
 
-    def __init__(self, gateway: PaymentGatewayDto, bot: Bot, config: AppConfig) -> None:
+    def __init__(self, gateway: PaymentGatewayDto, bots: BotRegistry, config: AppConfig) -> None:
         self.data = gateway
-        self.bot = bot
+        self.bots = bots
         self.config = config
-        self._bot_username: Optional[str] = None
 
         logger.debug(f"{self.__class__.__name__} Initialized")
 
@@ -54,10 +51,13 @@ class BasePaymentGateway(ABC):
     async def build_webhook_response(self, request: Request) -> Response:
         return Response(status_code=200)
 
+    @property
+    def bot(self) -> Bot:
+        """Bot the payment is being created from (current update's bot, primary otherwise)."""
+        return self.bots.current
+
     async def _get_bot_redirect_url(self) -> str:
-        if self._bot_username is None:
-            self._bot_username = (await self.bot.get_me()).username
-        return f"{T_ME}{self._bot_username}"
+        return await self.bots.url()
 
     async def _get_webhook_data(self, request: Request) -> dict:
         try:

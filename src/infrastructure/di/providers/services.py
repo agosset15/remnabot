@@ -31,6 +31,7 @@ from src.infrastructure.services import (
     CryptographerImpl,
     EventBusImpl,
     HealthService,
+    MediaResolver,
     NotificationQueue,
     NotificationService,
     NotificationWorker,
@@ -56,11 +57,12 @@ class ServicesProvider(Provider):
     email_sender = provide(source=SmtpEmailSender, provides=EmailSender)
     mailer = provide(source=SmtpMailerImpl, provides=Mailer)
     http_client = provide(source=AiohttpClient, provides=HttpClient)
-    redirect = provide(source=RedirectImpl, provides=Redirect)
+    redirect = provide(source=RedirectImpl, provides=Redirect, scope=Scope.REQUEST)
     pricing = provide(source=PricingService)
     event_bus = provide(EventBusImpl)
     publisher = alias(source=EventBusImpl, provides=EventPublisher)
     subscriber = alias(source=EventBusImpl, provides=EventSubscriber)
+    media_resolver = provide(source=MediaResolver)
     file_downloader = provide(source=AiogramFileDownloader, provides=FileDownloader)
 
     command = provide(source=CommandService)

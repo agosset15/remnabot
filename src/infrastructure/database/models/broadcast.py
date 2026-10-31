@@ -49,6 +49,8 @@ class BroadcastMessage(BaseSql):
     # Telegram chat ID used for message delivery; nullable for web-only users
     user_telegram_id: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True)
     message_id: Mapped[Optional[int]] = mapped_column(BigInteger)
+    # Bot that delivered the message; needed to delete it later
+    bot_id: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True)
 
     status: Mapped[BroadcastMessageStatus] = mapped_column(index=True)
 

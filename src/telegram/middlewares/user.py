@@ -1,5 +1,6 @@
 from typing import Any, Awaitable, Callable, Optional
 
+from aiogram import Bot
 from aiogram.types import ChatMemberUpdated, TelegramObject
 from aiogram.types import User as AiogramUser
 from aiogram_dialog.api.internal import FakeUser
@@ -47,6 +48,9 @@ class UserMiddleware(EventTypedMiddleware):
         referral_code = parse_referral_code(event)
         ad_link_code = parse_ad_link_code(event)
 
+        bot: Optional[Bot] = data.get("bot")
+        bot_id = bot.id if bot is not None else None
+
         container: AsyncContainer = data[CONTAINER_KEY]
         get_or_create_user = await container.get(GetOrCreateUser)
         update_user_profile = await container.get(UpdateUserProfile)
@@ -61,6 +65,7 @@ class UserMiddleware(EventTypedMiddleware):
                 is_chat_member_event=is_chat_member_event,
                 referral_code=referral_code,
                 ad_link_code=ad_link_code,
+                bot_id=bot_id,
             )
         )
 
@@ -72,6 +77,9 @@ class UserMiddleware(EventTypedMiddleware):
                     full_name=aiogram_user.full_name,
                     language_code=aiogram_user.language_code,
                     telegram_id=aiogram_user.id,
+                    # my_chat_member (block/unblock) is handled by its own router: blocking an
+                    # old bot must not switch the user away from the bot they actually use.
+                    bot_id=None if is_chat_member_event else bot_id,
                 )
             )
             await track_user_activity.system(user.id)

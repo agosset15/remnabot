@@ -1,7 +1,8 @@
 import hashlib
 import hmac
 import time
-from typing import Any
+from collections.abc import Sequence
+from typing import Any, Union
 from urllib.parse import parse_qsl
 
 import jwt
@@ -10,11 +11,16 @@ from jwt import PyJWKSet
 from src.core.constants import TELEGRAM_AUTH_MAX_AGE_SECONDS, TELEGRAM_OIDC_ISSUER
 
 
-def decode_telegram_id_token(id_token: str, jwks: dict[str, Any], bot_id: int) -> dict[str, Any]:
+def decode_telegram_id_token(
+    id_token: str,
+    jwks: dict[str, Any],
+    bot_id: Union[int, Sequence[int]],
+) -> dict[str, Any]:
     """Verify and decode a Telegram Login OIDC ``id_token``.
 
     Validates the RS256 signature against ``jwks`` and checks the ``iss``/``aud``/
-    ``exp`` claims. Raises ``ValueError`` on any failure.
+    ``exp`` claims; ``aud`` may match any of the given bot ids. Raises ``ValueError``
+    on any failure.
 
     See https://core.telegram.org/bots/telegram-login
     """
@@ -37,7 +43,7 @@ def decode_telegram_id_token(id_token: str, jwks: dict[str, Any], bot_id: int) -
             id_token,
             signing_key.key,
             algorithms=["RS256"],
-            audience=str(bot_id),
+            audience=[str(bot_id)] if isinstance(bot_id, int) else [str(b) for b in bot_id],
             issuer=TELEGRAM_OIDC_ISSUER,
             options={"require": ["exp", "iss", "aud"], "verify_sub": False},
         )
@@ -67,3 +73,8 @@ def verify_telegram_webapp_init_data(init_data: str, bot_token: str) -> bool:
         hashlib.sha256,
     ).hexdigest()
     return hmac.compare_digest(expected, telegram_hash)
+
+
+def verify_telegram_webapp_init_data_any(init_data: str, bot_tokens: Sequence[str]) -> bool:
+    """True if ``init_data`` was signed by any of the given bots (Mini App opened from it)."""
+    return any(verify_telegram_webapp_init_data(init_data, token) for token in bot_tokens)

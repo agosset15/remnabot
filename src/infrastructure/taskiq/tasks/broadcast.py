@@ -1,7 +1,6 @@
 import asyncio
 from typing import Optional, cast
 
-from aiogram import Bot
 from aiogram.exceptions import TelegramRetryAfter
 from dishka.integrations.taskiq import FromDishka, inject
 from loguru import logger
@@ -28,6 +27,7 @@ from src.application.use_cases.misc.commands.maintenance import ClearOldBroadcas
 from src.core.constants import BATCH_DELAY, BATCH_SIZE_20
 from src.core.enums import BroadcastMessageStatus, BroadcastStatus
 from src.core.utils.iterables import chunked
+from src.infrastructure.services.bot_registry import BotRegistry
 from src.infrastructure.taskiq.broker import broker
 
 
@@ -42,6 +42,7 @@ async def send_broadcast_task(  # noqa: C901
     update_broadcast_message_status: FromDishka[UpdateBroadcastMessageStatus],
     finish_broadcast: FromDishka[FinishBroadcast],
     notifier: FromDishka[Notifier],
+    bots: FromDishka[BotRegistry],
 ) -> None:
     task_id = broadcast.task_id
 
@@ -64,6 +65,8 @@ async def send_broadcast_task(  # noqa: C901
                 BroadcastMessageDto(
                     user_id=user.id,
                     user_telegram_id=user.telegram_id,
+                    # Notifier delivers through the user's bot; remember it for deletion.
+                    bot_id=bots.for_user(user).id,
                     status=BroadcastMessageStatus.PENDING,
                 )
             )
@@ -190,7 +193,7 @@ async def _finalize_broadcast_deletion(
 @inject(patch_module=True)
 async def delete_broadcast_task(
     broadcast: BroadcastDto,
-    bot: FromDishka[Bot],
+    bots: FromDishka[BotRegistry],
     bulk_update_broadcast_messages: FromDishka[BulkUpdateBroadcastMessages],
     finish_broadcast: FromDishka[FinishBroadcast],
     notifier: FromDishka[Notifier],
@@ -224,6 +227,7 @@ async def delete_broadcast_task(
             return message, retry_time_for_msg
 
         user_telegram_id: int = message.user_telegram_id
+        bot = bots.resolve(message.bot_id)
         while True:
             try:
                 async with semaphore:

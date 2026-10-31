@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Type
 
-from aiogram import Bot
 from dishka import Provider, Scope, provide
 from loguru import logger
 
@@ -27,6 +26,7 @@ from src.infrastructure.payment_gateways import (
     YookassaGateway,
     YoomoneyGateway,
 )
+from src.infrastructure.services.bot_registry import BotRegistry
 
 GATEWAY_MAP: dict[PaymentGatewayType, Type[BasePaymentGateway]] = {
     PaymentGatewayType.TELEGRAM_STARS: TelegramStarsGateway,
@@ -54,7 +54,7 @@ class PaymentGatewaysProvider(Provider):
         self._cached_gateways: dict[PaymentGatewayType, BasePaymentGateway] = {}
 
     @provide()
-    def get_gateway_factory(self, bot: Bot, config: AppConfig) -> PaymentGatewayFactory:
+    def get_gateway_factory(self, bots: BotRegistry, config: AppConfig) -> PaymentGatewayFactory:
         def get_instance(gateway: PaymentGatewayDto) -> BasePaymentGateway:
             gateway_type = gateway.type
 
@@ -74,7 +74,7 @@ class PaymentGatewaysProvider(Provider):
                     raise ValueError(f"Unknown gateway type '{gateway_type}'")
 
                 self._cached_gateways[gateway_type] = gateway_instance(
-                    gateway=gateway, bot=bot, config=config
+                    gateway=gateway, bots=bots, config=config
                 )
                 logger.debug(f"Initialized new gateway '{gateway_type}' instance")
 

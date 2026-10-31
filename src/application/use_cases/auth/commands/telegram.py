@@ -17,7 +17,7 @@ from src.application.dto import SubscriptionDto, UserDto
 from src.application.use_cases.auth._telegram import (
     decode_telegram_id_token,
     parse_webapp_init_data,
-    verify_telegram_webapp_init_data,
+    verify_telegram_webapp_init_data_any,
 )
 from src.application.use_cases.user.commands.web_registration import (
     RegisterWebUser,
@@ -76,7 +76,7 @@ async def _verify_id_token(id_token: str, config: AppConfig, redis: Redis) -> _T
         ) from e
 
     try:
-        claims = decode_telegram_id_token(id_token, jwks, config.bot.id)
+        claims = decode_telegram_id_token(id_token, jwks, config.bot.all_ids)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e)) from e
 
@@ -159,8 +159,7 @@ class AuthenticateTelegramWebApp(Interactor[str, UserDto]):
         self.register_web_user = register_web_user
 
     async def _execute(self, actor: UserDto, data: str) -> UserDto:
-        bot_token = self.config.bot.token.get_secret_value()
-        if not verify_telegram_webapp_init_data(data, bot_token):
+        if not verify_telegram_webapp_init_data_any(data, self.config.bot.all_tokens):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid Telegram WebApp init data",

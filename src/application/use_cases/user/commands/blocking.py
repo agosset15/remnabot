@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Optional
 
 from loguru import logger
 
@@ -87,6 +88,7 @@ class BlockUsersByIds(Interactor[list[int], BlockUsersResult]):
 class SetBotBlockedStatusDto:
     user_id: int
     is_blocked: bool
+    bot_id: Optional[int] = None  # Unblocking via a bot makes it the user's bot
 
 
 class SetBotBlockedStatus(Interactor[SetBotBlockedStatusDto, None]):
@@ -99,6 +101,8 @@ class SetBotBlockedStatus(Interactor[SetBotBlockedStatusDto, None]):
     async def _execute(self, actor: UserDto, data: SetBotBlockedStatusDto) -> None:
         async with self.uow:
             await self.user_dao.set_bot_blocked_status(data.user_id, data.is_blocked)
+            if not data.is_blocked and data.bot_id is not None:
+                await self.user_dao.set_bot_id(data.user_id, data.bot_id)
             await self.uow.commit()
 
         logger.info(f"Set bot blocked status for user_id='{data.user_id}' to '{data.is_blocked}'")

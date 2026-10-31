@@ -4,7 +4,6 @@ from typing import AsyncGenerator
 
 from adaptix import Retort
 from aiogram import Dispatcher
-from aiogram.types import WebhookInfo
 from dishka import AsyncContainer, Scope
 from fastapi import FastAPI
 from loguru import logger
@@ -33,6 +32,7 @@ from src.core.utils.i18n_helpers import i18n_format_seconds
 from src.core.utils.time import get_uptime
 from src.infrastructure.redis.keys import WelcomedVersionKey
 from src.infrastructure.services import (
+    BotRegistry,
     CommandService,
     EventBusImpl,
     NotificationWorker,
@@ -57,6 +57,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     async with container(scope=Scope.REQUEST) as startup_container:
         config = await startup_container.get(AppConfig)
         bot_service = await startup_container.get(BotService)
+        bots = await startup_container.get(BotRegistry)
         settings_dao = await startup_container.get(SettingsDao)
         webhook_service = await startup_container.get(WebhookService)
         command_service = await startup_container.get(CommandService)
@@ -67,14 +68,21 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         redis = await startup_container.get(Redis)
         retort = await startup_container.get(Retort)
 
-        if not await bot_service.is_inline_enabled():
-            logger.warning(
-                "Bot is not enabled for inline mode. "
-                "Please enable Inline Mode in BotFather for correct work of some features"
-            )
-            await event_bus.publish(BotInlineModeDisabledEvent())
+        bot_states: dict[int, dict[str, str]] = {}
+        for bot in bots.all():
+            with BotRegistry.use(bot):
+                if not await bot_service.is_inline_enabled():
+                    logger.warning(
+                        f"Bot '{bot.id}' is not enabled for inline mode. "
+                        "Please enable Inline Mode in BotFather for correct work of some features"
+                    )
+                    await event_bus.publish(BotInlineModeDisabledEvent())
 
-        states = await bot_service.get_bot_states()
+                bot_states[bot.id] = await bot_service.get_bot_states()
+
+        if bots.is_multi:
+            logger.info(f"Running '{len(bot_states)}' bots: {list(bot_states)}")
+
         await create_default_payment_gateway.system()
         # Seed the default settings row (committed, cache-invalidating) before any
         # request can read it, so `get()` never has to lazily create — and cache —
@@ -85,20 +93,30 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         await apply_config_routes.system()
         settings = await settings_dao.get()
         allowed_updates = dispatcher.resolve_used_update_types()
-        webhook_info: WebhookInfo = await webhook_service.setup_webhook(allowed_updates)
-
-        if webhook_service.has_error(webhook_info):
-            logger.critical(
-                f"Webhook has a last error message: '{webhook_info.last_error_message}'"
-            )
-            webhook_error_event = WebhookErrorEvent(
-                error_message=webhook_info.last_error_message,
-            )
-            await event_bus.publish(webhook_error_event)
+        for bot, webhook_info in await webhook_service.setup_webhooks(allowed_updates):
+            if webhook_service.has_error(bot, webhook_info):
+                logger.critical(
+                    f"Webhook of bot '{bot.id}' has a last error message: "
+                    f"'{webhook_info.last_error_message}'"
+                )
+                webhook_error_event = WebhookErrorEvent(
+                    error_message=webhook_info.last_error_message,
+                )
+                await event_bus.publish(webhook_error_event)
 
         await command_service.setup_commands()
 
     await telegram_webhook_endpoint.startup()
+
+    bots_info = "".join(
+        f"""        <cyan>------------------------</>
+        Bot {bot_id}
+        Groups Mode  - {states["groups_mode"]}
+        Privacy Mode - {states["privacy_mode"]}
+        Inline Mode  - {states["inline_mode"]}
+"""
+        for bot_id, states in bot_states.items()
+    )
 
     logger.opt(colors=True).info(
         rf"""
@@ -114,11 +132,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         <green>Build Time: {config.build.time}</>
         <green>Branch: {config.build.branch} ({config.build.tag})</>
         <green>Commit: {config.build.commit}</>
-        <cyan>------------------------</>
-        Groups Mode  - {states["groups_mode"]}"
-        Privacy Mode - {states["privacy_mode"]}"
-        Inline Mode  - {states["inline_mode"]}"
-        <cyan>------------------------</>
+{bots_info}        <cyan>------------------------</>
         <yellow>Bot in access mode: '{settings.access.mode}'</>
         <yellow>Payments allowed: '{settings.access.payments_allowed}'</>
         <yellow>Registration allowed: '{settings.access.registration_allowed}'</>
@@ -168,6 +182,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     await notification_worker.shutdown()
     await telegram_webhook_endpoint.shutdown()
     await command_service.delete_commands()
-    await webhook_service.delete_webhook()
+    await webhook_service.delete_webhooks()
     await container.close()
     await sentry_flush()

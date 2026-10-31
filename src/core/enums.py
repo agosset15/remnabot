@@ -304,6 +304,25 @@ class SystemNotificationType(UpperStrEnum):
     USER_DEVICES_UPDATED = auto()
     USER_REVOKED_SUBSCRIPTION = auto()
 
+    def get_logs_topic(self, topic_id_list: list[int]) -> int:
+        match self:
+            case SystemNotificationType.BOT_LIFECYCLE | SystemNotificationType.BOT_UPDATE:
+                return topic_id_list[0]
+            case (
+                SystemNotificationType.USER_REGISTERED
+                | SystemNotificationType.SUBSCRIPTION
+                | SystemNotificationType.PROMOCODE_ACTIVATED
+                | SystemNotificationType.TRIAL_ACTIVATED
+            ):
+                return topic_id_list[1]
+            case (
+                SystemNotificationType.NODE_STATUS_CHANGED
+                | SystemNotificationType.USER_FIRST_CONNECTION
+                | SystemNotificationType.USER_DEVICES_UPDATED
+            ):
+                return topic_id_list[2]
+        return 0
+
 
 class UserNotificationType(UpperStrEnum):
     EXPIRES_IN_3_DAYS = auto()

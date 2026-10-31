@@ -12,11 +12,11 @@ from src.core.constants import PUBLIC_LANDING_PLANS_CACHE_TTL_SECONDS
 from src.core.enums import Currency, PlanAvailability
 from src.web.schemas import PublicPlanLandingListResponse, PublicPlanLandingResponse
 
-from ._common import _normalize_decimal_str, localized_plan_name
+from ._common import _normalize_decimal_str
 
 router = APIRouter(tags=["Public - Plans"])
 
-_CACHE_KEY = "cache:public_landing_plans"
+_CACHE_KEY = "cache:public_landing_plans:v2"
 
 
 @router.get("/plans/public", response_model=PublicPlanLandingListResponse)
@@ -60,7 +60,7 @@ async def get_public_landing_plans(
         result.append(
             PublicPlanLandingResponse(
                 public_code=plan.public_code,
-                name=localized_plan_name(i18n, plan.name),
+                name=i18n.get(plan.name),
                 description=plan.description,
                 traffic_limit=plan.traffic_limit,
                 device_limit=plan.device_limit,
