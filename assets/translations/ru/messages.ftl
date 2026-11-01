@@ -51,6 +51,8 @@ msg-main-menu =
     }</i>
     </blockquote>
     }
+    <a href="https://usekago.net/terms"><i>Условия использования</i></a>
+    <a href="https://usekago.net/privacy"><i>Политика конфиденциальности</i></a>
 
 msg-menu-devices =
     <b><tg-emoji emoji-id="5771652845652677093">📱</tg-emoji> Управление устройствами</b>

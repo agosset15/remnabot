@@ -124,6 +124,7 @@ class ErrorMiddleware(EventTypedMiddleware):
             **config.build.data,
             #
             telegram_id=aiogram_user.id if aiogram_user else None,
+            email=None,
             username=aiogram_user.username if aiogram_user else None,
             name=aiogram_user.full_name if aiogram_user else None,
             #

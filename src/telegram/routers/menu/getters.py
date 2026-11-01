@@ -55,6 +55,8 @@ async def menu_getter(
             "support_url": support_url,
             "web_enabled": config.web.enabled,
             "email_enabled": config.email.enabled,
+            "is_email_verified": user.is_email_verified,
+            "has_pending_email": bool(user.pending_email),
             "web_cabinet_url": config.web.cabinet_url.strip() if config.web.cabinet_url else None,
             # referral
             "referral_enabled": menu_data.is_referral_enabled,
