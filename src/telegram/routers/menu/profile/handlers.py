@@ -115,7 +115,7 @@ async def on_code_input(
 
     dialog_manager.dialog_data.pop("pending_email", None)
     await notifier.notify_user(user, i18n_key="ntf-profile.email-confirmed")
-    await dialog_manager.switch_to(state=Profile.MAIN)
+    await dialog_manager.done()
 
 
 @inject

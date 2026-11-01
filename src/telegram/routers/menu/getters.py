@@ -19,6 +19,16 @@ from src.core.utils.i18n_helpers import (
 from src.core.utils.time import get_traffic_reset_delta
 
 
+def _get_email_state(user: TelegramUserDto, email_enabled: bool) -> str:
+    if not email_enabled:
+        return "disabled"
+    if user.pending_email or (user.email and not user.is_email_verified):
+        return "unverified"
+    if user.email:
+        return "verified"
+    return "missing"
+
+
 @inject
 async def menu_getter(
     dialog_manager: DialogManager,
@@ -54,9 +64,9 @@ async def menu_getter(
             "is_mini_app_reserve": config.bot.is_mini_app and settings.extra.mini_app_reserve,
             "support_url": support_url,
             "web_enabled": config.web.enabled,
-            "email_enabled": config.email.enabled,
-            "is_email_verified": user.is_email_verified,
+            "pending_email": user.pending_email or False,
             "has_pending_email": bool(user.pending_email),
+            "email_state": _get_email_state(user, config.email.enabled),
             "web_cabinet_url": config.web.cabinet_url.strip() if config.web.cabinet_url else None,
             # referral
             "referral_enabled": menu_data.is_referral_enabled,
