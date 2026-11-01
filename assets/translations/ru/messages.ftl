@@ -2,9 +2,12 @@
 msg-main-menu =
     { hdr-user-profile }
     { frg-user }
-    { $has_pending_email ->
-        [0] { empty }
-        *[other] <b>Ожидает подтверждения:</b> <code>{ $pending_email }</code>
+    { $email_state ->
+        [missing] <i>{ $web_cabinet_url ->
+            [0] Привяжите почту, чтобы не потерять доступ к аккаунту.
+            *[other] Привяжите почту, чтобы не потерять доступ к аккаунту и входить в личный кабинет.
+        }</i>
+        *[other] { empty }
     }
 
     { hdr-subscription }

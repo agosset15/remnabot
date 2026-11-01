@@ -120,16 +120,29 @@ menu = Window(
         WebApp(
             text=I18nFormat("btn-menu.web-cabinet"),
             url=Format("{web_cabinet_url}"),
+            when=F["web_cabinet_url"],
         ),
-        when=F["web_cabinet_url"],
+        Start(
+            text=I18nFormat("btn-profile.email"),
+            id="email_settings",
+            state=Profile.EMAIL_INPUT,
+            when=F["email_state"] == "verified",
+        ),
     ),
     Row(
         Start(
-            text=I18nFormat("btn-menu.profile"),
-            id="profile",
-            state=Profile.MAIN,
+            text=I18nFormat("btn-profile.email-add"),
+            id="email_add",
+            state=Profile.EMAIL_INPUT,
+            when=F["email_state"] == "missing",
         ),
-        when=F["email_enabled"],
+        Start(
+            text=I18nFormat("btn-profile.email-confirm"),
+            id="email_confirm",
+            state=Profile.EMAIL_CODE,
+            style=Style(ButtonStyle.PRIMARY),
+            when=F["email_state"] == "unverified",
+        ),
     ),
     *custom_buttons,
     Row(

@@ -14,7 +14,6 @@ class MainMenu(StatesGroup):
 
 
 class Profile(StatesGroup):
-    MAIN = State()
     EMAIL_INPUT = State()
     EMAIL_CODE = State()
 

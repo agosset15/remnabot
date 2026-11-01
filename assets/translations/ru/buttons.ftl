@@ -83,7 +83,8 @@ btn-menu =
 btn-profile =
     .email-confirm = <tg-emoji emoji-id="5774022692642492953">✅</tg-emoji> Подтвердить почту
     .email-change = <tg-emoji emoji-id="5776182936638329359">✉️</tg-emoji> Изменить почту
-    .email-add = <tg-emoji emoji-id="5776182936638329359">✉️</tg-emoji> Задать почту
+    .email-add = <tg-emoji emoji-id="5776182936638329359">✉️</tg-emoji> Привязать почту
+    .email = <tg-emoji emoji-id="5776182936638329359">✉️</tg-emoji> Почта
     .code-resend = <tg-emoji emoji-id="6030657343744644592">🔄</tg-emoji> Отправить код повторно
 
 btn-invite =
