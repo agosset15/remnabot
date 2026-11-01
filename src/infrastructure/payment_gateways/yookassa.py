@@ -5,7 +5,6 @@ from typing import Any, Final, Optional, Union
 from uuid import UUID
 
 import orjson
-from aiogram import Bot
 from fastapi import Request
 from httpx import AsyncClient, ConnectError, HTTPStatusError
 from loguru import logger
@@ -17,6 +16,7 @@ from src.application.dto import (
 from src.application.dto.payment_gateway import YooKassaGatewaySettingsDto
 from src.core.config import AppConfig
 from src.core.enums import TransactionStatus
+from src.infrastructure.services.bot_registry import BotRegistry
 
 from .base import BasePaymentGateway
 
@@ -45,8 +45,8 @@ class YookassaGateway(BasePaymentGateway):
         "2a02:5180:0:2669::/64",
     ]
 
-    def __init__(self, gateway: PaymentGatewayDto, bot: Bot, config: AppConfig) -> None:
-        super().__init__(gateway, bot, config)
+    def __init__(self, gateway: PaymentGatewayDto, bots: BotRegistry, config: AppConfig) -> None:
+        super().__init__(gateway, bots, config)
 
         if not isinstance(self.data.settings, YooKassaGatewaySettingsDto):
             raise TypeError(

@@ -8,7 +8,6 @@ from typing import Any, Optional, Union
 from uuid import UUID
 
 import orjson
-from aiogram import Bot
 from fastapi import Request
 from httpx import AsyncClient, HTTPStatusError
 from loguru import logger
@@ -20,6 +19,7 @@ from src.application.dto.payment_gateway import (
 )
 from src.core.config import AppConfig
 from src.core.enums import Currency, TransactionStatus
+from src.infrastructure.services.bot_registry import BotRegistry
 
 from .base import BasePaymentGateway
 
@@ -33,8 +33,8 @@ class CryptomusGateway(BasePaymentGateway):
 
     NETWORKS = ["91.227.144.54"]
 
-    def __init__(self, gateway: PaymentGatewayDto, bot: Bot, config: AppConfig) -> None:
-        super().__init__(gateway, bot, config)
+    def __init__(self, gateway: PaymentGatewayDto, bots: BotRegistry, config: AppConfig) -> None:
+        super().__init__(gateway, bots, config)
 
         if not isinstance(
             self.data.settings, (CryptomusGatewaySettingsDto, HeleketGatewaySettingsDto)

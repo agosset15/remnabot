@@ -7,7 +7,6 @@ from typing import Any, Final, Optional, Union
 from uuid import UUID
 
 import orjson
-from aiogram import Bot
 from fastapi import Request
 from fastapi.responses import PlainTextResponse
 from httpx import AsyncClient, HTTPStatusError
@@ -17,6 +16,7 @@ from src.application.dto import PaymentGatewayDto, PaymentResultDto
 from src.application.dto.payment_gateway import FreeKassaGatewaySettingsDto
 from src.core.config import AppConfig
 from src.core.enums import TransactionStatus
+from src.infrastructure.services.bot_registry import BotRegistry
 
 from .base import BasePaymentGateway
 
@@ -34,8 +34,8 @@ class FreeKassaGateway(BasePaymentGateway):
         "51.250.54.238",
     ]
 
-    def __init__(self, gateway: PaymentGatewayDto, bot: Bot, config: AppConfig) -> None:
-        super().__init__(gateway, bot, config)
+    def __init__(self, gateway: PaymentGatewayDto, bots: BotRegistry, config: AppConfig) -> None:
+        super().__init__(gateway, bots, config)
 
         if not isinstance(self.data.settings, FreeKassaGatewaySettingsDto):
             raise TypeError(

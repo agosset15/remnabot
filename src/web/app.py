@@ -73,10 +73,7 @@ def get_app(config: AppConfig, dispatcher: Dispatcher) -> FastAPI:
             api_routes = [r for r in app.routes if getattr(r, "include_in_schema", True)]
             return get_openapi(title=app.title, version=app.version, routes=api_routes)
 
-    telegram_webhook_endpoint = TelegramWebhookEndpoint(
-        dispatcher=dispatcher,
-        secret_token=config.bot.secret_token.get_secret_value(),
-    )
+    telegram_webhook_endpoint = TelegramWebhookEndpoint(dispatcher=dispatcher)
 
     telegram_webhook_endpoint.register(app=app, path=config.bot.webhook_path)
 

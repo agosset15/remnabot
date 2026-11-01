@@ -24,6 +24,7 @@ class GetOrCreateUserDto:
     referral_code: Optional[str] = None
     ad_link_code: Optional[str] = None
     role: Role = Role.USER
+    bot_id: Optional[int] = None
 
 
 class GetOrCreateUser(Interactor[GetOrCreateUserDto, Optional[UserDto]]):
@@ -188,6 +189,7 @@ class GetOrCreateUser(Interactor[GetOrCreateUserDto, Optional[UserDto]]):
             language=locale,
             is_blocked=is_blocked,
             ad_link_id=ad_link_id,
+            bot_id=data.bot_id,
         )
 
 
@@ -198,6 +200,7 @@ class UpdateUserProfileDto:
     full_name: str
     language_code: Optional[str]
     telegram_id: int
+    bot_id: Optional[int] = None
 
 
 class UpdateUserProfile(Interactor[UpdateUserProfileDto, UserDto]):
@@ -243,6 +246,16 @@ class UpdateUserProfile(Interactor[UpdateUserProfileDto, UserDto]):
                     f"User '{user.remna_name}' language '{new_language}' is not supported, "
                     f"keeping current '{user.language}'"
                 )
+
+        if data.bot_id is not None and user.bot_id != data.bot_id:
+            logger.debug(
+                f"User '{user.remna_name}' switched bot from '{user.bot_id}' to '{data.bot_id}'"
+            )
+            user.bot_id = data.bot_id
+            # The user is talking to this bot right now, so it is not blocked.
+            if user.is_bot_blocked:
+                user.is_bot_blocked = False
+            changed = True
 
         if not changed:
             return user

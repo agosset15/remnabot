@@ -1,5 +1,4 @@
 import asyncio
-import secrets
 from typing import Annotated, Any
 
 from aiogram import Bot, Dispatcher
@@ -9,17 +8,19 @@ from dishka.integrations.fastapi import FromDishka, inject
 from fastapi import Body, FastAPI, Header, HTTPException, Response, status
 from loguru import logger
 
+from src.infrastructure.services.bot_registry import BotRegistry
+
 _MAX_CONCURRENT_UPDATES = 100
 
 
 class TelegramWebhookEndpoint:
+    """Single webhook endpoint for all bots; the secret token identifies the bot."""
+
     dispatcher: Dispatcher
-    secret_token: str
     _feed_update_tasks: set[asyncio.Task[Any]]
 
-    def __init__(self, dispatcher: Dispatcher, secret_token: str) -> None:
+    def __init__(self, dispatcher: Dispatcher) -> None:
         self.dispatcher = dispatcher
-        self.secret_token = secret_token
         self._feed_update_tasks = set()
         self._semaphore = asyncio.Semaphore(_MAX_CONCURRENT_UPDATES)
 
@@ -44,17 +45,15 @@ class TelegramWebhookEndpoint:
             path, endpoint=self._handle_request, methods=["POST"], include_in_schema=False
         )
 
-    def _verify_secret(self, telegram_secret_token: str) -> bool:
-        return secrets.compare_digest(telegram_secret_token, self.secret_token)
-
     async def _feed_update(self, bot: Bot, update: Update) -> None:
         # Bound concurrent update processing so a flood cannot exhaust resources
         # (DB connections, etc.); excess updates queue on the semaphore.
         async with self._semaphore:
             try:
-                result = await self.dispatcher.feed_update(bot, update)
-                if isinstance(result, TelegramMethod):
-                    await result.as_(bot)
+                with BotRegistry.use(bot):
+                    result = await self.dispatcher.feed_update(bot, update)
+                    if isinstance(result, TelegramMethod):
+                        await result.as_(bot)
             except Exception as e:
                 logger.exception(
                     f"Failed to process update '{update.update_id}' due to error '{e}'"
@@ -64,7 +63,7 @@ class TelegramWebhookEndpoint:
     async def _handle_request(
         self,
         update: Annotated[Update, Body()],
-        bot: FromDishka[Bot],
+        bots: FromDishka[BotRegistry],
         x_telegram_bot_api_secret_token: Annotated[str, Header()] = "",
     ) -> Response:
         if not x_telegram_bot_api_secret_token:
@@ -73,7 +72,8 @@ class TelegramWebhookEndpoint:
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Token header is missing"
             )
 
-        if not self._verify_secret(x_telegram_bot_api_secret_token):
+        bot = bots.by_secret(x_telegram_bot_api_secret_token)
+        if bot is None:
             logger.warning(f"Invalid secret token provided for update '{update.update_id}'")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid secret token"
@@ -83,5 +83,5 @@ class TelegramWebhookEndpoint:
         self._feed_update_tasks.add(task)
         task.add_done_callback(self._feed_update_tasks.discard)
 
-        logger.debug(f"Update '{update.update_id}' scheduled for processing")
+        logger.debug(f"Update '{update.update_id}' for bot '{bot.id}' scheduled for processing")
         return Response(status_code=status.HTTP_200_OK)

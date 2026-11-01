@@ -213,6 +213,11 @@ class UserDaoImpl(UserDao):
         await self.session.execute(stmt)
         logger.debug(f"Bot blocked status for user_id='{user_id}' set to '{is_bot_blocked}'")
 
+    async def set_bot_id(self, user_id: int, bot_id: int) -> None:
+        stmt = update(User).where(User.id == user_id).values(bot_id=bot_id)
+        await self.session.execute(stmt)
+        logger.debug(f"Bot for user_id='{user_id}' set to '{bot_id}'")
+
     async def set_current_subscription_by_id(self, user_id: int, subscription_id: int) -> None:
         stmt = (
             update(User).where(User.id == user_id).values(current_subscription_id=subscription_id)

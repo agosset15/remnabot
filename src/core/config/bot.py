@@ -13,6 +13,8 @@ from .validators import validate_not_change_me, validate_username
 
 class BotConfig(BaseConfig, env_prefix="BOT_"):
     token: SecretStr
+    # Comma-separated tokens of additional bots sharing the same functionality and database.
+    extra_tokens: SecretStr = SecretStr("")
     secret_token: SecretStr
     owner_id: int
     support_username: SecretStr
@@ -38,6 +40,20 @@ class BotConfig(BaseConfig, env_prefix="BOT_"):
         Used as the OIDC ``aud`` claim when validating Telegram Login id_tokens.
         """
         return int(self.token.get_secret_value().split(":", 1)[0])
+
+    @property
+    def extra_token_values(self) -> list[str]:
+        raw = self.extra_tokens.get_secret_value()
+        return [t.strip() for t in raw.split(",") if t.strip()]
+
+    @property
+    def all_tokens(self) -> list[str]:
+        """Primary token first, followed by the extra tokens."""
+        return [self.token.get_secret_value(), *self.extra_token_values]
+
+    @property
+    def all_ids(self) -> list[int]:
+        return [int(t.split(":", 1)[0]) for t in self.all_tokens]
 
     @property
     def webhook_path(self) -> str:
@@ -79,6 +95,22 @@ class BotConfig(BaseConfig, env_prefix="BOT_"):
     @classmethod
     def validate_bot_fields(cls, field: object, info: FieldValidationInfo) -> object:
         validate_not_change_me(field, info)
+        return field
+
+    @field_validator("extra_tokens")
+    @classmethod
+    def validate_extra_tokens(cls, field: SecretStr, info: FieldValidationInfo) -> SecretStr:
+        tokens = [t.strip() for t in field.get_secret_value().split(",") if t.strip()]
+        primary = info.data.get("token")
+        primary_value = primary.get_secret_value() if isinstance(primary, SecretStr) else None
+        seen: set[str] = set()
+        for token in tokens:
+            bot_id, sep, secret = token.partition(":")
+            if not sep or not bot_id.isdigit() or not secret:
+                raise ValueError("BOT_EXTRA_TOKENS contains an invalid bot token")
+            if token == primary_value or token in seen:
+                raise ValueError("BOT_EXTRA_TOKENS contains a duplicate bot token")
+            seen.add(token)
         return field
 
     @field_validator("support_username")

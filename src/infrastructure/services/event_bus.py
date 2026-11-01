@@ -118,7 +118,12 @@ class EventBusImpl(EventPublisher, EventSubscriber):
             return
 
         container = self._container_factory()
-        self._scan_registries(container.registry, *container.child_registries)
+        registries: list[Registry] = []
+        registry: Registry | None = container.registry
+        while registry is not None:
+            registries.append(registry)
+            registry = registry.child_registry
+        self._scan_registries(*registries)
 
         total_listeners = sum(len(handlers) for handlers in self._listeners.values())
         logger.info(f"Autodiscovery finished. Total listeners: '{total_listeners}'")

@@ -6,7 +6,6 @@ from typing import Any, Final, Optional, Union
 from urllib.parse import parse_qs, urlencode
 from uuid import UUID
 
-from aiogram import Bot
 from fastapi import Request
 from fastapi.responses import PlainTextResponse
 from loguru import logger
@@ -15,6 +14,7 @@ from src.application.dto import PaymentGatewayDto, PaymentResultDto
 from src.application.dto.payment_gateway import RoboKassaGatewaySettingsDto
 from src.core.config import AppConfig
 from src.core.enums import TransactionStatus
+from src.infrastructure.services.bot_registry import BotRegistry
 
 from .base import BasePaymentGateway
 
@@ -25,8 +25,8 @@ class RobokassaGateway(BasePaymentGateway):
 
     SHP_ORDER_ID: Final[str] = "Shp_order_id"
 
-    def __init__(self, gateway: PaymentGatewayDto, bot: Bot, config: AppConfig) -> None:
-        super().__init__(gateway, bot, config)
+    def __init__(self, gateway: PaymentGatewayDto, bots: BotRegistry, config: AppConfig) -> None:
+        super().__init__(gateway, bots, config)
 
         if not isinstance(self.data.settings, RoboKassaGatewaySettingsDto):
             raise TypeError(

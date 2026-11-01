@@ -44,6 +44,9 @@ class User(BaseSql, TimestampMixin):
     is_rules_accepted: Mapped[bool]
     is_trial_available: Mapped[bool]
 
+    # Telegram bot the user last interacted with; outgoing messages are sent through it.
+    bot_id: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True)
+
     ad_link_id: Mapped[Optional[int]] = mapped_column(
         Integer,
         ForeignKey("ad_links.id", ondelete="SET NULL"),

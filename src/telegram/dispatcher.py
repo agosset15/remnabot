@@ -1,13 +1,16 @@
 from datetime import timedelta
+from typing import Any, Awaitable, Callable
 
 from aiogram import Dispatcher
 from aiogram.fsm.storage.base import DefaultKeyBuilder
 from aiogram.fsm.storage.redis import RedisStorage
+from aiogram.types import TelegramObject
 from aiogram_dialog import BgManagerFactory, setup_dialogs
 from loguru import logger
 
 from src.core.config import AppConfig
 from src.infrastructure.common import json
+from src.infrastructure.services.bot_registry import BotRegistry
 from src.telegram.filters import setup_global_filters
 from src.telegram.message_manager import MessageManager
 from src.telegram.middlewares import setup_middlewares
@@ -43,7 +46,23 @@ def get_bg_manager_factory(dispatcher: Dispatcher) -> BgManagerFactory:
     return bg_manager_factory
 
 
+async def _current_bot_middleware(
+    handler: Callable[[TelegramObject, dict[str, Any]], Awaitable[Any]],
+    event: TelegramObject,
+    data: dict[str, Any],
+) -> Any:
+    # Marks the bot handling this update as "current" for services resolving a bot
+    # (BotRegistry.current). Must run before the dishka container middleware.
+    with BotRegistry.use(data.get("bot")):
+        return await handler(event, data)
+
+
+def setup_current_bot(dispatcher: Dispatcher) -> None:
+    dispatcher.update.outer_middleware(_current_bot_middleware)
+
+
 def setup_dispatcher(dispatcher: Dispatcher) -> None:
+    setup_current_bot(dispatcher)
     setup_middlewares(dispatcher)
     setup_global_filters(dispatcher)
     setup_routers(dispatcher)
@@ -53,6 +72,7 @@ def setup_dispatcher(dispatcher: Dispatcher) -> None:
 def setup_worker_dispatcher(dispatcher: Dispatcher) -> None:
     # Background redirects (e.g. Subscription:SUCCESS) start dialogs via bg_manager, which
     # emit AIOGD_UPDATE. Dialog getters rely on USER_KEY, so UserMiddleware must populate it.
+    setup_current_bot(dispatcher)
     UserMiddleware().setup_outer(dispatcher)
     setup_routers(dispatcher)
     logger.info("Worker dispatcher routers have been configured")

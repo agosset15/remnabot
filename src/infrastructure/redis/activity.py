@@ -27,5 +27,5 @@ class RedisActivityRepository:
     ) -> list[int]:
         excluded = {str(i) for i in excluded_ids}
         members = await self.redis.zrevrange(self._key, 0, limit + len(excluded) - 1)
-        ids = [int(member) for member in members if member not in excluded]
+        ids = [int(str(member)) for member in members if member not in excluded]
         return ids[:limit]

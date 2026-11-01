@@ -3,7 +3,7 @@ import base64
 import string
 import traceback
 from dataclasses import asdict
-from typing import Any, Callable, Optional, Sequence, Union
+from typing import Any, Callable, Optional, Sequence, Union, cast
 
 from aiogram import Bot
 from aiogram.exceptions import (
@@ -77,11 +77,15 @@ from src.telegram.keyboards import (
 )
 from src.telegram.widgets import extract_tg_emoji
 
+from .bot_registry import BotRegistry
+from .media_resolver import MediaResolver
+
 
 class NotificationService(Notifier):
     def __init__(
         self,
-        bot: Bot,
+        bots: BotRegistry,
+        media_resolver: MediaResolver,
         config: AppConfig,
         translator_hub: TranslatorHub,
         user_dao: UserDao,
@@ -90,7 +94,8 @@ class NotificationService(Notifier):
         event_publisher: EventPublisher,
         mailer: Mailer,
     ) -> None:
-        self.bot = bot
+        self.bots = bots
+        self.media_resolver = media_resolver
         self.config = config
         self.translator_hub = translator_hub
         self.user_dao = user_dao
@@ -276,9 +281,12 @@ class NotificationService(Notifier):
             else None
         )
 
+        # Notification chats/topics are configured for the primary bot.
+        bot = self.bots.primary
+
         try:
             if payload.is_text:
-                await self.bot.send_message(
+                await bot.send_message(
                     chat_id=chat_id,  # type:ignore[arg-type]
                     text=text,
                     message_thread_id=thread_id,
@@ -287,14 +295,15 @@ class NotificationService(Notifier):
                     reply_markup=reply_markup,
                 )
             elif payload.media:
-                method = self._get_media_method(payload)
+                method = self._get_media_method(payload, bot)
                 if not method:
                     logger.warning(f"Unknown media type for payload '{payload}'")
                     return
-                media = self._build_media(payload.media)
-                await method(
-                    chat_id,
-                    media,
+                await self._send_media(
+                    bot,
+                    method,
+                    payload.media,
+                    chat_id,  # type:ignore[arg-type]
                     caption=text,
                     message_thread_id=thread_id,
                     disable_notification=payload.disable_notification,
@@ -319,13 +328,19 @@ class NotificationService(Notifier):
                 )
             )
 
-    async def delete_notification(self, chat_id: int, message_id: int) -> None:
+    async def delete_notification(
+        self,
+        chat_id: int,
+        message_id: int,
+        bot: Optional[Bot] = None,
+    ) -> None:
+        bot = bot or self.bots.current
         try:
-            await self.bot.delete_message(chat_id=chat_id, message_id=message_id)
+            await bot.delete_message(chat_id=chat_id, message_id=message_id)
             logger.debug(f"Notification '{message_id}' for chat '{chat_id}' deleted")
         except Exception as e:
             logger.error(f"Failed to delete notification '{message_id}': {e}")
-            await self._clear_reply_markup(chat_id, message_id)
+            await self._clear_reply_markup(chat_id, message_id, bot)
 
     async def _process_task(self, task: NotificationTaskDto) -> None:
         users = await self.user_dao.filter_by_role(task.roles)
@@ -379,23 +394,28 @@ class NotificationService(Notifier):
             "reply_markup": reply_markup,
         }
 
+        # Users can only receive messages from a bot they have started: use their own.
+        bot = self.bots.for_user(user)
+
+        message: Optional[Message]
         try:
             if payload.is_text:
-                message = await self.bot.send_message(
+                message = await bot.send_message(
                     chat_id=user.telegram_id,
                     text=text,
                     disable_web_page_preview=True,
                     **kwargs,
                 )
             elif payload.media:
-                method = self._get_media_method(payload)
-                media = self._build_media(payload.media)
+                method = self._get_media_method(payload, bot)
 
                 if not method:
                     logger.warning(f"Unknown media type for payload '{payload}'")
                     return None
 
-                message = await method(user.telegram_id, media, caption=text, **kwargs)
+                message = await self._send_media(
+                    bot, method, payload.media, user.telegram_id, caption=text, **kwargs
+                )
             else:
                 logger.error(f"Payload must contain text or media for user {user.log}")
                 return None
@@ -406,6 +426,7 @@ class NotificationService(Notifier):
                         chat_id=user.telegram_id,
                         message_id=message.message_id,
                         delay=payload.delete_after,
+                        bot=bot,
                     )
                 )
 
@@ -418,18 +439,22 @@ class NotificationService(Notifier):
             logger.exception(f"Failed to send notification to {user.log}: {e}")
             raise
 
-    def _get_media_method(self, payload: MessagePayloadDto) -> Optional[Callable[..., Any]]:
+    def _get_media_method(
+        self,
+        payload: MessagePayloadDto,
+        bot: Bot,
+    ) -> Optional[Callable[..., Any]]:
         if payload.is_photo:
-            return self.bot.send_photo
+            return bot.send_photo
 
         if payload.is_video:
-            return self.bot.send_video
+            return bot.send_video
 
         if payload.is_document:
-            return self.bot.send_document
+            return bot.send_document
 
         if payload.is_animation:
-            return self.bot.send_animation
+            return bot.send_animation
 
         return None
 
@@ -544,15 +569,21 @@ class NotificationService(Notifier):
 
         return keyboard
 
-    async def _schedule_message_deletion(self, chat_id: int, message_id: int, delay: int) -> None:
+    async def _schedule_message_deletion(
+        self,
+        chat_id: int,
+        message_id: int,
+        delay: int,
+        bot: Bot,
+    ) -> None:
         logger.debug(f"Schedule msg '{message_id}' deletion in chat '{chat_id}' after '{delay}'s")
         await asyncio.sleep(delay)
-        await self.delete_notification(chat_id, message_id)
+        await self.delete_notification(chat_id, message_id, bot)
 
-    async def _clear_reply_markup(self, chat_id: int, message_id: int) -> None:
+    async def _clear_reply_markup(self, chat_id: int, message_id: int, bot: Bot) -> None:
         try:
             logger.debug(f"Attempting to remove keyboard from notification '{message_id}'")
-            await self.bot.edit_message_reply_markup(
+            await bot.edit_message_reply_markup(
                 chat_id=chat_id,
                 message_id=message_id,
                 reply_markup=None,
@@ -560,6 +591,32 @@ class NotificationService(Notifier):
             logger.debug(f"Keyboard removed from notification '{message_id}'")
         except Exception as e:
             logger.error(f"Failed to remove keyboard from '{message_id}': {e}")
+
+    async def _send_media(
+        self,
+        bot: Bot,
+        method: Callable[..., Any],
+        media: MediaDescriptorDto,
+        chat_id: Union[int, str],
+        **kwargs: Any,
+    ) -> Optional[Message]:
+        if media.kind != "file_id":
+            return cast(
+                Optional[Message], await method(chat_id, self._build_media(media), **kwargs)
+            )
+
+        # file_ids are bot-specific: translate for the sending bot. The first send through a
+        # foreign bot re-uploads the file under a lock; later sends reuse the cached file_id.
+        cached = await self.media_resolver.cached(media.value, bot)
+        if cached:
+            return cast(Optional[Message], await method(chat_id, cached, **kwargs))
+
+        async with self.media_resolver.lock(bot, media.value):
+            resolved = await self.media_resolver.resolve(media.value, bot)
+            message = cast(Optional[Message], await method(chat_id, resolved, **kwargs))
+            if not isinstance(resolved, str):
+                await self.media_resolver.remember(media.value, bot, message)
+        return message
 
     def _build_media(self, media: MediaDescriptorDto) -> Union[str, BufferedInputFile, FSInputFile]:
         if media.kind == "file_id":

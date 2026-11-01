@@ -6,7 +6,6 @@ from typing import Any, Final, Optional, Union
 from uuid import UUID
 
 import orjson
-from aiogram import Bot
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
@@ -20,6 +19,7 @@ from src.application.dto.payment_gateway import WataGatewaySettingsDto
 from src.core.config import AppConfig
 from src.core.constants import TTL_6H
 from src.core.enums import TransactionStatus
+from src.infrastructure.services.bot_registry import BotRegistry
 
 from .base import BasePaymentGateway
 
@@ -33,8 +33,8 @@ class WataGateway(BasePaymentGateway):
     _public_key_pem: bytes | None = None
     _public_key_loaded_at: datetime | None = None
 
-    def __init__(self, gateway: PaymentGatewayDto, bot: Bot, config: AppConfig) -> None:
-        super().__init__(gateway, bot, config)
+    def __init__(self, gateway: PaymentGatewayDto, bots: BotRegistry, config: AppConfig) -> None:
+        super().__init__(gateway, bots, config)
 
         if not isinstance(self.data.settings, WataGatewaySettingsDto):
             raise TypeError(
