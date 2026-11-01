@@ -66,13 +66,13 @@ frg-user =
         *[HAS] • <b>ID</b>: <code>{ NUMBER($telegram_id, useGrouping: 0) }</code>
     }
     { $email_state ->
-        [verified] • <b>Почта</b>: <code>{ $email }</code> ✅
+        [verified] • <b>Почта</b>: <code>{ $email }</code> <tg-emoji emoji-id="5938252440926163756">✅</tg-emoji>
         [unverified] • <b>Почта</b>: { $has_pending_email ->
-            [0] <code>{ $email }</code> ⏳ <i>не подтверждена</i>
+            [0] <code>{ $email }</code> <tg-emoji emoji-id="5938252440926163756">⏳</tg-emoji> <i>не подтверждена</i>
             *[other] { $email ->
                 [0] <code>{ $pending_email }</code>
                 *[HAS] <code>{ $email }</code> → <code>{ $pending_email }</code>
-            } ⏳ <i>ожидает подтверждения</i>
+            } <tg-emoji emoji-id="5938252440926163756">⏳</tg-emoji> <i>ожидает подтверждения</i>
         }
         *[other] { $email ->
             [0] { empty }
