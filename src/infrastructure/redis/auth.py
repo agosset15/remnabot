@@ -20,7 +20,7 @@ class RedisAuthRepository:
         token_key = serialize_storage_key(RefreshTokenKey(token=token))
         user_set_key = serialize_storage_key(UserTokensKey(user_id=user_id))
         await self.redis.setex(token_key, ttl, str(user_id))
-        await self.redis.sadd(user_set_key, token)  # type: ignore[misc]
+        await self.redis.sadd(user_set_key, token)
         await self.redis.expire(user_set_key, ttl)
 
     async def get_user_id_by_refresh_token(self, token: str) -> Optional[int]:
@@ -35,7 +35,7 @@ class RedisAuthRepository:
         value = await self.redis.getdel(token_key)
         if value is not None:
             user_set_key = serialize_storage_key(UserTokensKey(user_id=int(value)))
-            await self.redis.srem(user_set_key, token)  # type: ignore[misc]
+            await self.redis.srem(user_set_key, token)
 
     async def get_and_revoke_refresh_token(self, token: str) -> Optional[int]:
         token_key = serialize_storage_key(RefreshTokenKey(token=token))
@@ -44,14 +44,14 @@ class RedisAuthRepository:
             return None
         user_id = int(value)
         user_set_key = serialize_storage_key(UserTokensKey(user_id=user_id))
-        await self.redis.srem(user_set_key, token)  # type: ignore[misc]
+        await self.redis.srem(user_set_key, token)
         return user_id
 
     async def revoke_all_user_tokens(self, user_id: int) -> None:
         user_set_key = serialize_storage_key(UserTokensKey(user_id=user_id))
-        tokens = await self.redis.smembers(user_set_key)  # type: ignore[misc]
+        tokens = await self.redis.smembers(user_set_key)
         if tokens:
-            token_keys = [serialize_storage_key(RefreshTokenKey(token=t)) for t in tokens]
+            token_keys = [serialize_storage_key(RefreshTokenKey(token=str(t))) for t in tokens]
             await self.redis.delete(*token_keys)
         await self.redis.delete(user_set_key)
 

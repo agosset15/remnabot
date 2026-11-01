@@ -75,7 +75,7 @@ class HealthService:
 
     async def _check_redis(self) -> bool:
         try:
-            await self.redis.ping()  # type: ignore[misc]
+            await self.redis.ping()
             return True
         except Exception:
             return False
