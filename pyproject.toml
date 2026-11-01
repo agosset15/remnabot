@@ -46,7 +46,7 @@ repository = "https://github.com/snoups/remnashop"
 [dependency-groups]
 dev = [
     "aiogram-dialog[tools]~=2.6.0",
-    "sqlalchemy[mypy]>=2.0.0",
+    "sqlalchemy>=2.0.0",
     "mypy>=1.18.2",
     "ruff>=0.14.2",
     "pytest>=8.4.2",
@@ -85,7 +85,7 @@ pythonpath = ["."]
 
 [tool.mypy]
 packages = ["src"]
-plugins = ["sqlalchemy.ext.mypy.plugin", "pydantic.mypy"]
+plugins = ["pydantic.mypy"]
 exclude = ["venv", ".venv", ".idea", "tests"]
 warn_unused_configs = true
 disallow_subclassing_any = true
