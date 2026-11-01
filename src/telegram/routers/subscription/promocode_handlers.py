@@ -124,6 +124,7 @@ async def on_promocode_confirm(
             ErrorEvent(
                 **config.build.data,
                 telegram_id=user.telegram_id,
+                email=user.email,
                 username=user.username,
                 name=user.name,
                 exception=exc,
