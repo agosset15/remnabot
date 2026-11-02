@@ -93,6 +93,7 @@ class PaymentInitResponse(BaseModel):
 
 class GatewayOfferResponse(BaseModel):
     gateway_type: PaymentGatewayType
+    display_name: Optional[str] = None
     currency: str
     currency_symbol: str
 
