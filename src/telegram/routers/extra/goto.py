@@ -7,7 +7,7 @@ from dishka.integrations.aiogram_dialog import inject
 from loguru import logger
 
 from src.application.common import Notifier
-from src.application.common.dao import SubscriptionDao
+from src.application.common.dao import SubscriptionDao, TransactionDao
 from src.application.dto import TelegramUserDto
 from src.application.use_cases.promocode.queries.validate import (
     ValidatePromocode,
@@ -203,6 +203,106 @@ async def on_goto_promocode(
             },
             "prefill_replace": will_replace,
         },
+        mode=StartMode.RESET_STACK,
+        show_mode=ShowMode.DELETE_AND_SEND,
+    )
+
+
+@inject
+@router.message(
+    CommandStart(deep_link=True, ignore_case=True, magic=F.args.lower() == Deeplink.DEVICES),
+)
+async def on_goto_devices(
+    message: Message,
+    dialog_manager: DialogManager,
+    user: TelegramUserDto,
+    subscription_dao: FromDishka[SubscriptionDao],
+    notifier: FromDishka[Notifier],
+) -> None:
+    subscription = await subscription_dao.get_current(user.id)
+
+    # Mirrors the `has_device_limit` condition of the main menu "Devices" button.
+    available = (
+        subscription is not None
+        and subscription.is_active
+        and (subscription.has_devices_limit or subscription.device_limit == 0)
+    )
+
+    if not available:
+        logger.info(f"{user.log} Deeplink devices unavailable, redirecting to main menu")
+        await notifier.notify_user(user=user, i18n_key="ntf-common.devices-unavailable")
+        await dialog_manager.start(
+            state=MainMenu.MAIN,
+            mode=StartMode.RESET_STACK,
+            show_mode=ShowMode.DELETE_AND_SEND,
+        )
+        return
+
+    logger.info(f"{user.log} Redirected to devices")
+    await dialog_manager.start(
+        state=MainMenu.DEVICES,
+        mode=StartMode.RESET_STACK,
+        show_mode=ShowMode.DELETE_AND_SEND,
+    )
+
+
+@inject
+@router.message(
+    CommandStart(
+        deep_link=True,
+        ignore_case=True,
+        magic=F.args.lower() == Deeplink.SUCCESS_PAYMENT,
+    ),
+)
+async def on_goto_success_payment(
+    message: Message,
+    dialog_manager: DialogManager,
+    user: TelegramUserDto,
+    subscription_dao: FromDishka[SubscriptionDao],
+    transaction_dao: FromDishka[TransactionDao],
+    notifier: FromDishka[Notifier],
+) -> None:
+    # Gateways bounce the user back right after checkout, often before the webhook lands.
+    # Show the success screen only once the payment is actually completed; otherwise the
+    # webhook handler will redirect the user to it by itself.
+    transactions = await transaction_dao.get_by_user(user.id)
+    last_completed = next((t for t in transactions if t.is_completed), None)
+    subscription = await subscription_dao.get_current(user.id)
+
+    if not last_completed or not subscription:
+        logger.info(f"{user.log} Deeplink success-payment without completed payment")
+        await notifier.notify_user(user=user, i18n_key="ntf-common.payment-processing")
+        await dialog_manager.start(
+            state=MainMenu.MAIN,
+            mode=StartMode.RESET_STACK,
+            show_mode=ShowMode.DELETE_AND_SEND,
+        )
+        return
+
+    logger.info(f"{user.log} Redirected to success payment")
+    await dialog_manager.start(
+        state=Subscription.SUCCESS,
+        data={"purchase_type": last_completed.purchase_type},
+        mode=StartMode.RESET_STACK,
+        show_mode=ShowMode.DELETE_AND_SEND,
+    )
+
+
+@router.message(
+    CommandStart(
+        deep_link=True,
+        ignore_case=True,
+        magic=F.args.lower() == Deeplink.FAILED_PAYMENT,
+    ),
+)
+async def on_goto_failed_payment(
+    message: Message,
+    dialog_manager: DialogManager,
+    user: TelegramUserDto,
+) -> None:
+    logger.info(f"{user.log} Redirected to failed payment")
+    await dialog_manager.start(
+        state=Subscription.FAILED,
         mode=StartMode.RESET_STACK,
         show_mode=ShowMode.DELETE_AND_SEND,
     )
