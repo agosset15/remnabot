@@ -19,6 +19,9 @@ class Deeplink(StrEnum):
     INVITE = "invite"
     ADVERTISING = "ad"
     PROMOCODE = "promo"
+    DEVICES = "devices"
+    SUCCESS_PAYMENT = "success-payment"
+    FAILED_PAYMENT = "failed-payment"
 
     def build_url(self, base_url: str, data: Optional[str]) -> str:
         if not data:
