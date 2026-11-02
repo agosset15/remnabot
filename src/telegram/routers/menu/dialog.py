@@ -57,7 +57,7 @@ custom_buttons = (
 menu = Window(
     Banner(BannerName.MENU),
     I18nFormat("msg-main-menu"),
-    LinkPreview(is_disabled=False),
+    LinkPreview(is_disabled=True),
     *connect_buttons,
     Row(
         Button(
