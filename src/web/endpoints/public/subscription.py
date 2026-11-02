@@ -636,6 +636,7 @@ async def get_subscription_offers(
     gateway_offers = [
         GatewayOfferResponse(
             gateway_type=gateway.type,
+            display_name=gateway.settings.display_name if gateway.settings else None,
             currency=gateway.currency.value,
             currency_symbol=gateway.currency.symbol,
         )
