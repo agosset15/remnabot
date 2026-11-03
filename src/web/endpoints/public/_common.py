@@ -9,6 +9,7 @@ from dishka import FromDishka
 from dishka.integrations.fastapi import inject
 from fastapi import Depends, HTTPException, Request, Response, status
 
+from src.application.common import TranslatorRunner
 from src.application.common.dao import UserDao
 from src.application.common.dao.auth import AuthSessionDao
 from src.application.dto import UserDto
@@ -22,6 +23,14 @@ def _normalize_decimal_str(value: Decimal) -> str:
         return str(int(value))
     normalized = value.quantize(Decimal("0.01")).normalize()
     return format(normalized, "f")
+
+
+def localized_plan_name(i18n: TranslatorRunner, plan_name: str) -> str:
+    plain_key = f"{plan_name}-plain"
+    plain_name = i18n.get(plain_key)
+    if plain_name != plain_key:
+        return plain_name
+    return i18n.get(plan_name)
 
 
 def _allowed_return_hosts(config: AppConfig) -> set[str]:

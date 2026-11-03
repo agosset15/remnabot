@@ -70,7 +70,7 @@ from src.web.schemas import (
     TrialPurchaseRequest,
 )
 
-from ._common import CurrentUser, resolve_return_url
+from ._common import CurrentUser, localized_plan_name, resolve_return_url
 
 router = APIRouter(prefix="/subscription", tags=["Public - Subscription"])
 
@@ -157,7 +157,7 @@ async def get_current_subscription(
         traffic_limit_strategy=current_subscription.traffic_limit_strategy.value,
         expire_at=current_subscription.expire_at,
         url=current_subscription.url,
-        plan_name=i18n.get(current_subscription.plan_snapshot.name),
+        plan_name=localized_plan_name(i18n, current_subscription.plan_snapshot.name),
         plan_duration_days=current_subscription.plan_snapshot.duration,
         used_traffic_bytes=remna_user.used_traffic_bytes if remna_user else None,
         lifetime_used_traffic_bytes=remna_user.lifetime_used_traffic_bytes if remna_user else None,
@@ -623,7 +623,7 @@ async def get_subscription_offers(
             PlanOfferResponse(
                 id=plan.id,
                 public_code=plan.public_code,
-                name=i18n.get(plan.name),
+                name=localized_plan_name(i18n, plan.name),
                 description=plan.description,
                 traffic_limit=plan.traffic_limit,
                 device_limit=plan.device_limit,
