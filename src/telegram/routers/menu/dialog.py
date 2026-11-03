@@ -158,6 +158,7 @@ menu = Window(
     ),
     MessageInput(func=on_smart_search),
     IgnoreUpdate(),
+    rich=I18nFormat("msg-main-menu-rich"),
     state=MainMenu.MAIN,
     getter=menu_getter,
 )

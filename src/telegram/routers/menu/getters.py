@@ -10,6 +10,7 @@ from src.application.common.dao import ReferralDao, SettingsDao, SubscriptionDao
 from src.application.dto import TelegramUserDto
 from src.application.use_cases.misc.queries.menu import GetMenuData
 from src.core.config import AppConfig
+from src.core.constants import UNLIMITED_EXPIRE_YEAR
 from src.core.exceptions import MenuRenderError
 from src.core.utils.i18n_helpers import (
     i18n_format_device_limit,
@@ -84,6 +85,7 @@ async def menu_getter(
             "traffic_limit": None,
             "device_limit": None,
             "expire_time": None,
+            "expire_unix": 0,
             "reset_time": None,
             "connection_url": None,
             "subscription_url": None,
@@ -121,6 +123,10 @@ async def menu_getter(
                 "traffic_limit": i18n_format_traffic_limit(subscription.traffic_limit),
                 "device_limit": i18n_format_device_limit(subscription.device_limit),
                 "expire_time": i18n_format_expire_time(subscription.expire_at),
+                # Raw expiry for rich <tg-time>; 0 for unlimited subscriptions.
+                "expire_unix": 0
+                if subscription.expire_at.year == UNLIMITED_EXPIRE_YEAR
+                else int(subscription.expire_at.timestamp()),
                 "reset_time": i18n_format_expire_time(
                     get_traffic_reset_delta(
                         subscription.traffic_limit_strategy,
