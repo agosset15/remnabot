@@ -132,7 +132,7 @@ msg-main-menu-rich =
         *[0] ↘️ Для покупки доступа перейдите в меню «Подписка».
     }</i></blockquote>
     }
-    <footer><a href="https://usekago.net/terms">Условия использования</a> · <a href="https://usekago.net/privacy">Политика конфиденциальности</a></footer>
+    <footer><a href="https://usekago.net/terms">Условия использования</a><br><a href="https://usekago.net/privacy">Политика конфиденциальности</a></footer>
 
 msg-menu-devices =
     <b><tg-emoji emoji-id="5771652845652677093">📱</tg-emoji> Управление устройствами</b>

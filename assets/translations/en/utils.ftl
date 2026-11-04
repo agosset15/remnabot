@@ -272,7 +272,7 @@ role =
     *[1] { role-user }
 }
 
-unlimited = ♾️
+unlimited = ∞
 
 unit-unlimited = { $value ->
     [0] { unlimited }
