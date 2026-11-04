@@ -21,6 +21,8 @@ ntf-common =
     .cooldown-active = <tg-emoji emoji-id="5891211339170326418">⏳</tg-emoji> <i>Temporarily unavailable. Try again in { $available_at }.</i>
 
     .plan-not-found = <tg-emoji emoji-id="5774077015388852135">❌</tg-emoji> <i>Plan not found or unavailable.</i>
+    .devices-unavailable = <tg-emoji emoji-id="5774077015388852135">❌</tg-emoji> <i>Device management is unavailable: no active subscription with a device limit.</i>
+    .payment-processing = <tg-emoji emoji-id="5891211339170326418">⏳</tg-emoji> <i>Your payment is still being processed. We will notify you as soon as it is credited.</i>
     .connect-not-available =
     ⚠️ { $status ->
     [LIMITED]

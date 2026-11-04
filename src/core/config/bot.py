@@ -32,6 +32,8 @@ class BotConfig(BaseConfig, env_prefix="BOT_"):
     drop_pending_updates: bool = False
     setup_commands: bool = True
     use_banners: bool = True
+    # Render windows that define a rich layout via Bot API rich messages (sendRichMessage).
+    use_rich_messages: bool = True
 
     @property
     def id(self) -> int:

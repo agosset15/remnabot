@@ -57,6 +57,83 @@ msg-main-menu =
     <a href="https://usekago.net/terms"><i>Условия использования</i></a>
     <a href="https://usekago.net/privacy"><i>Политика конфиденциальности</i></a>
 
+# Rich layout (Bot API rich messages, BOT_USE_RICH_MESSAGES). Fallback: msg-main-menu
+msg-main-menu-rich =
+    <h3><tg-emoji emoji-id="6035084557378654059">👤</tg-emoji> Профиль</h3>
+    <table compact>
+    { $telegram_id ->
+        [0] { empty }
+        *[HAS] <tr><th align="left">ID</th><td align="left"><code>{ NUMBER($telegram_id, useGrouping: 0) }</code></td></tr>
+    }
+    <tr><th align="left">Имя</th><td align="left">{ $name }</td></tr>
+    { $email_state ->
+        [verified] <tr><th align="left">Почта</th><td align="left"><code>{ $email }</code> <tg-emoji emoji-id="5938252440926163756">✅</tg-emoji></td></tr>
+        [unverified] <tr><th align="left">Почта</th><td align="left">{ $has_pending_email ->
+            [0] <code>{ $email }</code> <i>⏳ не подтверждена</i>
+            *[other] <code>{ $pending_email }</code> <i>⏳ ожидает подтверждения</i>
+        }</td></tr>
+        *[other] { $email ->
+            [0] { empty }
+            *[HAS] <tr><th align="left">Почта</th><td align="left"><code>{ $email }</code></td></tr>
+        }
+    }
+    { $show_personal_discount ->
+        [1] <tr><th align="left">Персональная скидка</th><td align="left"><b>{ $personal_discount }%</b></td></tr>
+        *[0] { empty }
+    }
+    { $show_purchase_discount ->
+        [1] <tr><th align="left">Скидка на покупку</th><td align="left"><b>{ $purchase_discount }%</b></td></tr>
+        *[0] { empty }
+    }
+    </table>
+    { $email_state ->
+        [missing] <p><i>{ $web_cabinet_url ->
+            [0] Привяжите почту, чтобы не потерять доступ к аккаунту.
+            *[other] Привяжите почту, чтобы не потерять доступ к аккаунту и входить в личный кабинет.
+        }</i></p>
+        *[other] { empty }
+    }
+    <hr/>
+    <h3>{ $is_trial ->
+        [1] <tg-emoji emoji-id="6032644646587338669">🎁</tg-emoji> Пробная подписка
+        *[0] <tg-emoji emoji-id="5805331990618053402">💳</tg-emoji> Подписка
+    }</h3>
+    { $status ->
+    [ACTIVE]
+    <table compact>
+    <tr><th align="left">Трафик</th><td align="left">{ $traffic_limit }</td></tr>
+    <tr><th align="left">Устройства</th><td align="left">{ $device_limit }</td></tr>
+    { $expire_unix ->
+        [0] <tr><th align="left">Осталось</th><td align="left"><b>{ $expire_time }</b></td></tr>
+        *[HAS] <tr><th align="left">Действует до</th><td align="left"><tg-time unix="{ NUMBER($expire_unix, useGrouping: 0) }" format="D">{ $expire_time }</tg-time></td></tr>
+    }
+    </table>
+    [EXPIRED]
+    <blockquote><b>Срок действия истек.</b><br><i>{ $is_trial ->
+        [0] Ваша подписка истекла. Продлите ее, чтобы продолжить пользоваться сервисом!
+        *[1] Ваш бесплатный пробный период закончился. Оформите подписку, чтобы продолжить пользоваться сервисом!
+    }</i></blockquote>
+    [LIMITED]
+    <blockquote><b>Ваш трафик израсходован.</b><br><i>{ $is_trial ->
+        [0] { $traffic_strategy ->
+            [NO_RESET] Продлите подписку, чтобы сбросить трафик и продолжить пользоваться сервисом!
+            *[RESET] Трафик будет восстановлен через { $reset_time }. Вы также можете продлить подписку, чтобы сбросить трафик.
+        }
+        *[1] { $traffic_strategy ->
+            [NO_RESET] Оформите подписку, чтобы продолжить пользоваться сервисом!
+            *[RESET] Трафик будет восстановлен через { $reset_time }. Вы также можете оформить подписку, чтобы пользоваться сервисом без ограничений.
+        }
+    }</i></blockquote>
+    [DISABLED]
+    <blockquote><b>Ваша подписка отключена.</b><br><i>Свяжитесь с поддержкой для выяснения причины!</i></blockquote>
+    *[NONE]
+    <blockquote><b>У вас нет оформленной подписки.</b><br><i>{ $trial_available ->
+        [1] <tg-emoji emoji-id="6032644646587338669">🎁</tg-emoji> Для вас доступен бесплатный пробник — нажмите кнопку ниже, чтобы его получить.
+        *[0] ↘️ Для покупки доступа перейдите в меню «Подписка».
+    }</i></blockquote>
+    }
+    <footer><a href="https://usekago.net/terms">Условия использования</a><br><a href="https://usekago.net/privacy">Политика конфиденциальности</a></footer>
+
 msg-menu-devices =
     <b><tg-emoji emoji-id="5771652845652677093">📱</tg-emoji> Управление устройствами</b>
 

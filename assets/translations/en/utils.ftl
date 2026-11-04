@@ -65,11 +65,18 @@ frg-user =
         [0] { empty }
         *[HAS] • <b>ID</b>: <code>{ NUMBER($telegram_id, useGrouping: 0) }</code>
     }
-    { $email ->
-        [0] { empty }
-        *[HAS] • <b>Email</b>: <code>{ $email }</code> { $is_email_verified ->
-            [1] ✅
-            *[0] ❌
+    { $email_state ->
+        [verified] • <b>Email</b>: <code>{ $email }</code> ✅
+        [unverified] • <b>Email</b>: { $has_pending_email ->
+            [0] <code>{ $email }</code> ⏳ <i>not confirmed</i>
+            *[other] { $email ->
+                [0] <code>{ $pending_email }</code>
+                *[HAS] <code>{ $email }</code> → <code>{ $pending_email }</code>
+            } ⏳ <i>pending confirmation</i>
+        }
+        *[other] { $email ->
+            [0] { empty }
+            *[HAS] • <b>Email</b>: <code>{ $email }</code>
         }
     }
     • <b>Name</b>: { $name }
