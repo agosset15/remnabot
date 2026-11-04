@@ -103,9 +103,8 @@ msg-main-menu-rich =
     <table compact>
     <tr><th align="left">Трафик</th><td align="left">{ $traffic_limit }</td></tr>
     <tr><th align="left">Устройства</th><td align="left">{ $device_limit }</td></tr>
-    <tr><th align="left">Осталось</th><td align="left"><b>{ $expire_time }</b></td></tr>
     { $expire_unix ->
-        [0] { empty }
+        [0] <tr><th align="left">Осталось</th><td align="left"><b>{ $expire_time }</b></td></tr>
         *[HAS] <tr><th align="left">Действует до</th><td align="left"><tg-time unix="{ NUMBER($expire_unix, useGrouping: 0) }" format="D">{ $expire_time }</tg-time></td></tr>
     }
     </table>

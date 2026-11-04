@@ -83,7 +83,8 @@ btn-menu =
 btn-profile =
     .email-confirm = <tg-emoji emoji-id="5774022692642492953">✅</tg-emoji> Confirm email
     .email-change = <tg-emoji emoji-id="5776182936638329359">✉️</tg-emoji> Change email
-    .email-add = <tg-emoji emoji-id="5776182936638329359">✉️</tg-emoji> Set email
+    .email-add = <tg-emoji emoji-id="5776182936638329359">✉️</tg-emoji> Link email
+    .email = <tg-emoji emoji-id="5776182936638329359">✉️</tg-emoji> Email
     .code-resend = <tg-emoji emoji-id="6030657343744644592">🔄</tg-emoji> Resend code
 
 btn-invite =

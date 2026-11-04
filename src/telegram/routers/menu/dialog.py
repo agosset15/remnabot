@@ -88,12 +88,19 @@ menu = Window(
             text=I18nFormat("btn-menu.devices"),
             id="devices",
             state=MainMenu.DEVICES,
-            when=F["has_device_limit"],
+            # With a web cabinet, devices are managed in the mini app.
+            when=F["has_device_limit"] & ~F["web_cabinet_url"],
         ),
         Start(
             text=I18nFormat("btn-menu.subscription"),
             id=f"{PAYMENT_PREFIX}subscription",
             state=Subscription.MAIN,
+        ),
+        Url(
+            text=I18nFormat("btn-menu.support"),
+            id="support_inline",
+            url=Format("{support_url}"),
+            when=F["web_cabinet_url"],
         ),
     ),
     Row(
@@ -117,18 +124,13 @@ menu = Window(
             id="support",
             url=Format("{support_url}"),
         ),
+        when=~F["web_cabinet_url"],
     ),
     Row(
         WebApp(
             text=I18nFormat("btn-menu.web-cabinet"),
             url=Format("{web_cabinet_url}"),
             when=F["web_cabinet_url"],
-        ),
-        Start(
-            text=I18nFormat("btn-profile.email"),
-            id="email_settings",
-            state=Profile.EMAIL_INPUT,
-            when=F["email_state"] == "verified",
         ),
     ),
     Row(

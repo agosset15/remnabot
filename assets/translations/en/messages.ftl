@@ -2,9 +2,12 @@
 msg-main-menu =
     { hdr-user-profile }
     { frg-user }
-    { $has_pending_email ->
-        [0] { empty }
-        *[other] <b>Pending confirmation:</b> <code>{ $pending_email }</code>
+    { $email_state ->
+        [missing] <i>{ $web_cabinet_url ->
+            [0] Link your email so you never lose access to your account.
+            *[other] Link your email so you never lose access to your account and can sign in to the web cabinet.
+        }</i>
+        *[other] { empty }
     }
 
     { hdr-subscription }
@@ -50,6 +53,82 @@ msg-main-menu =
     *[0] ↘️ To buy access, go to the "Subscription" menu.
     }</i>
     </blockquote>
+    }
+
+# Rich layout (Bot API rich messages, BOT_USE_RICH_MESSAGES). Fallback: msg-main-menu
+msg-main-menu-rich =
+    <h3><tg-emoji emoji-id="6035084557378654059">👤</tg-emoji> Profile</h3>
+    <table compact>
+    { $telegram_id ->
+        [0] { empty }
+        *[HAS] <tr><th align="left">ID</th><td align="left"><code>{ NUMBER($telegram_id, useGrouping: 0) }</code></td></tr>
+    }
+    <tr><th align="left">Name</th><td align="left">{ $name }</td></tr>
+    { $email_state ->
+        [verified] <tr><th align="left">Email</th><td align="left"><code>{ $email }</code> <tg-emoji emoji-id="5938252440926163756">✅</tg-emoji></td></tr>
+        [unverified] <tr><th align="left">Email</th><td align="left">{ $has_pending_email ->
+            [0] <code>{ $email }</code> <i>⏳ not verified</i>
+            *[other] <code>{ $pending_email }</code> <i>⏳ awaiting verification</i>
+        }</td></tr>
+        *[other] { $email ->
+            [0] { empty }
+            *[HAS] <tr><th align="left">Email</th><td align="left"><code>{ $email }</code></td></tr>
+        }
+    }
+    { $show_personal_discount ->
+        [1] <tr><th align="left">Personal discount</th><td align="left"><b>{ $personal_discount }%</b></td></tr>
+        *[0] { empty }
+    }
+    { $show_purchase_discount ->
+        [1] <tr><th align="left">Purchase discount</th><td align="left"><b>{ $purchase_discount }%</b></td></tr>
+        *[0] { empty }
+    }
+    </table>
+    { $email_state ->
+        [missing] <p><i>{ $web_cabinet_url ->
+            [0] Link your email so you never lose access to your account.
+            *[other] Link your email so you never lose access to your account and can sign in to the web cabinet.
+        }</i></p>
+        *[other] { empty }
+    }
+    <hr/>
+    <h3>{ $is_trial ->
+        [1] <tg-emoji emoji-id="6032644646587338669">🎁</tg-emoji> Trial subscription
+        *[0] <tg-emoji emoji-id="5805331990618053402">💳</tg-emoji> Subscription
+    }</h3>
+    { $status ->
+    [ACTIVE]
+    <table compact>
+    <tr><th align="left">Traffic</th><td align="left">{ $traffic_limit }</td></tr>
+    <tr><th align="left">Devices</th><td align="left">{ $device_limit }</td></tr>
+    { $expire_unix ->
+        [0] <tr><th align="left">Time left</th><td align="left"><b>{ $expire_time }</b></td></tr>
+        *[HAS] <tr><th align="left">Valid until</th><td align="left"><tg-time unix="{ NUMBER($expire_unix, useGrouping: 0) }" format="D">{ $expire_time }</tg-time></td></tr>
+    }
+    </table>
+    [EXPIRED]
+    <blockquote><b>Subscription has expired.</b><br><i>{ $is_trial ->
+        [0] Your subscription has expired. Renew it to keep using the service!
+        *[1] Your free trial has ended. Get a subscription to keep using the service!
+    }</i></blockquote>
+    [LIMITED]
+    <blockquote><b>Your traffic has been used up.</b><br><i>{ $is_trial ->
+        [0] { $traffic_strategy ->
+            [NO_RESET] Renew your subscription to reset your traffic and keep using the service!
+            *[RESET] Your traffic will be restored in { $reset_time }. You can also renew your subscription to reset it.
+        }
+        *[1] { $traffic_strategy ->
+            [NO_RESET] Get a subscription to keep using the service!
+            *[RESET] Your traffic will be restored in { $reset_time }. You can also get a subscription to use the service without limits.
+        }
+    }</i></blockquote>
+    [DISABLED]
+    <blockquote><b>Your subscription is disabled.</b><br><i>Contact support to find out why!</i></blockquote>
+    *[NONE]
+    <blockquote><b>You don't have a subscription.</b><br><i>{ $trial_available ->
+        [1] <tg-emoji emoji-id="6032644646587338669">🎁</tg-emoji> A free trial is available to you — press the button below to get it.
+        *[0] ↘️ To buy access, go to the "Subscription" menu.
+    }</i></blockquote>
     }
 
 msg-menu-devices =
