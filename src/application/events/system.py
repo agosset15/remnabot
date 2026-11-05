@@ -566,6 +566,7 @@ class PromocodeActivatedEvent(SystemEvent):
 
     user_id: int
     telegram_id: Optional[int]
+    email: Optional[str] = field(default=None)
     username: Optional[str]
     name: str
     promocode_code: str
@@ -582,6 +583,7 @@ class PromocodeActivatedEvent(SystemEvent):
             i18n_key=self.event_key,
             i18n_kwargs={
                 "telegram_id": self.telegram_id or 0,
+                "email": self.email or 0,
                 "username": self.username or 0,
                 "name": self.name,
                 "promocode_code": self.promocode_code,
