@@ -370,6 +370,11 @@ btn-remnashop-extra =
         *[0] 🔴
     } Backup connect button
 
+    .birthday-greeting = { $enabled ->
+        [1] 🟢
+        *[0] 🔴
+    } Birthday greeting
+
     .toggle = { $enabled ->
         [1] 🟢 Enabled
         *[0] 🔴 Disabled

@@ -144,6 +144,7 @@ class RemnashopExtra(StatesGroup):
     REFERRAL_RESET = State()
     TRIAL_CHANNEL_GUARD = State()
     MINI_APP_RESERVE = State()
+    BIRTHDAY_GREETING = State()
 
 
 class RemnashopReferral(StatesGroup):

@@ -11,6 +11,13 @@ from src.core.utils.time import datetime_now
 from .base import BaseDto, TimestampMixin, TrackableMixin
 
 
+@dataclass(frozen=True)
+class BirthdateDto:
+    day: int
+    month: int
+    year: Optional[int] = None
+
+
 @dataclass(kw_only=True)
 class TempUserDto:
     telegram_id: int

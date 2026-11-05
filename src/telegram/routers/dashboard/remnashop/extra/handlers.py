@@ -8,6 +8,7 @@ from dishka.integrations.aiogram_dialog import inject
 from src.application.common import Notifier
 from src.application.dto import TelegramUserDto
 from src.application.use_cases.settings.commands.extra import (
+    ToggleBirthdayGreeting,
     ToggleMiniAppReserve,
     ToggleResetFeature,
     ToggleResetFeatureDto,
@@ -58,6 +59,17 @@ async def on_mini_app_reserve_toggle(
 ) -> None:
     user: TelegramUserDto = dialog_manager.middleware_data[USER_KEY]
     await toggle_mini_app_reserve(user)
+
+
+@inject
+async def on_birthday_greeting_toggle(
+    callback: CallbackQuery,
+    widget: Button,
+    dialog_manager: DialogManager,
+    toggle_birthday_greeting: FromDishka[ToggleBirthdayGreeting],
+) -> None:
+    user: TelegramUserDto = dialog_manager.middleware_data[USER_KEY]
+    await toggle_birthday_greeting(user)
 
 
 @inject

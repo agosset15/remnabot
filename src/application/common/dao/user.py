@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional, Protocol, runtime_checkable
 
 from src.application.dto import UserDto
@@ -94,3 +95,25 @@ class UserDao(Protocol):
     async def count_bot_blocked(self) -> int: ...
 
     async def block_by_telegram_ids(self, telegram_ids: list[int]) -> int: ...
+
+    async def get_birthdate_sync_batch(
+        self,
+        stale_before: datetime,
+        limit: int,
+    ) -> list[UserDto]: ...
+
+    async def set_birthdate(
+        self,
+        user_id: int,
+        day: Optional[int],
+        month: Optional[int],
+        synced_at: datetime,
+    ) -> None: ...
+
+    async def get_birthday_users(
+        self, dates: list[tuple[int, int]], year: int
+    ) -> list[UserDto]: ...
+
+    async def claim_birthday_gift(self, user_id: int, year: int) -> bool: ...
+
+    async def release_birthday_gift(self, user_id: int, year: int) -> None: ...

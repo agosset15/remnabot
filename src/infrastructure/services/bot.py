@@ -3,6 +3,7 @@ from urllib.parse import quote
 
 from aiogram.utils.chat_member import ChatMemberUnion
 
+from src.application.dto import BirthdateDto
 from src.application.services import WebService
 from src.core.config import AppConfig
 from src.core.constants import T_ME
@@ -69,3 +70,14 @@ class BotService:
 
     async def get_chat_member(self, chat_id: Union[str, int], user_id: int) -> ChatMemberUnion:
         return await self.bots.current.get_chat_member(chat_id=chat_id, user_id=user_id)
+
+    async def get_birthdate(
+        self,
+        telegram_id: int,
+        bot_id: Optional[int] = None,
+    ) -> Optional[BirthdateDto]:
+        chat = await self.bots.resolve(bot_id).get_chat(chat_id=telegram_id)
+        birthdate = chat.birthdate
+        if birthdate is None:
+            return None
+        return BirthdateDto(day=birthdate.day, month=birthdate.month, year=birthdate.year)

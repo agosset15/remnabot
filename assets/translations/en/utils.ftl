@@ -470,6 +470,7 @@ notification-type = { $notification_type ->
     [REFERRAL_ATTACHED] Referral attached
     [REFERRAL_REWARD_RECEIVED] Referral reward
     [REFERRAL_REWARD_FAILED] Reward accrual error
+    [BIRTHDAY] Birthday greeting
     [BOT_LIFECYCLE] Bot lifecycle
     [BOT_UPDATE] Bot updates
     [USER_REGISTERED] User registration

@@ -42,7 +42,7 @@ from .statistics import (
 )
 from .subscription import RemnaSubscriptionDto, SquadInfoDto, SubscriptionDto
 from .transaction import PriceDetailsDto, TransactionDto
-from .user import TelegramUserDto, TempUserDto, UserDto, UserOAuthProviderDto
+from .user import BirthdateDto, TelegramUserDto, TempUserDto, UserDto, UserOAuthProviderDto
 
 __all__ = [
     "AdLinkDto",
@@ -99,6 +99,7 @@ __all__ = [
     "TransactionDto",
     "TelegramUserDto",
     "TempUserDto",
+    "BirthdateDto",
     "UserDto",
     "UserOAuthProviderDto",
 ]

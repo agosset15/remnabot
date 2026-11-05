@@ -1091,6 +1091,23 @@ msg-extra-mini-app-reserve =
 
     Works only when the Mini App is enabled (BOT_MINI_APP).
 
+msg-extra-birthday-greeting =
+    <tg-emoji emoji-id="6032742198179532882">⚙️</tg-emoji> <b>Birthday greeting</b>
+
+    On their birthday the user gets a greeting, and <b>{ $days } { $days ->
+        [one] day
+        *[other] days
+    }</b> are added to their subscription. An expired subscription is extended from the greeting date. Users without a subscription only get the greeting.
+
+    <blockquote>
+    <b>Status:</b> { $enabled ->
+        [1] <tg-emoji emoji-id="5774022692642492953">✅</tg-emoji> Enabled
+        *[0] <tg-emoji emoji-id="5774077015388852135">❌</tg-emoji> Disabled
+    }
+    </blockquote>
+
+    The date comes from the Telegram profile if the user set it and did not hide it. Greetings are sent daily at 09:00 UTC, at most once a year.
+
 msg-admins-main = <b><tg-emoji emoji-id="6030445631921721471">👮‍♂️</tg-emoji> Administrators</b>
 
 

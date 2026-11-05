@@ -9,6 +9,7 @@ from src.telegram.widgets.kbd import Button, Row, Start, SwitchTo
 
 from .getters import extra_getter
 from .handlers import (
+    on_birthday_greeting_toggle,
     on_cooldown_input,
     on_mini_app_reserve_toggle,
     on_toggle,
@@ -76,6 +77,16 @@ main = Window(
             ),
             id="mini_app_reserve",
             state=RemnashopExtra.MINI_APP_RESERVE,
+        ),
+    ),
+    Row(
+        SwitchTo(
+            text=I18nFormat(
+                "btn-remnashop-extra.birthday-greeting",
+                enabled=F["birthday_greeting_enabled"],
+            ),
+            id="birthday_greeting",
+            state=RemnashopExtra.BIRTHDAY_GREETING,
         ),
     ),
     Row(
@@ -255,6 +266,35 @@ mini_app_reserve = Window(
     getter=extra_getter,
 )
 
+birthday_greeting = Window(
+    Banner(BannerName.DASHBOARD),
+    I18nFormat(
+        "msg-extra-birthday-greeting",
+        enabled=F["birthday_greeting_enabled"],
+        days=F["birthday_gift_days"],
+    ),
+    Row(
+        Button(
+            text=I18nFormat(
+                "btn-remnashop-extra.toggle",
+                enabled=F["birthday_greeting_enabled"],
+            ),
+            id="birthday_greeting_toggle",
+            on_click=on_birthday_greeting_toggle,
+        ),
+    ),
+    Row(
+        SwitchTo(
+            text=I18nFormat("btn-back.general"),
+            id="back",
+            state=RemnashopExtra.MAIN,
+        ),
+    ),
+    IgnoreUpdate(),
+    state=RemnashopExtra.BIRTHDAY_GREETING,
+    getter=extra_getter,
+)
+
 router = Dialog(
     main,
     device_single,
@@ -263,4 +303,5 @@ router = Dialog(
     referral_reset,
     trial_channel_guard,
     mini_app_reserve,
+    birthday_greeting,
 )

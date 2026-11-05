@@ -12,6 +12,7 @@ from .commands.backup import (
 from .commands.currency import UpdateDefaultCurrency
 from .commands.defaults import ApplyConfigNotificationRoutes, CreateDefaultSettings
 from .commands.extra import (
+    ToggleBirthdayGreeting,
     ToggleMiniAppReserve,
     ToggleResetFeature,
     ToggleTrialChannelGuard,
@@ -61,6 +62,7 @@ SETTINGS_USE_CASES: Final[tuple[type[Interactor], ...]] = (
     UpdateBackupMaxFiles,
     ToggleResetFeature,
     ToggleTrialChannelGuard,
+    ToggleBirthdayGreeting,
     ToggleMiniAppReserve,
     UpdateResetCooldown,
 )

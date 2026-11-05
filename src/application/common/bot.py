@@ -2,6 +2,8 @@ from typing import Optional, Protocol, Union
 
 from aiogram.utils.chat_member import ChatMemberUnion
 
+from src.application.dto import BirthdateDto
+
 
 class BotService(Protocol):
     async def is_inline_enabled(self) -> bool: ...
@@ -23,3 +25,14 @@ class BotService(Protocol):
         chat_id: Union[str, int],
         user_id: int,
     ) -> ChatMemberUnion: ...
+
+    async def get_birthdate(
+        self,
+        telegram_id: int,
+        bot_id: Optional[int] = None,
+    ) -> Optional[BirthdateDto]:
+        """Birthdate from the user's Telegram profile (None if hidden or not set).
+
+        Raises aiogram's Telegram API errors (e.g. forbidden, chat not found, retry after).
+        """
+        ...

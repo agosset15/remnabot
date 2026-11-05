@@ -1,10 +1,16 @@
+import html
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
 from remnapy.enums.users import TrafficLimitStrategy
 
 from src.application.dto import MessagePayloadDto
-from src.core.enums import MessageEffectId, ReferralRewardType, UserNotificationType
+from src.core.enums import (
+    BirthdayGift,
+    MessageEffectId,
+    ReferralRewardType,
+    UserNotificationType,
+)
 from src.core.types import NotificationType
 
 from .base import UserEvent
@@ -174,6 +180,34 @@ class ReferralRewardFailedEvent(ReferralRewardEvent):
     @property
     def event_key(self) -> str:
         return "event-referral.reward-failed"
+
+
+@dataclass(frozen=True, kw_only=True)
+class BirthdayGreetingEvent(UserEvent):
+    notification_type: NotificationType = field(
+        default=UserNotificationType.BIRTHDAY,
+        init=False,
+    )
+
+    gift: BirthdayGift
+    days: int
+
+    @property
+    def event_key(self) -> str:
+        return "event-birthday.greeting"
+
+    def as_payload(self) -> "MessagePayloadDto":
+        return MessagePayloadDto(
+            i18n_key=self.event_key,
+            i18n_kwargs={
+                "name": html.escape(self.user.name),
+                "gift": self.gift,
+                "days": self.days,
+            },
+            disable_default_markup=False,
+            delete_after=None,
+            message_effect=MessageEffectId.PARTY,
+        )
 
 
 @dataclass(frozen=True, kw_only=True)

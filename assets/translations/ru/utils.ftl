@@ -479,6 +479,7 @@ notification-type = { $notification_type ->
     [REFERRAL_ATTACHED] Реферал закреплен
     [REFERRAL_REWARD_RECEIVED] Вознаграждение за реферала
     [REFERRAL_REWARD_FAILED] Ошибка начисления вознаграждения
+    [BIRTHDAY] День рождения
     [BOT_LIFECYCLE] Жизненный цикл бота
     [BOT_UPDATE] Обновления бота
     [USER_REGISTERED] Регистрация пользователя

@@ -205,7 +205,10 @@ class NotificationsSettingsDto(TrackableMixin):
     @property
     def user(self) -> list[tuple[NotificationType, bool]]:
         return [
-            (ntf, self.is_enabled(UserNotificationType(ntf.value))) for ntf in UserNotificationType
+            (ntf, self.is_enabled(UserNotificationType(ntf.value)))
+            for ntf in UserNotificationType
+            # Managed in the extra settings together with the gift, not as a notification.
+            if ntf != UserNotificationType.BIRTHDAY
         ]
 
 
@@ -293,6 +296,7 @@ class ExtraSettingsDto(TrackableMixin):
     referral_reset: ResetFeatureSettingsDto = field(default_factory=ResetFeatureSettingsDto)
     trial_channel_guard: bool = False
     mini_app_reserve: bool = False
+    birthday_greeting: bool = False  # Greet users on their birthday and gift extra days
 
 
 @dataclass(kw_only=True)

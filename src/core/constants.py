@@ -112,3 +112,9 @@ WEB_PASSWORD_LEN: Final[int] = 8
 WEB_PASSWORD_ALPHABET: Final[str] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 WEB_PASSWORD_MIN_LEN: Final[int] = 8
 WEB_PASSWORD_MAX_LEN: Final[int] = 256
+
+# Birthday greetings
+BIRTHDAY_GIFT_DAYS: Final[int] = 15
+BIRTHDATE_SYNC_INTERVAL_DAYS: Final[int] = 7  # How often each user's birthdate is re-fetched
+BIRTHDATE_SYNC_BATCH_SIZE: Final[int] = 2000  # Users per hourly sync run
+BIRTHDATE_REQUEST_DELAY: Final[float] = 0.05  # ~20 getChat requests per second

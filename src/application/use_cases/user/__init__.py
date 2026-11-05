@@ -3,6 +3,7 @@ from typing import Final
 from src.application.common import Interactor
 
 from .commands.activity import TrackUserActivity
+from .commands.birthday import CongratulateBirthdayUsers, SyncUserBirthdates
 from .commands.blocking import (
     BlockUsersByIds,
     ClearBlockedIds,
@@ -60,4 +61,6 @@ USER_USE_CASES: Final[tuple[type[Interactor], ...]] = (
     RegisterWebUser,
     TrackUserActivity,
     GetRecentActivityUsers,
+    SyncUserBirthdates,
+    CongratulateBirthdayUsers,
 )

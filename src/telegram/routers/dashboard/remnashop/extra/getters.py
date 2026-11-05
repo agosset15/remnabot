@@ -5,6 +5,7 @@ from dishka import FromDishka
 from dishka.integrations.aiogram_dialog import inject
 
 from src.application.common.dao import SettingsDao
+from src.core.constants import BIRTHDAY_GIFT_DAYS
 
 
 @inject
@@ -26,4 +27,6 @@ async def extra_getter(
         "referral_reset_cooldown": extra.referral_reset.cooldown_hours,
         "trial_channel_guard_enabled": extra.trial_channel_guard,
         "mini_app_reserve_enabled": extra.mini_app_reserve,
+        "birthday_greeting_enabled": extra.birthday_greeting,
+        "birthday_gift_days": BIRTHDAY_GIFT_DAYS,
     }

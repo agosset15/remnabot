@@ -453,6 +453,26 @@ event-referral =
     <i>Buy a subscription to get bonuses for invited friends!</i>
     </blockquote>
 
+event-birthday =
+    .greeting =
+    <b>🎂 Happy birthday, { $name }!</b>
+
+    <blockquote>
+    The KAGO team wishes you a wonderful day! May this year be bright, calm and full of good moments.
+    </blockquote>
+
+    { $gift ->
+    [DAYS]
+    🎁 As a gift, we added <b>{ $days } { $days ->
+        [one] day
+        *[other] days
+        }</b> to your subscription.
+    [UNLIMITED]
+    🎁 Your subscription is already permanent, so we simply wish you a great day!
+    *[NONE]
+    🎁 Get a subscription, and on your next birthday we will gift you extra days.
+    }
+
 event-promocode =
     .activated =
     #PromocodeActivatedEvent

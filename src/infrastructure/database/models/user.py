@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import BigInteger, DateTime, ForeignKey, Integer, String
+from sqlalchemy import BigInteger, DateTime, ForeignKey, Index, Integer, SmallInteger, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.core.enums import AuthType, Locale, Role
@@ -12,6 +12,7 @@ from .timestamp import TimestampMixin
 
 class User(BaseSql, TimestampMixin):
     __tablename__ = "users"
+    __table_args__ = (Index("ix_users_birth_month_day", "birth_month", "birth_day"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
     telegram_id: Mapped[Optional[int]] = mapped_column(
@@ -57,6 +58,15 @@ class User(BaseSql, TimestampMixin):
     referral_code_reset_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+
+    # Birthday cached from Telegram (getChat -> birthdate); refreshed by a background task.
+    birth_day: Mapped[Optional[int]] = mapped_column(SmallInteger, nullable=True)
+    birth_month: Mapped[Optional[int]] = mapped_column(SmallInteger, nullable=True)
+    birthdate_synced_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    # Year of the last birthday greeting/gift; guards against granting twice a year.
+    birthday_gift_year: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
     current_subscription_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("subscriptions.id", ondelete="SET NULL"),

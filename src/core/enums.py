@@ -343,6 +343,14 @@ class UserNotificationType(UpperStrEnum):
     REFERRAL_ATTACHED = auto()
     REFERRAL_REWARD_RECEIVED = auto()
     REFERRAL_REWARD_FAILED = auto()
+    #
+    BIRTHDAY = auto()
+
+
+class BirthdayGift(UpperStrEnum):
+    DAYS = auto()  # Extra days were added to the subscription
+    UNLIMITED = auto()  # Subscription is permanent, nothing to add
+    NONE = auto()  # No subscription to extend, greeting only
 
 
 class AccessMode(UpperStrEnum):

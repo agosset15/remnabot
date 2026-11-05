@@ -472,3 +472,81 @@ class UserDaoImpl(UserDao):
         count = await self.session.scalar(stmt) or 0
         logger.debug(f"Total bot-blocked users count is '{count}'")
         return count
+
+    async def get_birthdate_sync_batch(self, stale_before: datetime, limit: int) -> list[UserDto]:
+        stmt = (
+            select(User)
+            .where(
+                User.telegram_id.is_not(None),
+                User.is_blocked.is_(False),
+                User.is_bot_blocked.is_(False),
+                or_(
+                    User.birthdate_synced_at.is_(None),
+                    User.birthdate_synced_at < stale_before,
+                ),
+            )
+            .order_by(User.birthdate_synced_at.asc().nulls_first(), User.id.asc())
+            .limit(limit)
+        )
+        result = await self.session.scalars(stmt)
+        db_users = cast(list, result.all())
+        logger.debug(f"Retrieved '{len(db_users)}' users for birthdate sync")
+        return self._convert_to_dto_list(db_users)
+
+    async def set_birthdate(
+        self,
+        user_id: int,
+        day: Optional[int],
+        month: Optional[int],
+        synced_at: datetime,
+    ) -> None:
+        stmt = (
+            update(User)
+            .where(User.id == user_id)
+            .values(birth_day=day, birth_month=month, birthdate_synced_at=synced_at)
+        )
+        await self.session.execute(stmt)
+
+    async def get_birthday_users(self, dates: list[tuple[int, int]], year: int) -> list[UserDto]:
+        if not dates:
+            return []
+
+        stmt = (
+            select(User)
+            .where(
+                or_(
+                    *((User.birth_day == day) & (User.birth_month == month) for day, month in dates)
+                ),
+                User.telegram_id.is_not(None),
+                User.is_blocked.is_(False),
+                User.is_bot_blocked.is_(False),
+                or_(User.birthday_gift_year.is_(None), User.birthday_gift_year < year),
+            )
+            .order_by(User.id.asc())
+        )
+        result = await self.session.scalars(stmt)
+        db_users = cast(list, result.all())
+        logger.debug(f"Retrieved '{len(db_users)}' users with a birthday on '{dates}'")
+        return self._convert_to_dto_list(db_users)
+
+    async def claim_birthday_gift(self, user_id: int, year: int) -> bool:
+        # Conditional update: only one concurrent run can move the year forward.
+        stmt = (
+            update(User)
+            .where(
+                User.id == user_id,
+                or_(User.birthday_gift_year.is_(None), User.birthday_gift_year < year),
+            )
+            .values(birthday_gift_year=year)
+            .returning(User.id)
+        )
+        claimed = await self.session.scalar(stmt)
+        return claimed is not None
+
+    async def release_birthday_gift(self, user_id: int, year: int) -> None:
+        stmt = (
+            update(User)
+            .where(User.id == user_id, User.birthday_gift_year == year)
+            .values(birthday_gift_year=None)
+        )
+        await self.session.execute(stmt)
